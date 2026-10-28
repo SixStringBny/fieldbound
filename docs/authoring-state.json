@@ -44,9 +44,36 @@
       "completedAt": "2026-10-28T19:03:03.145Z"
     },
     "skills": {
-      "status": "pending",
+      "status": "complete",
       "inputFingerprint": "28158bd2155c2c6e4944d82d403c2af3723f54660ba04826f416555a27e1dd1d",
-      "outputs": []
+      "outputs": [
+        ".opencode\\skills\\seeded-determinism-and-replay\\SKILL.md",
+        ".opencode\\skills\\versioned-local-persistence\\SKILL.md",
+        ".opencode\\skills\\portrait-first-board-and-accessibility\\SKILL.md",
+        ".opencode\\skills\\placeholder-asset-manifest\\SKILL.md",
+        ".opencode\\skills\\static-build-origin-audit\\SKILL.md"
+      ],
+      "startedAt": "2026-10-28T19:03:16.348Z",
+      "invocation": {
+        "runner": "opencode",
+        "requestedModel": "opencode/deepseek-v4.1-flash-free",
+        "source": "project",
+        "effectiveModel": "opencode/deepseek-v4.1-flash-free",
+        "inventoryVerifiedAt": "2026-10-28T18:12:20.343Z",
+        "runnerSource": "project",
+        "argv": [
+          "run",
+          "--auto",
+          "--model",
+          "opencode/deepseek-v4.1-flash-free",
+          "/forge-build-project-skills Consume docs/SKILL-CANDIDATES.json. Use .opencode/skills/ and .opencode/agents/. Create or extend only planned skills, reuse unchanged packages, honor omit decisions, and run structural and per-axis review gates. Do not regenerate the team, modify its ownership or handoff, compile a manifest, or start the build. Headless: proceed with authorized defaults."
+        ],
+        "skill": "forge-build-project-skills"
+      },
+      "outputFingerprint": "8dd5f93e38a15e659509fcefa63721ac57116b2988f0e129b4e290df92e042be",
+      "completedAt": "2026-10-28T19:09:09.699Z",
+      "reusedSkills": [],
+      "noSkillsRequired": false
     }
   }
 }
