@@ -3,7 +3,7 @@
 ## Current State
 **Phase**: BATTLE-ENGINE-RULES-3
 **Status**: In Progress
-**Last Updated**: 2026-10-28T20:45:04.492Z
+**Last Updated**: 2026-10-28T20:49:14.142Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -19,12 +19,13 @@
   - Files: src/engine/status.ts, src/engine/status.test.ts
 - [x] Phase BATTLE-ENGINE-RULES-3, Task ENG-04: Implement the legal battle state machine (@rules-engineer)
   - Files: src/engine/battle.ts, src/engine/battle.test.ts
+- [x] Phase BATTLE-ENGINE-RULES-3, Task ENG-05: Serialize and restore battle snapshots (@rules-engineer)
+  - Files: src/engine/snapshot.ts, src/engine/snapshot.test.ts
 
 ## Current Task
 - None currently running
 
 ## Remaining
-- [ ] Phase BATTLE-ENGINE-RULES-3: Phase 3: Battle Loop
 - [ ] Phase BATTLE-ENGINE-RULES-4: Phase 4: Opponent and Verification
 - [ ] Phase CARD-ENEMY-CONTENT-1: Phase 1: Card Catalog
 - [ ] Phase CARD-ENEMY-CONTENT-2: Phase 2: Decks and Enemies

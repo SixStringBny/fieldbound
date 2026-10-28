@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-28T20:45:04.491Z",
+  "lastUpdatedAt": "2026-10-28T20:49:14.141Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -322,10 +322,48 @@
     },
     "ENG-05": {
       "taskId": "ENG-05",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "rules-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/engine/snapshot.ts",
+        "src/engine/snapshot.test.ts"
+      ],
+      "startedAt": "2026-10-28T20:45:04.853Z",
+      "usage": {
+        "inputTokens": 39903,
+        "outputTokens": 16116,
+        "reasoningTokens": 27551,
+        "cacheReadTokens": 1510528,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.036717233999999994,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/ENG-05.2026-10-28T20-49-14-135Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 39903,
+            "outputTokens": 16116,
+            "reasoningTokens": 27551,
+            "cacheReadTokens": 1510528,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.036717233999999994,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-28T20:49:14.139Z",
+      "agentOutput": "I'll start by reading the execution file and the relevant documentation.\r\nNow I have the full picture. Let me write the snapshot module.\r\nNow the test suite:\r\nThe fixture's opponent hand is empty because the enemy draws after ending its own turn. Let me fix the fixture to mirror that housekeeping rule.\r\nA repo-wide engine test bans the literal storage token even in comments. Rewording:\r\nImplemented and verified. The engine now has a pure snapshot module with typed, ordered validation and full round-trip coverage.\n\n**Files created**\n- `src/engine/snapshot.ts`\n- `src/engine/snapshot.test.ts`\n\n**What it does**\n- `serializeSnapshot(state)` rebuilds the contract shape field-by-field (no spreads of live state), so nested arrays/objects never alias battle state and no runtime function can leak into a snapshot. Includes `schemaVersion`, seed, PRNG state, turn, active side, phase, field, outcome, both sides' deck/hand/discard, energy, health, defense, statuses, and the enemy telegraph.\n- `restoreSnapshot(input, catalog)` validates before constructing anything: schema version, unsigned 32-bit PRNG state, structure, catalog card ids in every zone and plan step, duplicate instance ids across all six piles and within a plan, hand above five, defense/status caps, numeric bounds, phase/outcome/health agreement, and plan shape. Every failure is a typed `SnapshotErrorCode`; no throw escapes the API and no partial state is returned.\n- No browser storage, React, content, or host randomness; the only randomness reference is the restored `RngState`.\n\n```forge-result\n{\n  \"summary\": \"Added src/engine/snapshot.ts (versioned BattleSnapshot serializer plus validate-before-restore) and src/engine/snapshot.test.ts with 63 tests covering exact mid-battle round-trip, identical next action set and post-restore play, PRNG/reshuffle continuation, typed rejections for schema version, card ids, duplicate instance ids and impossible counts, and a function-free JSON-safe snapshot.\",\n  \"decisions\": [\n    \"serializeSnapshot is total: it copies the contract shape explicitly and normalizes the PRNG counter through serializeRng; restoreSnapshot is the sole validator, so callers may snapshot hand-built states without a catalog.\",\n    \"restoreSnapshot accepts unknown and internally maps a private rejection exception to SnapshotRestoreResult, guaranteeing validation finishes before any BattleState is returned and that no exception escapes.\",\n    \"Card ids are checked against the caller's CardCatalog in every deck, hand, discard and enemy-plan step; the engine still imports no src/content.\",\n    \"Impossible counts are reported with distinct codes: hand above HAND_SIZE, defense above DEFENSE_CAP and status stacks above their caps are impossible-count; malformed types, negatives and out-of-range turn/seed/health/energy are invalid-snapshot.\",\n    \"Duplicate instance ids are checked with one set shared across both sides and all three zones (one physical card lives in exactly one zone), and separately within a plan so a plan cannot execute the same instance twice.\",\n    \"Phase, outcome and health must agree (ended phase implies a non-ongoing outcome, player-victory needs the opponent at 0, an ongoing battle needs both sides above 0), since only the battle reducer can settle a battle.\",\n    \"enemyPlan is required but nullable: a missing value is rejected rather than defaulted, because silently dropping the telegraph would change the player's legal information on resume.\",\n    \"Plan step instance ids are not required to be in the opponent hand; membership is a planner concern (ENG-06), while the snapshot only enforces structure, catalog ids and plan-internal uniqueness.\"\n  ],\n  \"interfaces\": [\n    \"snapshot.ts exports serializeSnapshot(state: BattleState): BattleSnapshot.\",\n    \"snapshot.ts exports restoreSnapshot(input: unknown, catalog: CardCatalog): SnapshotRestoreResult.\",\n    \"Serialized snapshots carry schemaVersion = BATTLE_SCHEMA_VERSION (1) and every BattleState field, so consumers can JSON.stringify/parse and persist them directly.\",\n    \"Solo/duel persistence should call serializeSnapshot after each settled action and restoreSnapshot on load, discarding the affected save on any typed failure.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/engine/snapshot.test.ts: exit 0, 63 passed\",\n    \"npm run typecheck: exit 0\",\n    \"npm test (full suite incl. engine purity checks): exit 0, 303 passed\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-eng-05-001",
+      "inputArtifactIds": [
+        "work-eng-04-001",
+        "work-eng-01-001",
+        "work-eng-02-001",
+        "work-eng-03-001"
+      ]
     },
     "ENG-06": {
       "taskId": "ENG-06",
