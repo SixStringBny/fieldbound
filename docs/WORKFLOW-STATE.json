@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-28T20:35:57.667Z",
+  "lastUpdatedAt": "2026-10-28T20:37:36.380Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -235,10 +235,46 @@
     },
     "ENG-03": {
       "taskId": "ENG-03",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "rules-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/engine/status.ts",
+        "src/engine/status.test.ts"
+      ],
+      "startedAt": "2026-10-28T20:35:58.046Z",
+      "usage": {
+        "inputTokens": 25634,
+        "outputTokens": 8813,
+        "reasoningTokens": 7578,
+        "cacheReadTokens": 394624,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.014863572000000002,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/ENG-03.2026-10-28T20-37-36-373Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 25634,
+            "outputTokens": 8813,
+            "reasoningTokens": 7578,
+            "cacheReadTokens": 394624,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.014863572000000002,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-28T20:37:36.378Z",
+      "agentOutput": "I'll start by reading the execution file and the referenced documentation.\r\nNow I have the full picture. Let me implement `src/engine/status.ts`.\r\n## Result\n\nImplemented the status-stack rules module and its unit suite. Focus/Weaken/Regen application clamps at 3/3/2, attack plays spend one of each present stack (net 0 when both), turn-start Regen heals 2 capped at max health and spends a stack, and battle-end clearing zeroes both sides without mutating the input. All helpers are pure, typed and free of React/DOM/storage/content imports or `Math.random`.\n\n**Files created**\n- `src/engine/status.ts`\n- `src/engine/status.test.ts`\n\n```forge-result\n{\n  \"summary\": \"Implemented ENG-03 status stacks: capped application, per-attack Focus/Weaken consumption with net modifier, turn-start Regen healing and consumption, battle-end clearing for both sides, plus 51 unit tests. `npm test -- src/engine/status.test.ts` (51 passed), `npm run typecheck` and the full `npm test` suite (165 passed) all succeed.\",\n  \"decisions\": [\n    \"Spending is a property of playing an attack card, so `consumeAttackStatuses` is called before damage and spends one Focus and one Weaken stack whenever present, independent of the final damage; the returned `modifier` is passed to `resolveAttack` as `statusModifier`.\",\n    \"Regen consumes one stack at every turn start even at full health, following the status table's literal 'one stack per turn start'; healing is capped at maximum health and reported separately as `healed`.\",\n    \"Status application accepts a typed `StatusCounters` plus one kind/stacks pair or a list of `StatusApplication`s; `target` is deliberately resolved by `resolveStatusTarget` in the caller so the same helper serves self-buffs, debuffs and planner simulation without guessing a side.\",\n    \"Corrupt counters (negative, fractional, non-finite) are normalised to legal 0..cap integers on every read, application and consumption so bad data cannot enter battle state.\",\n    \"Battle-end clearing is exposed both per side (`clearStatuses`) and for the symmetric board (`clearBattleStatuses`), which copies every other side field unchanged and returns fresh zeroed counters.\"\n  ],\n  \"interfaces\": [\n    \"status.ts exports constants EMPTY_STATUSES, FOCUS_DAMAGE_BONUS=2, WEAKEN_DAMAGE_PENALTY=2.\",\n    \"status.ts exports emptyStatuses(): StatusCounters, clampStatusStacks(kind, stacks), normalizeStatusCounters(counters), getStacks(statuses, kind), hasStatus(statuses, kind).\",\n    \"status.ts exports applyStatus(statuses, kind, stacks), applyStatusApplications(statuses, applications), resolveStatusTarget(actingSide, target).\",\n    \"status.ts exports AttackStatusSpend { statuses, focusConsumed, weakenConsumed, modifier }, consumeAttackStatuses(statuses), attackStatusModifier(statuses).\",\n    \"status.ts exports RegenTick { statuses, health, healed, regenConsumed }, tickRegen(statuses, health, maxHealth).\",\n    \"status.ts exports clearStatuses(statuses) and clearBattleStatuses(sides): BattleSides.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/engine/status.test.ts: exit 0, 51 tests passed\",\n    \"npm run typecheck: exit 0\",\n    \"npm test (full suite): exit 0, 4 files / 165 tests passed\",\n    \"grep over src/engine for Math.random / React / DOM / storage / src-content references: no offending code (only pre-existing documentation and guard-test text)\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-eng-03-001",
+      "inputArtifactIds": [
+        "work-eng-01-001",
+        "work-eng-00-001"
+      ]
     },
     "ENG-04": {
       "taskId": "ENG-04",

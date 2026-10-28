@@ -3,7 +3,7 @@
 ## Current State
 **Phase**: BATTLE-ENGINE-RULES-2
 **Status**: In Progress
-**Last Updated**: 2026-10-28T20:35:57.669Z
+**Last Updated**: 2026-10-28T20:37:36.382Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -15,12 +15,13 @@
   - Files: src/engine/types.ts, src/engine/rng.ts, src/engine/rng.test.ts, docs/engine-config.json
 - [x] Phase BATTLE-ENGINE-RULES-2, Task ENG-02: Resolve field matchup, damage, defense and piercing (@rules-engineer)
   - Files: src/engine/damage.ts, src/engine/damage.test.ts
+- [x] Phase BATTLE-ENGINE-RULES-2, Task ENG-03: Apply Focus, Weaken and Regen stacks (@rules-engineer)
+  - Files: src/engine/status.ts, src/engine/status.test.ts
 
 ## Current Task
 - None currently running
 
 ## Remaining
-- [ ] Phase BATTLE-ENGINE-RULES-2: Phase 2: Core Rules
 - [ ] Phase BATTLE-ENGINE-RULES-3: Phase 3: Battle Loop
 - [ ] Phase BATTLE-ENGINE-RULES-4: Phase 4: Opponent and Verification
 - [ ] Phase CARD-ENEMY-CONTENT-1: Phase 1: Card Catalog
