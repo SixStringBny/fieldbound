@@ -1,0 +1,168 @@
+:root {
+  color-scheme: light;
+
+  --fb-parchment: #f3ead7;
+  --fb-parchment-deep: #e6d7bb;
+  --fb-ink: #2b2419;
+  --fb-ink-soft: #5b4f3d;
+  --fb-accent: #7a3f1d;
+  --fb-focus: #1d4ed8;
+  --fb-radius: 16px;
+  --fb-shadow: 0 18px 40px rgb(43 36 25 / 12%);
+
+  font-family:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia,
+    ui-serif, serif;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--fb-ink);
+  background-color: var(--fb-parchment);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 15% 0%, #fbf5e8 0%, transparent 55%),
+    linear-gradient(180deg, var(--fb-parchment) 0%, var(--fb-parchment-deep) 100%);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+p,
+ul {
+  margin: 0;
+}
+
+ul {
+  padding-left: 1.25rem;
+}
+
+.app-root {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1rem 2.5rem;
+}
+
+.shell {
+  width: 100%;
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.shell:focus {
+  outline: none;
+}
+
+.shell__header {
+  padding: 2.5rem 0 2rem;
+  text-align: center;
+}
+
+.shell__eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fb-ink-soft);
+}
+
+.shell__title {
+  margin-top: 0.5rem;
+  font-size: clamp(2.75rem, 12vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.shell__tagline {
+  margin-top: 0.9rem;
+  font-size: 1.0625rem;
+  color: var(--fb-ink-soft);
+}
+
+.shell__panel {
+  border: 1px solid rgb(122 63 29 / 22%);
+  border-radius: var(--fb-radius);
+  background: rgb(255 252 244 / 78%);
+  box-shadow: var(--fb-shadow);
+  padding: 1.25rem;
+}
+
+.shell__panel-title {
+  font-size: 1.25rem;
+}
+
+.shell__copy {
+  margin-top: 0.5rem;
+  color: var(--fb-ink-soft);
+}
+
+.shell__list {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.4rem;
+  color: var(--fb-ink);
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 10;
+  min-height: 44px;
+  padding: 0.65rem 1rem;
+  border-radius: 0 0 12px 12px;
+  background: var(--fb-ink);
+  color: var(--fb-parchment);
+  font-weight: 600;
+}
+
+.skip-link:focus-visible {
+  top: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--fb-focus);
+  outline-offset: 3px;
+}
+
+@media (min-width: 640px) {
+  .app-root {
+    justify-content: center;
+    padding: 3rem 1.5rem;
+  }
+
+  .shell__header {
+    padding: 3.5rem 0 2.5rem;
+  }
+
+  .shell__panel {
+    padding: 1.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

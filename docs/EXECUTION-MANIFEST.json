@@ -1,0 +1,2419 @@
+{
+  "version": "1.0",
+  "generatedAt": "2026-10-28T19:13:31.392Z",
+  "granularity": "fine",
+  "sourceLayout": "features",
+  "repoRoot": "c:\\dev-work\\Card-Game-Project",
+  "harnessRoot": ".opencode",
+  "prdPath": "c:\\dev-work\\Card-Game-Project\\docs\\PRD.md",
+  "visionPath": "c:\\dev-work\\Card-Game-Project\\docs\\PRD.md",
+  "featureOrder": [
+    "Battle Engine & Rules",
+    "Card & Enemy Content",
+    "Game Shell & Presentation",
+    "Solo Run",
+    "Local Duel",
+    "Release Verification"
+  ],
+  "progressPath": "c:\\dev-work\\Card-Game-Project\\docs\\PROGRESS.md",
+  "auditPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-AUDIT.jsonl",
+  "validationCommands": [],
+  "approvalGates": {
+    "preflight": true,
+    "betweenPhases": true
+  },
+  "phases": [
+    {
+      "id": "BATTLE-ENGINE-RULES-1",
+      "title": "Phase 1: Workspace Foundation",
+      "feature": "Battle Engine & Rules",
+      "description": "```forge-task {   \"id\": \"ENG-00\",",
+      "ownerAgents": [
+        "frontend-engineer"
+      ],
+      "dependencies": [],
+      "approvalRequired": false,
+      "tasks": [
+        {
+          "id": "ENG-00",
+          "title": "Scaffold the Vite React TypeScript workspace",
+          "description": "Create the runnable workspace: Vite 8 with the React plugin, React 19, strict TypeScript 7, Vitest with jsdom, a Playwright config stub, a base-path-aware build, a Vite plugin that injects a same-origin CSP meta tag into the built HTML only, and npm scripts for dev, build, typecheck, unit tests, E2E, static serving and budget checks. Dev mode must stay CSP-free so React Fast Refresh keeps working. Mount a placeholder App through src/main.tsx. Do not implement game screens or engine rules.",
+          "ownerAgent": "frontend-engineer",
+          "dependencies": [],
+          "expectedOutputs": [
+            "package.json",
+            "package-lock.json",
+            "vite.config.ts",
+            "tsconfig.json",
+            "index.html",
+            "src/main.tsx",
+            "src/App.tsx",
+            "src/App.test.tsx",
+            "src/test/setup.ts",
+            "src/styles/base.css",
+            "src/vite-env.d.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/App.test.tsx",
+            "npm run typecheck",
+            "npm run build"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The workspace produces a static dist build that honors a non-root base path",
+              "The built HTML carries a same-origin CSP meta tag while the dev server HTML does not",
+              "The composition root renders the app shell and its scripts are documented",
+              "ENG-FR-10: Scaffold a Vite 8 and React 19 TypeScript workspace with strict typechecking, Vitest with jsdom, a Playwright configuration, a base-path-aware static build, a same-origin CSP meta tag injected into the production HTML only, and documented npm scripts, using src/main.tsx and src/App.tsx as the composition root.",
+              "SHL-FR-01: Route every screen through App.tsx using one discriminated Screen union: menu, how-to-play, settings, solo setup, run overview, battle, reward, run result, duel setup, privacy, round result and match result.",
+              "VIS-SEC-01: Ship a same-origin Content-Security-Policy meta tag in the production build only, and forbid dangerouslySetInnerHTML, eval and new Function anywhere in application code."
+            ],
+            "acceptanceCriteria": [
+              "npm test, npm run typecheck and npm run build all succeed from the repository root",
+              "The Vitest environment is jsdom and the App test renders the composition root",
+              "Vite reads VITE_BASE and the built index references assets under that base",
+              "dist/index.html contains the same-origin Content-Security-Policy meta tag and the HTML served by npm run dev does not, so Fast Refresh is unaffected",
+              "package.json exposes dev, build, preview, typecheck, test, test:e2e, serve:dist, check:build and check:budget scripts"
+            ],
+            "constraints": [
+              "Use the verified versions from PRD section 6.1",
+              "Inject the CSP through a build-only Vite plugin or a post-build step; do not hard-code it into the shared index.html template",
+              "Do not add a state-management, routing or CSS framework dependency",
+              "Do not implement gameplay or screens beyond the shell placeholder",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package.",
+              "VIS-CON-02: Produce a static dist build that works from a GitHub Pages project subpath and from the local preview server; resolve every asset through the Vite base URL and write no host-specific runtime behavior."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/PRD.md#8. Security and Privacy",
+              "docs/features/battle-engine.md#ENG-FR-10",
+              "docs/features/game-shell.md#SHL-FR-01",
+              "docs/PRD.md#VIS-SEC-01",
+              "docs/PRD.md#VIS-CON-01",
+              "docs/PRD.md#VIS-CON-02"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.eng-00",
+          "inputs": [],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "BATTLE-ENGINE-RULES-2",
+      "title": "Phase 2: Core Rules",
+      "feature": "Battle Engine & Rules",
+      "description": "```forge-task {   \"id\": \"ENG-01\",",
+      "ownerAgents": [
+        "rules-engineer"
+      ],
+      "dependencies": [
+        "BATTLE-ENGINE-RULES-1"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "ENG-01",
+          "title": "Define engine types and the seeded PRNG",
+          "description": "Create the framework-free engine type model and a serializable 32-bit PRNG with seeded shuffle. Export Element, CardType, StatusKind, CardDefinition, EnemyDefinition, BattleState, BattleSnapshot, EnemyPlan and result types. Include the PRNG state in every random API call. Do not implement damage, turn flow or UI.",
+          "ownerAgent": "rules-engineer",
+          "dependencies": [
+            "ENG-00"
+          ],
+          "expectedOutputs": [
+            "src/engine/types.ts",
+            "src/engine/rng.ts",
+            "src/engine/rng.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/engine/rng.test.ts",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The PRNG exposes nextUint32, shuffle and serialize/restore with identical sequences after restore",
+              "ENG-FR-05: Drive shuffles, reward offers and AI tie-breaks from an explicit 32-bit seed and serializable PRNG state, so identical seeds and action sequences reproduce identical battles, and never call Math.random inside the engine."
+            ],
+            "acceptanceCriteria": [
+              "The same seed produces the same 100-value sequence and the same shuffle on repeat runs",
+              "Restoring serialized PRNG state continues the exact sequence",
+              "A shuffle is a permutation with no duplicated or dropped entries",
+              "A repository grep finds no Math.random call under src/engine"
+            ],
+            "constraints": [
+              "No runtime dependency may be added for randomness",
+              "All engine files must compile under strict TypeScript with no any",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package.",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/battle-engine.md#4. UI / Interaction Design",
+              "docs/features/battle-engine.md#ENG-FR-05",
+              "docs/PRD.md#VIS-CON-01",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.eng-01",
+          "inputs": [
+            "work.eng-00"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "ENG-02",
+          "title": "Resolve field matchup, damage, defense and piercing",
+          "description": "Implement the pure damage and field resolution functions from the pipeline and matchup table. Cover matching attacks (+2 and pierce), countered attacks (ceiling half, minimum 1 before defense, piercing overridden), Neutral fields, defense capped at 8, matching Ward bonus and persistent defense passed as an input. Exclude turn flow, drawing and enemy AI.",
+          "ownerAgent": "rules-engineer",
+          "dependencies": [
+            "ENG-01"
+          ],
+          "expectedOutputs": [
+            "src/engine/damage.ts",
+            "src/engine/damage.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/engine/damage.test.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The full 5-by-5 field and attack-element matrix is implemented in one testable function",
+              "Defense gain clamps at 8 and piercing skips defense",
+              "ENG-FR-02: Resolve each attack as base damage, then Focus and Weaken modifiers, then field modifiers, then persistent defense. A matching attack gains +2 and pierces; a countered attack deals ceiling half with a minimum of 1 before defense and cannot pierce; a matching Ward gains +2 defense; defense is capped at 8."
+            ],
+            "acceptanceCriteria": [
+              "Table-driven tests cover every field and attack element combination, including Neutral",
+              "Odd countered damage rounds up and never drops below 1 before defense",
+              "A countered piercing attack does not bypass defense",
+              "Defense clamps at 8 and a 9-point reduction request yields 8",
+              "A matching Ward adds 2 defense and the total still clamps at 8"
+            ],
+            "constraints": [
+              "Do not read React, DOM or storage from the engine",
+              "Do not hard-code card ids in damage logic",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/battle-engine.md#4. UI / Interaction Design",
+              "docs/features/battle-engine.md#ENG-FR-02",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.eng-02",
+          "inputs": [
+            "work.eng-01",
+            "work.eng-00"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "ENG-03",
+          "title": "Apply Focus, Weaken and Regen stacks",
+          "description": "Implement status application, per-attack consumption, turn-start Regen ticks and battle-end clearing with the caps in the status table. Expose helpers that the battle reducer and intent preview can call. Do not implement visual status display or card definitions.",
+          "ownerAgent": "rules-engineer",
+          "dependencies": [
+            "ENG-01"
+          ],
+          "expectedOutputs": [
+            "src/engine/status.ts",
+            "src/engine/status.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/engine/status.test.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "Focus and Weaken each consume one stack per attack while both can apply simultaneously",
+              "Regen heals 2 and consumes one stack at the owner's turn start",
+              "ENG-FR-03: Implement Focus, Weaken and Regen as capped stacks: each attack consumes one Focus and one Weaken stack for +2 or -2 damage, Regen heals 2 at the owner's turn start and consumes one stack, caps are 3/3/2, and all statuses clear when the battle ends."
+            ],
+            "acceptanceCriteria": [
+              "Applying more than the cap keeps Focus and Weaken at 3 and Regen at 2",
+              "An attack consumes one stack of each present status and returns the correct net modifier",
+              "Both statuses present nets to zero damage change and consumes one of each",
+              "Regen heals without exceeding maximum health and stops at zero stacks",
+              "Clearing statuses leaves all counters at zero"
+            ],
+            "constraints": [
+              "Status effects must not mutate the input state object",
+              "No UI or persistence concerns in this module",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/battle-engine.md#4. UI / Interaction Design",
+              "docs/features/battle-engine.md#ENG-FR-03",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.eng-03",
+          "inputs": [
+            "work.eng-01",
+            "work.eng-00"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "BATTLE-ENGINE-RULES-3",
+      "title": "Phase 3: Battle Loop",
+      "feature": "Battle Engine & Rules",
+      "description": "```forge-task {   \"id\": \"ENG-04\",",
+      "ownerAgents": [
+        "rules-engineer"
+      ],
+      "dependencies": [
+        "BATTLE-ENGINE-RULES-2"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "ENG-04",
+          "title": "Implement the legal battle state machine",
+          "description": "Build battle setup and the symmetric two-side turn loop: seeded deck shuffle, opening hand of 5, energy reset to 3, draw to 5 with overdraw burn, discard at end of turn, discard reshuffle, card play validation, energy gain beyond 3, field shifts, ward application, victory and defeat. Every action takes an explicit side so solo and duel share the engine. Reject actions after battle end and out of turn. Do not implement AI planning or snapshot serialization.",
+          "ownerAgent": "rules-engineer",
+          "dependencies": [
+            "ENG-02",
+            "ENG-03"
+          ],
+          "expectedOutputs": [
+            "src/engine/battle.ts",
+            "src/engine/battle.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/engine/battle.test.ts",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "A turn starts with 3 energy and a hand of 5, and ends by discarding the hand",
+              "Card plays are atomic and validate cost, turn and battle phase",
+              "ENG-FR-01: Start each turn with exactly 3 energy, resetting rather than accumulating unspent energy; draw to a hand of 5, discard the entire hand at end of turn, reshuffle the discard pile when the draw pile empties, and burn cards drawn beyond 5. Card-granted energy may exceed 3 for the current turn.",
+              "ENG-FR-04: Begin each battle on a Neutral field with 0 defense, 40 player health and the enemy's configured health; apply each card atomically, reject unaffordable or out-of-turn actions, and end the battle immediately when either side reaches 0 health.",
+              "ENG-FR-11: Model both battle sides symmetrically with independent health, defense, deck, hand, discard, energy, statuses and turn ownership; expose play-card and end-turn actions for either side, and keep AI planning in a separate module used only by the solo mode."
+            ],
+            "acceptanceCriteria": [
+              "Setup produces a 5-card hand and 3 energy on a Neutral field with 0 defense for both sides",
+              "Unspent energy does not carry into the next turn and card-granted energy can exceed 3 in the current turn",
+              "Drawing past 5 burns the extra card and drawing from an empty pile reshuffles the discard",
+              "An unaffordable card, an out-of-turn action and an action after victory are rejected without changing state",
+              "Reaching 0 health on either side ends the battle and further actions are rejected",
+              "Each side has independent health, defense, deck, hand, discard, energy and statuses, and play-card accepts the acting side"
+            ],
+            "constraints": [
+              "All exported mutators return a new state rather than mutating the argument",
+              "Card behavior comes from definitions, never from card-id conditionals",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/battle-engine.md#4. UI / Interaction Design",
+              "docs/features/battle-engine.md#ENG-FR-01",
+              "docs/features/battle-engine.md#ENG-FR-04",
+              "docs/features/battle-engine.md#ENG-FR-11",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.eng-04",
+          "inputs": [
+            "work.eng-02",
+            "work.eng-03",
+            "work.eng-01"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "ENG-05",
+          "title": "Serialize and restore battle snapshots",
+          "description": "Implement a versioned BattleSnapshot serializer and validator for save/resume and duel round resets. Include every mutable battle field and the PRNG state, validate card ids against the supplied catalog, reject duplicate instance ids and impossible counts, and return typed errors. Do not read or write localStorage.",
+          "ownerAgent": "rules-engineer",
+          "dependencies": [
+            "ENG-04"
+          ],
+          "expectedOutputs": [
+            "src/engine/snapshot.ts",
+            "src/engine/snapshot.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/engine/snapshot.test.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "Snapshot round-trip preserves the exact next legal action set",
+              "Unknown schema versions and invalid card ids fail with typed errors",
+              "ENG-FR-08: Serialize and restore a complete battle snapshot covering decks, hands, discard, energy, health, defense, field, statuses, turn, phase, seed and PRNG state, such that a round-trip resumes to an identical next state."
+            ],
+            "acceptanceCriteria": [
+              "Serializing and restoring a mid-battle state then playing the same card produces identical states",
+              "PRNG state survives the round-trip and continues the same shuffle sequence",
+              "Unknown schemaVersion, unknown card id, duplicate instance id and hand count above 5 are rejected",
+              "The serialized object contains no functions and survives JSON stringify and parse"
+            ],
+            "constraints": [
+              "Validation must happen before any state is returned",
+              "The module must not access browser storage",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/PRD.md#8. Security and Privacy",
+              "docs/features/battle-engine.md#4. UI / Interaction Design",
+              "docs/features/battle-engine.md#ENG-FR-08",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.eng-05",
+          "inputs": [
+            "work.eng-04",
+            "work.eng-01",
+            "work.eng-02",
+            "work.eng-03"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "BATTLE-ENGINE-RULES-4",
+      "title": "Phase 4: Opponent and Verification",
+      "feature": "Battle Engine & Rules",
+      "description": "```forge-task {   \"id\": \"ENG-06\",",
+      "ownerAgents": [
+        "rules-engineer"
+      ],
+      "dependencies": [
+        "BATTLE-ENGINE-RULES-3"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "ENG-06",
+          "title": "Plan enemy turns and compute the intent preview",
+          "description": "Implement the deterministic enemy planner and intent preview. Apply the priority order, affordability simulation, boss counter-element bias and card-ID tie-break. Let the enemy draw and plan at the end of its turn so the player sees an exact next-turn plan. Recompute preview numbers from live field and defense without changing the plan. Do not render the plan or implement UI.",
+          "ownerAgent": "rules-engineer",
+          "dependencies": [
+            "ENG-04"
+          ],
+          "expectedOutputs": [
+            "src/engine/ai.ts",
+            "src/engine/intent.ts",
+            "src/engine/ai.test.ts",
+            "src/engine/intent.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/engine/ai.test.ts src/engine/intent.test.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The planner follows the lethal, Ward, Shift, attack, utility priority and is deterministic",
+              "The preview lists each planned card with recomputed totals",
+              "ENG-FR-06: Plan enemy turns deterministically: prefer a lethal sequence, then a Ward at 12 or less enemy health, then a field-enabling Shift, then field-matching and highest damage-per-energy attacks; break ties by card ID, never plan an unaffordable card, and let the boss prefer the element that counters the player's starter element.",
+              "ENG-FR-07: Expose the enemy's full next-turn plan as an ordered card list with recomputed damage, defense, status and field effects; when the field or defense changes during the player turn, recompute the preview without changing the chosen cards."
+            ],
+            "acceptanceCriteria": [
+              "A lethal plan is chosen whenever an affordable sequence kills the player",
+              "At 12 or less health a Ward is preferred before non-lethal attacks",
+              "A Shift that enables the enemy element is preferred over an unmatched attack",
+              "Equal candidates resolve by card ID and repeated planning returns the same plan",
+              "Changing the field or player defense changes preview totals but not the planned card ids",
+              "The boss prefers the Shift for the element that counters the player's starter element",
+              "The enemy plans after drawing at the end of its turn and never plans an unaffordable card"
+            ],
+            "constraints": [
+              "AI uses the same damage and status functions as the player",
+              "No randomness inside the planner beyond the seeded tie-break order",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/battle-engine.md#4. UI / Interaction Design",
+              "docs/features/battle-engine.md#ENG-FR-06",
+              "docs/features/battle-engine.md#ENG-FR-07",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.eng-06",
+          "inputs": [
+            "work.eng-04",
+            "work.eng-05"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "ENG-07",
+          "title": "Verify seeded self-play legality and termination",
+          "description": "Add a cross-module self-play test that runs seeded AI-versus-AI battles with representative decks, asserting termination, resource bounds, action legality and replay determinism. Keep it as an integration test over the public engine API. Do not add UI, persistence or content-specific tuning.",
+          "ownerAgent": "rules-engineer",
+          "dependencies": [
+            "ENG-06"
+          ],
+          "expectedOutputs": [
+            "src/engine/self-play.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/engine/self-play.test.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "Every simulated battle terminates within 100 turns",
+              "Seeded replay of the same action log produces an identical final state",
+              "ENG-FR-09: Guarantee legality and termination under self-play: seeded AI-versus-AI battles end in victory or defeat within 100 turns and never accept an unaffordable card, a negative resource, an out-of-turn action or an action after battle end.",
+              "ENG-FR-01: Start each turn with exactly 3 energy, resetting rather than accumulating unspent energy; draw to a hand of 5, discard the entire hand at end of turn, reshuffle the discard pile when the draw pile empties, and burn cards drawn beyond 5. Card-granted energy may exceed 3 for the current turn.",
+              "ENG-FR-06: Plan enemy turns deterministically: prefer a lethal sequence, then a Ward at 12 or less enemy health, then a field-enabling Shift, then field-matching and highest damage-per-energy attacks; break ties by card ID, never plan an unaffordable card, and let the boss prefer the element that counters the player's starter element."
+            ],
+            "acceptanceCriteria": [
+              "At least 200 seeded self-play battles finish with a winner or loser and no exception",
+              "No state has negative energy, hand size above 5, defense above 8 or health above maximum",
+              "Replaying one recorded seed and action log twice yields byte-identical snapshots",
+              "A battle that would exceed 100 turns fails the test rather than hanging"
+            ],
+            "constraints": [
+              "Use fixture decks inside the test; do not import the content feature",
+              "Keep the suite under 10 seconds on the CI runner",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/battle-engine.md#4. UI / Interaction Design",
+              "docs/features/battle-engine.md#ENG-FR-09",
+              "docs/features/battle-engine.md#ENG-FR-01",
+              "docs/features/battle-engine.md#ENG-FR-06",
+              "docs/PRD.md#VIS-CON-01"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.eng-07",
+          "inputs": [
+            "work.eng-06",
+            "work.eng-04",
+            "work.eng-05"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "CARD-ENEMY-CONTENT-1",
+      "title": "Phase 1: Card Catalog",
+      "feature": "Card & Enemy Content",
+      "description": "```forge-task {   \"id\": \"CNT-01\",",
+      "ownerAgents": [
+        "content-designer"
+      ],
+      "dependencies": [
+        "BATTLE-ENGINE-RULES-4"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "CNT-01",
+          "title": "Author and validate the 32-card catalog",
+          "description": "Create cards.json with the exact 32-card table, typed exports in cards.ts, and a catalog test that enforces unique ids and names, element and type counts, cost bounds, supported effect fields and per-element role coverage. Use the card ids and effect values in this document verbatim. Do not implement deck lists, enemies or artwork.",
+          "ownerAgent": "content-designer",
+          "dependencies": [
+            "ENG-01"
+          ],
+          "expectedOutputs": [
+            "src/content/cards.json",
+            "src/content/cards.ts",
+            "src/content/cards.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/content/cards.test.ts",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The catalog contains exactly 32 cards with the documented element, type and cost distribution",
+              "Each element has an attack, a Ward, a piercing attack and a field-payoff card",
+              "CNT-FR-01: Ship exactly 32 unique cards: five per element for Ember, Frost, Gale and Stone, eight Neutral cards and four one-cost Shift cards, with costs from 0 to 3 and data-only effects the engine already supports.",
+              "CNT-FR-02: Include in every element at least one attack, one Ward, one piercing attack and one card that gains a bonus only while its own element is active; enforce ids, names, costs, counts and role coverage in an automated catalog test."
+            ],
+            "acceptanceCriteria": [
+              "Counts are 20 element cards (5 per element), 8 Neutral cards and 4 Shift cards",
+              "No id or name is duplicated and every cost is between 0 and 3",
+              "Every effect key is in the supported set and every status kind is focus, weaken or regen",
+              "Each element satisfies attack, ward, piercing and fieldBonus role checks",
+              "The typed export exposes a byId lookup returning undefined for unknown ids"
+            ],
+            "constraints": [
+              "Keep numbers exactly as specified; do not tune balance in this task",
+              "Content files must not contain gameplay formulas or UI text branching",
+              "VIS-CON-07: Freeze the card, health, heal and enemy numbers in this PRD for v1; do not run a balance-tuning pass or change values without a documented follow-up.",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/card-content.md#4. UI / Interaction Design",
+              "docs/features/card-content.md#CNT-FR-01",
+              "docs/features/card-content.md#CNT-FR-02",
+              "docs/PRD.md#VIS-CON-07",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.cnt-01",
+          "inputs": [
+            "work.eng-01",
+            "work.eng-06",
+            "work.eng-07"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "CARD-ENEMY-CONTENT-2",
+      "title": "Phase 2: Decks and Enemies",
+      "feature": "Card & Enemy Content",
+      "description": "```forge-task {   \"id\": \"CNT-02\",",
+      "ownerAgents": [
+        "content-designer"
+      ],
+      "dependencies": [
+        "CARD-ENEMY-CONTENT-1"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "CNT-02",
+          "title": "Build starter decks and enemy definitions",
+          "description": "Create the four 10-card starter decks and four enemies with the exact lists and health values in this document. Export typed deck and enemy lookups and add a content test that resolves every card id, checks deck composition (5 element, 3 Neutral, 2 Shift), checks the 12-card boss deck, unique enemy ids and the health ladder. Do not create assets or UI.",
+          "ownerAgent": "content-designer",
+          "dependencies": [
+            "CNT-01"
+          ],
+          "expectedOutputs": [
+            "src/content/decks.json",
+            "src/content/enemies.json",
+            "src/content/decks.ts",
+            "src/content/enemies.ts",
+            "src/content/content.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/content/content.test.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "Four legal 10-card decks and four enemies with the documented decks and health",
+              "Every referenced card id resolves against the catalog",
+              "CNT-FR-03: Provide four 10-card starter decks, each containing five distinct element cards, three Neutral cards and two Shift cards (its own element and the element it beats), with no card appearing more than once.",
+              "CNT-FR-04: Define four enemies: Cinder Warden (Ember, 30 HP), Rime Sentinel (Frost, 35 HP), Storm Herald (Gale, 40 HP) and The Hollow Field (Neutral boss, 60 HP), each with an explicit legal deck; the boss uses a 12-card shift-heavy deck."
+            ],
+            "acceptanceCriteria": [
+              "Each starter deck has exactly 10 cards with 5 distinct element cards, 3 Neutral cards and 2 Shift cards, and no duplicates",
+              "Each deck includes its own Shift and the Shift of the element it beats",
+              "Enemy health values are 30, 35, 40 and 60 in ladder order",
+              "The boss deck has 12 cards with all four Shift cards and no illegal card id",
+              "Deck and enemy ids are unique and lookups return undefined for unknown ids"
+            ],
+            "constraints": [
+              "Do not add enemies or cards beyond the documented set",
+              "Do not encode AI behavior in content files beyond the boss counter-element bias",
+              "VIS-CON-07: Freeze the card, health, heal and enemy numbers in this PRD for v1; do not run a balance-tuning pass or change values without a documented follow-up.",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/card-content.md#4. UI / Interaction Design",
+              "docs/features/card-content.md#CNT-FR-03",
+              "docs/features/card-content.md#CNT-FR-04",
+              "docs/PRD.md#VIS-CON-07",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.cnt-02",
+          "inputs": [
+            "work.cnt-01"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "CARD-ENEMY-CONTENT-3",
+      "title": "Phase 3: Assets",
+      "feature": "Card & Enemy Content",
+      "description": "```forge-task {   \"id\": \"CNT-03\",",
+      "ownerAgents": [
+        "content-designer"
+      ],
+      "dependencies": [
+        "CARD-ENEMY-CONTENT-2"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "CNT-03",
+          "title": "Generate placeholder SVG assets and the manifest loader",
+          "description": "Write a deterministic Node script that reads the card and enemy catalogs, emits one SVG per card, enemy and field, and writes public/assets/assets.manifest.json with the documented spec. Add a pure base-URL-aware loader in src/assets/asset-manifest.ts, a manifest test that checks exact coverage and file existence, and docs/ASSET-SPEC.md covering dimensions, safe areas, palettes, naming and replacement. Do not render assets in the UI.",
+          "ownerAgent": "content-designer",
+          "dependencies": [
+            "CNT-02"
+          ],
+          "expectedOutputs": [
+            "scripts/generate-placeholder-assets.mjs",
+            "public/assets/assets.manifest.json",
+            "src/assets/asset-manifest.ts",
+            "src/assets/asset-manifest.test.ts",
+            "docs/ASSET-SPEC.md"
+          ],
+          "validationCommands": [
+            "node scripts/generate-placeholder-assets.mjs",
+            "npm test -- src/assets/asset-manifest.test.ts",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "Exactly one SVG exists for each of the 32 cards, 4 enemies and 5 fields, with manifest coverage and spec metadata",
+              "The loader resolves only known ids and prefixes the supplied base URL",
+              "CNT-FR-05: Publish a versioned assets manifest keyed by card, enemy and field id with dimensions, SVG format and safe-area metadata, and generate exactly one deterministic SVG placeholder per asset at its documented path.",
+              "CNT-FR-06: Resolve asset URLs through a pure loader that takes the app base URL and rejects unknown ids, and require every asset reference to come from the manifest so replacing SVG files needs no engine or UI code change."
+            ],
+            "acceptanceCriteria": [
+              "The generator creates 41 SVG files and a manifest with 32 card, 4 enemy and 5 field entries",
+              "Running the generator twice produces byte-identical files and manifest",
+              "Every manifest path is relative, uses forward slashes and exists under public/assets",
+              "The test fails when an asset file or manifest entry is missing or duplicated",
+              "The loader returns base + assets/cards/<id>.svg for a known card and undefined for an unknown id",
+              "ASSET-SPEC.md documents card 300x420, enemy 512x512, field 256x256, safe areas and the replacement procedure"
+            ],
+            "constraints": [
+              "No network access and no external fonts or images",
+              "Do not edit the generated SVG files by hand in later tasks",
+              "VIS-CON-06: Load art only from committed same-origin SVG placeholders mapped by the manifest, and generate audio only with WebAudio; do not fetch remote fonts, images or audio files.",
+              "VIS-CON-02: Produce a static dist build that works from a GitHub Pages project subpath and from the local preview server; resolve every asset through the Vite base URL and write no host-specific runtime behavior."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/card-content.md#4. UI / Interaction Design",
+              "docs/features/card-content.md#CNT-FR-05",
+              "docs/features/card-content.md#CNT-FR-06",
+              "docs/PRD.md#VIS-CON-06",
+              "docs/PRD.md#VIS-CON-02"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.cnt-03",
+          "inputs": [
+            "work.cnt-02"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "GAME-SHELL-PRESENTATION-1",
+      "title": "Phase 1: Navigation Shell",
+      "feature": "Game Shell & Presentation",
+      "description": "```forge-task {   \"id\": \"SHL-01\",",
+      "ownerAgents": [
+        "frontend-engineer"
+      ],
+      "dependencies": [
+        "BATTLE-ENGINE-RULES-4",
+        "CARD-ENEMY-CONTENT-3"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "SHL-01",
+          "title": "Build the App router, menu and rules reference",
+          "description": "Create the Screen union and App router with menu, how-to-play and a test-only initialScreen prop. Add a typed UI event bus for sound cues. Build the menu with Play Solo, Local Duel, How to Play and Settings, plus a Continue Run entry gated by a hasSave prop that defaults to false. Add the rules reference covering energy, field cycle, defense, statuses and modes. Do not build the board, settings persistence, solo or duel screens.",
+          "ownerAgent": "frontend-engineer",
+          "dependencies": [
+            "ENG-00"
+          ],
+          "expectedOutputs": [
+            "src/App.tsx",
+            "src/App.navigation.test.tsx",
+            "src/ui/screens/MenuScreen.tsx",
+            "src/ui/screens/HowToPlayScreen.tsx",
+            "src/ui/events.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/App.navigation.test.tsx",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "Every current screen is selected through the App Screen union",
+              "Menu and rules content cover the field cycle, energy, defense and both modes",
+              "SHL-FR-01: Route every screen through App.tsx using one discriminated Screen union: menu, how-to-play, settings, solo setup, run overview, battle, reward, run result, duel setup, privacy, round result and match result."
+            ],
+            "acceptanceCriteria": [
+              "Rendering App shows the menu with the five entry points",
+              "Activating How to Play opens the rules and Back returns to the menu",
+              "The rules text names Ember, Frost, Gale, Stone, the cycle and the three-energy rule",
+              "The Screen union is exhaustive and adding an unknown screen fails typecheck",
+              "The event bus delivers a typed cue to a subscriber and unsubscribes cleanly"
+            ],
+            "constraints": [
+              "Do not add a routing library",
+              "Do not implement gameplay in screens",
+              "Do not create empty screens for unimplemented features",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/game-shell.md#4. UI / Interaction Design",
+              "docs/features/game-shell.md#SHL-FR-01",
+              "docs/PRD.md#VIS-CON-01"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.shl-01",
+          "inputs": [
+            "work.eng-00",
+            "work.eng-06",
+            "work.eng-07",
+            "work.cnt-03"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "GAME-SHELL-PRESENTATION-2",
+      "title": "Phase 2: Battle Presentation",
+      "feature": "Game Shell & Presentation",
+      "description": "```forge-task {   \"id\": \"SHL-02\",",
+      "ownerAgents": [
+        "ux-engineer",
+        "frontend-engineer"
+      ],
+      "dependencies": [
+        "GAME-SHELL-PRESENTATION-1"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "SHL-02",
+          "title": "Build the responsive board, card faces and asset rendering",
+          "description": "Implement design tokens, board CSS and presentational components for the enemy panel, field banner, player panel, hand, card face, card detail and manifest-backed image. Ensure 375px layout without horizontal page scroll, 44px targets, glyph plus label for every element, and a labelled fallback for failed images. Keep components props-only with no engine mutation.",
+          "ownerAgent": "ux-engineer",
+          "dependencies": [
+            "SHL-01",
+            "CNT-03",
+            "ENG-01"
+          ],
+          "expectedOutputs": [
+            "src/styles/tokens.css",
+            "src/styles/board.css",
+            "src/ui/components/BattleBoard.tsx",
+            "src/ui/components/EnemyPanel.tsx",
+            "src/ui/components/FieldBanner.tsx",
+            "src/ui/components/PlayerPanel.tsx",
+            "src/ui/components/Hand.tsx",
+            "src/ui/components/CardView.tsx",
+            "src/ui/components/CardDetail.tsx",
+            "src/ui/components/AssetImage.tsx",
+            "src/ui/components/BattleBoard.test.tsx",
+            "src/ui/components/CardView.test.tsx"
+          ],
+          "validationCommands": [
+            "npm test -- src/ui/components/BattleBoard.test.tsx src/ui/components/CardView.test.tsx",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The board exposes enemy, field, player, hand and controls with all five cards reachable at 375px",
+              "Card faces show cost, name, element and primary number, and the detail view shows the full effect",
+              "SHL-FR-02: Render a portrait-first battle board with enemy, field, player, hand and controls that fits 375–430px without horizontal page scroll and centers at a 1080px maximum on desktop, showing enemy intent, energy, defense, statuses and the field matchup.",
+              "SHL-FR-03: Make every hand card a button showing cost, name, element glyph and primary number, disable unaffordable cards, open a full-effect detail view on tap or Enter, and keep the detail dismissible by tap, Escape or a close button.",
+              "SHL-FR-08: Resolve every card, enemy and field image through the asset manifest with the app base URL, set meaningful alt text, and render a labelled text fallback when an image fails to load."
+            ],
+            "acceptanceCriteria": [
+              "At a 375px viewport the board renders without document-level horizontal overflow and every hand card has a 44px target",
+              "Every element renders a glyph and a text label, never color alone",
+              "An unaffordable card is disabled and an affordable card is focusable",
+              "Card detail opens on click and Enter and closes on Escape and the close button",
+              "AssetImage uses the manifest and base URL, and a missing file shows a labelled fallback",
+              "Field banner text names the empowered and countered elements"
+            ],
+            "constraints": [
+              "No hover-only interaction",
+              "No engine or storage imports in presentational components",
+              "Use plain CSS with custom properties; no UI framework",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package.",
+              "VIS-CON-06: Load art only from committed same-origin SVG placeholders mapped by the manifest, and generate audio only with WebAudio; do not fetch remote fonts, images or audio files."
+            ],
+            "references": [
+              "docs/PRD.md#7. Non-Functional Requirements",
+              "docs/features/game-shell.md#4. UI / Interaction Design",
+              "docs/features/game-shell.md#SHL-FR-02",
+              "docs/features/game-shell.md#SHL-FR-03",
+              "docs/features/game-shell.md#SHL-FR-08",
+              "docs/PRD.md#VIS-CON-01",
+              "docs/PRD.md#VIS-CON-06"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.shl-02",
+          "inputs": [
+            "work.shl-01",
+            "work.cnt-03",
+            "work.eng-01"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "SHL-03",
+          "title": "Wire the battle controller and playable battle screen",
+          "description": "Create a reducer-backed battle controller over the engine and a BattleScreen that renders board components, dispatches play-card and end-turn intents, shows the intent preview, emits sound cues, and is reachable through App via initialScreen. Add interaction tests through App that play a card, end a turn and surface the enemy plan. Do not implement solo or duel setup screens.",
+          "ownerAgent": "frontend-engineer",
+          "dependencies": [
+            "SHL-02",
+            "ENG-07",
+            "CNT-02"
+          ],
+          "expectedOutputs": [
+            "src/state/battle-controller.ts",
+            "src/state/battle-controller.test.ts",
+            "src/ui/screens/BattleScreen.tsx",
+            "src/App.tsx",
+            "src/App.battle.test.tsx"
+          ],
+          "validationCommands": [
+            "npm test -- src/App.battle.test.tsx src/state/battle-controller.test.ts",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The battle screen can complete a turn through the UI and reflects engine state exactly",
+              "The screen shows the enemy plan and the field matchup without duplicating damage rules",
+              "SHL-FR-03: Make every hand card a button showing cost, name, element glyph and primary number, disable unaffordable cards, open a full-effect detail view on tap or Enter, and keep the detail dismissible by tap, Escape or a close button.",
+              "ENG-FR-01: Start each turn with exactly 3 energy, resetting rather than accumulating unspent energy; draw to a hand of 5, discard the entire hand at end of turn, reshuffle the discard pile when the draw pile empties, and burn cards drawn beyond 5. Card-granted energy may exceed 3 for the current turn.",
+              "ENG-FR-04: Begin each battle on a Neutral field with 0 defense, 40 player health and the enemy's configured health; apply each card atomically, reject unaffordable or out-of-turn actions, and end the battle immediately when either side reaches 0 health.",
+              "ENG-FR-07: Expose the enemy's full next-turn plan as an ordered card list with recomputed damage, defense, status and field effects; when the field or defense changes during the player turn, recompute the preview without changing the chosen cards."
+            ],
+            "acceptanceCriteria": [
+              "Rendering App with a battle initial screen shows the hand, energy, both health values and the enemy plan",
+              "Playing an affordable card reduces energy and applies the engine result to health or defense",
+              "An unaffordable card cannot be played through the UI",
+              "End Turn executes the enemy plan and returns control to the player",
+              "The controller rejects actions after battle end and exposes victory or defeat",
+              "The screen emits card-play, damage, ward and shift cues for the matching actions"
+            ],
+            "constraints": [
+              "Screens may not import damage or status functions directly",
+              "The controller is the only layer that touches engine mutators",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/game-shell.md#4. UI / Interaction Design",
+              "docs/features/game-shell.md#SHL-FR-03",
+              "docs/features/battle-engine.md#ENG-FR-01",
+              "docs/features/battle-engine.md#ENG-FR-04",
+              "docs/features/battle-engine.md#ENG-FR-07",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.shl-03",
+          "inputs": [
+            "work.shl-02",
+            "work.eng-07",
+            "work.cnt-02",
+            "work.shl-01"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "GAME-SHELL-PRESENTATION-3",
+      "title": "Phase 3: Motion, Audio and Settings",
+      "feature": "Game Shell & Presentation",
+      "description": "```forge-task {   \"id\": \"SHL-04\",",
+      "ownerAgents": [
+        "ux-engineer",
+        "frontend-engineer"
+      ],
+      "dependencies": [
+        "GAME-SHELL-PRESENTATION-2"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "SHL-04",
+          "title": "Implement reduced-motion preference and motion styles",
+          "description": "Create a useReducedMotion hook that combines the matchMedia system preference with an explicit override, plus CSS for draw, play, damage and field-shift transitions with a reduced branch. Expose the resolved value for the app root data attribute. Do not persist settings in this task.",
+          "ownerAgent": "ux-engineer",
+          "dependencies": [
+            "SHL-02"
+          ],
+          "expectedOutputs": [
+            "src/ui/motion/useReducedMotion.ts",
+            "src/ui/motion/motion.css",
+            "src/ui/motion/useReducedMotion.test.tsx"
+          ],
+          "validationCommands": [
+            "npm test -- src/ui/motion/useReducedMotion.test.tsx"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The hook resolves true when either the system preference or an explicit override is active",
+              "Reduced motion removes transforms and long animations",
+              "SHL-FR-04: Animate card draw, play, damage numbers and field repaint with 120–400ms transitions, and remove transforms and long animations when either the operating-system reduced-motion preference or the in-app toggle is active."
+            ],
+            "acceptanceCriteria": [
+              "A matching system media query returns true and a non-matching one returns false",
+              "An explicit true override wins over a non-matching system preference and false wins over a matching one",
+              "The hook reacts to a media-query change event and cleans up its listener",
+              "The reduced CSS branch sets transition duration to at most 1ms and removes transforms",
+              "Motion CSS defines all five documented durations for the normal branch"
+            ],
+            "constraints": [
+              "Do not read or write localStorage in this task",
+              "Respect prefers-reduced-motion without forcing the override on first render",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package."
+            ],
+            "references": [
+              "docs/PRD.md#9. Accessibility",
+              "docs/features/game-shell.md#4. UI / Interaction Design",
+              "docs/features/game-shell.md#SHL-FR-04",
+              "docs/PRD.md#VIS-CON-01"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.shl-04",
+          "inputs": [
+            "work.shl-02",
+            "work.shl-03"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "SHL-05",
+          "title": "Implement synthesized WebAudio sound cues",
+          "description": "Create a small WebAudio cue engine with unlock, play, mute and dispose. Generate card-play, damage, ward, shift, victory, defeat and ui cues from oscillators or noise under 300ms, with a low master gain. Create no audio files, fetch no audio and do nothing before unlock. Do not wire settings or the battle screen.",
+          "ownerAgent": "ux-engineer",
+          "dependencies": [
+            "SHL-01"
+          ],
+          "expectedOutputs": [
+            "src/audio/sfx.ts",
+            "src/audio/sfx.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/audio/sfx.test.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "All cues are synthesized at runtime and no audio asset is loaded",
+              "Muting stops playback and skips future cue scheduling",
+              "SHL-FR-05: Synthesize all sound effects with WebAudio oscillators or noise, never audio files; unlock the context on the first pointer or key gesture, play only when unmuted, and stop all sound immediately when muted."
+            ],
+            "acceptanceCriteria": [
+              "No AudioContext is constructed before unlock is called",
+              "Each cue schedules at least one oscillator or noise source and stops within 300ms",
+              "Playing while muted schedules nothing",
+              "Muting during a cue stops the connected nodes and unmuting allows later cues",
+              "The module never fetches a file or references an audio URL"
+            ],
+            "constraints": [
+              "Use the platform AudioContext only behind a factory that can be mocked",
+              "No music or looping beds",
+              "VIS-CON-06: Load art only from committed same-origin SVG placeholders mapped by the manifest, and generate audio only with WebAudio; do not fetch remote fonts, images or audio files."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/game-shell.md#4. UI / Interaction Design",
+              "docs/features/game-shell.md#SHL-FR-05",
+              "docs/PRD.md#VIS-CON-06"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.shl-05",
+          "inputs": [
+            "work.shl-01",
+            "work.shl-02",
+            "work.shl-03"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "SHL-06",
+          "title": "Add settings persistence and wire audio and motion",
+          "description": "Persist Sound and Reduce motion under fieldbound.settings.v1 with a versioned schema, defaults and safe fallback. Build the settings screen, set data-reduced-motion on the app root, subscribe App to the cue bus, unlock audio on the first gesture and pass the motion override. Add tests through App for toggling, persistence and reload. Do not change gameplay.",
+          "ownerAgent": "frontend-engineer",
+          "dependencies": [
+            "SHL-04",
+            "SHL-05"
+          ],
+          "expectedOutputs": [
+            "src/ui/screens/SettingsScreen.tsx",
+            "src/persistence/settings.ts",
+            "src/persistence/settings.test.ts",
+            "src/App.tsx",
+            "src/App.settings.test.tsx"
+          ],
+          "validationCommands": [
+            "npm test -- src/App.settings.test.tsx src/persistence/settings.test.ts",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "Settings persist immediately under a versioned key and apply on the next load",
+              "Audio unlocks on the first gesture and plays only when unmuted",
+              "SHL-FR-07: Persist audio-muted and reduced-motion settings in a versioned localStorage key, initialize reduced motion from the operating-system preference, and fall back to defaults when storage is unavailable or invalid.",
+              "SHL-FR-05: Synthesize all sound effects with WebAudio oscillators or noise, never audio files; unlock the context on the first pointer or key gesture, play only when unmuted, and stop all sound immediately when muted.",
+              "SHL-FR-04: Animate card draw, play, damage numbers and field repaint with 120–400ms transitions, and remove transforms and long animations when either the operating-system reduced-motion preference or the in-app toggle is active."
+            ],
+            "acceptanceCriteria": [
+              "Toggling Sound writes muted true or false and survives a remount",
+              "Toggling Reduce motion writes the override and sets data-reduced-motion on the app root",
+              "First paint uses the system motion preference when no stored override exists",
+              "Invalid or unknown-version settings fall back to defaults without throwing",
+              "Storage being unavailable keeps the toggles working in memory",
+              "A cue emitted after unlock is played when unmuted and skipped when muted"
+            ],
+            "constraints": [
+              "Only the settings module may touch the settings key",
+              "Do not store game state in settings",
+              "VIS-CON-03: Ship no backend, accounts, cloud save, telemetry or remote API; persist only the run, settings and stats keys in localStorage, and never transmit them."
+            ],
+            "references": [
+              "docs/PRD.md#8. Security and Privacy",
+              "docs/features/game-shell.md#4. UI / Interaction Design",
+              "docs/features/game-shell.md#SHL-FR-07",
+              "docs/features/game-shell.md#SHL-FR-05",
+              "docs/features/game-shell.md#SHL-FR-04",
+              "docs/PRD.md#VIS-CON-03"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.shl-06",
+          "inputs": [
+            "work.shl-04",
+            "work.shl-05",
+            "work.shl-02",
+            "work.shl-03"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "SHL-07",
+          "title": "Add keyboard controls, live announcements and focus handling",
+          "description": "Add global keyboard controls for ending a turn and closing overlays, a polite live region for turn, damage and field changes, dialog focus trapping with focus restore, and a skip link. Wire them through App and add tests through App for keyboard and announcements. Do not change visual design or game rules.",
+          "ownerAgent": "frontend-engineer",
+          "dependencies": [
+            "SHL-03",
+            "SHL-06"
+          ],
+          "expectedOutputs": [
+            "src/ui/a11y/useKeyboardControls.ts",
+            "src/ui/components/LiveRegion.tsx",
+            "src/ui/a11y/useKeyboardControls.test.tsx",
+            "src/App.tsx",
+            "src/App.a11y.test.tsx"
+          ],
+          "validationCommands": [
+            "npm test -- src/App.a11y.test.tsx src/ui/a11y/useKeyboardControls.test.tsx"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "A turn can be played with the keyboard alone",
+              "Changes to turn, damage and field are announced politely",
+              "SHL-FR-06: Provide baseline accessibility: full keyboard operation (Tab, Shift+Tab, Enter, Space, E to end turn, Escape to close overlays), visible 2px focus, 44px minimum targets, element glyph plus text, dialog focus trapping and polite live announcements for turn, damage and field changes."
+            ],
+            "acceptanceCriteria": [
+              "Tab and Shift+Tab reach every hand card and End Turn in order",
+              "Enter plays a focused card and E ends the turn outside a text field",
+              "Escape closes the card detail and any open dialog and restores focus to the invoker",
+              "The live region announces turn changes and damage totals without duplicate messages",
+              "A skip link moves focus to the main board region"
+            ],
+            "constraints": [
+              "Do not use positive tabindex values",
+              "Dialogs must set aria-modal and trap focus",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package."
+            ],
+            "references": [
+              "docs/PRD.md#9. Accessibility",
+              "docs/features/game-shell.md#4. UI / Interaction Design",
+              "docs/features/game-shell.md#SHL-FR-06",
+              "docs/PRD.md#VIS-CON-01"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.shl-07",
+          "inputs": [
+            "work.shl-03",
+            "work.shl-06",
+            "work.shl-02"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "SOLO-RUN-1",
+      "title": "Phase 1: Run Model",
+      "feature": "Solo Run",
+      "description": "```forge-task {   \"id\": \"RUN-01\",",
+      "ownerAgents": [
+        "solo-mode-engineer"
+      ],
+      "dependencies": [
+        "GAME-SHELL-PRESENTATION-3"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "RUN-01",
+          "title": "Implement run creation, ladder progression and healing",
+          "description": "Build the pure solo run model: create a run from a starter element and seed, resolve the four-enemy ladder, carry health and deck, heal 12 after each normal win capped at 40, advance encounters, and expose victory and defeat states plus turns, cards added and damage taken. Do not persist, generate rewards or render UI.",
+          "ownerAgent": "solo-mode-engineer",
+          "dependencies": [
+            "ENG-05",
+            "CNT-02"
+          ],
+          "expectedOutputs": [
+            "src/run/run-model.ts",
+            "src/run/run-model.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/run/run-model.test.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "A new run starts at 40 health with a 10-card deck on the first ladder enemy",
+              "Victory heals 12 before the reward and defeat or boss victory ends the run",
+              "RUN-FR-01: Start a solo run from one of the four starter decks at 40 health and run a fixed ladder of Cinder Warden, Rime Sentinel, Storm Herald and The Hollow Field, carrying health, deck and turn totals between battles.",
+              "RUN-FR-02: After each normal-encounter victory heal 12 health capped at 40, grant one mandatory reward choice, and start the next battle only after the reward resolves; a boss victory ends the run without a reward.",
+              "RUN-FR-04: Track encounters cleared, total turns, cards added and damage taken, and show a victory or defeat result with New Run and Menu actions."
+            ],
+            "acceptanceCriteria": [
+              "Encounter order is Cinder Warden, Rime Sentinel, Storm Herald, The Hollow Field",
+              "Healing 12 at 34 health yields 40 and never exceeds the maximum",
+              "A normal victory moves to the reward phase and a boss victory moves to victory without a reward",
+              "Defeat preserves the encounter reached and total turns",
+              "Turn and damage totals accumulate exactly once per battle result"
+            ],
+            "constraints": [
+              "No localStorage, React or screen imports",
+              "Do not embed enemy stats; read them from the content catalog",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/PRD.md#10. System States / Lifecycle",
+              "docs/features/solo-run.md#4. UI / Interaction Design",
+              "docs/features/solo-run.md#RUN-FR-01",
+              "docs/features/solo-run.md#RUN-FR-02",
+              "docs/features/solo-run.md#RUN-FR-04",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.run-01",
+          "inputs": [
+            "work.eng-05",
+            "work.cnt-02",
+            "work.shl-04",
+            "work.shl-05",
+            "work.shl-06",
+            "work.shl-07"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "RUN-02",
+          "title": "Generate and apply seeded reward offers",
+          "description": "Implement reward generation from the chosen element plus Neutral using the run PRNG, producing three unique cards, with the third slot replaced by Heal 12 when health is below 20. Implement applying a card or heal exactly once and rejecting a second choice. Do not render the reward screen or write saves.",
+          "ownerAgent": "solo-mode-engineer",
+          "dependencies": [
+            "RUN-01",
+            "CNT-01"
+          ],
+          "expectedOutputs": [
+            "src/run/rewards.ts",
+            "src/run/rewards.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/run/rewards.test.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "Three unique offers come from the chosen element plus Neutral and are deterministic for a seed",
+              "Below 20 health the third offer is Heal 12 and the choice is exactly one",
+              "RUN-FR-03: Offer three unique reward cards drawn with the run PRNG from the chosen element plus Neutral; when health is below 20, replace the third card with a Heal 12 option, and accept exactly one choice."
+            ],
+            "acceptanceCriteria": [
+              "The same run seed and state produce the same three offers",
+              "No offer repeats a card id and no offer is outside the element-plus-Neutral pool",
+              "At 19 health the third offer is heal; at 20 health all three are cards",
+              "Choosing a card appends exactly one copy to the deck and advances the encounter",
+              "Choosing heal restores 12 health capped at 40 and appends no card",
+              "A second choice against the same offer is rejected"
+            ],
+            "constraints": [
+              "Do not use Math.random",
+              "Do not include enemy-only or out-of-pool cards",
+              "VIS-CON-07: Freeze the card, health, heal and enemy numbers in this PRD for v1; do not run a balance-tuning pass or change values without a documented follow-up."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/solo-run.md#4. UI / Interaction Design",
+              "docs/features/solo-run.md#RUN-FR-03",
+              "docs/PRD.md#VIS-CON-07"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.run-02",
+          "inputs": [
+            "work.run-01",
+            "work.cnt-01",
+            "work.shl-04",
+            "work.shl-05",
+            "work.shl-06",
+            "work.shl-07"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "RUN-06",
+          "title": "Store and update the best-run record",
+          "description": "Implement a versioned best-run record under fieldbound.stats.v1 with furthest encounter, boss clears and fewest completed turns. Validate on read, clamp impossible values, update only at run end, and expose a pure update function plus load and save helpers. Do not render stats.",
+          "ownerAgent": "solo-mode-engineer",
+          "dependencies": [
+            "RUN-01"
+          ],
+          "expectedOutputs": [
+            "src/persistence/stats.ts",
+            "src/persistence/stats.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/persistence/stats.test.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The record keeps the furthest encounter, boss clears and best completed turns",
+              "Only a completed run updates the record",
+              "RUN-FR-07: Maintain one local best-run record containing the furthest encounter reached, total boss clears and the fewest turns for a completed run, updating it only when a run ends."
+            ],
+            "acceptanceCriteria": [
+              "A first defeat records its furthest encounter and leaves boss clears at zero",
+              "A completed 18-turn run increments boss clears and sets bestCompletedTurns to 18",
+              "A later 24-turn completion keeps 18 while a 12-turn completion replaces it",
+              "Invalid JSON and an unknown version fall back to an empty record without throwing",
+              "Saving and loading a record round-trips exactly"
+            ],
+            "constraints": [
+              "Only the stats module may touch the stats key",
+              "Do not overwrite run or settings keys",
+              "VIS-CON-03: Ship no backend, accounts, cloud save, telemetry or remote API; persist only the run, settings and stats keys in localStorage, and never transmit them."
+            ],
+            "references": [
+              "docs/PRD.md#8. Security and Privacy",
+              "docs/features/solo-run.md#4. UI / Interaction Design",
+              "docs/features/solo-run.md#RUN-FR-07",
+              "docs/PRD.md#VIS-CON-03"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.run-06",
+          "inputs": [
+            "work.run-01",
+            "work.shl-04",
+            "work.shl-05",
+            "work.shl-06",
+            "work.shl-07"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "SOLO-RUN-2",
+      "title": "Phase 2: Persistence",
+      "feature": "Solo Run",
+      "description": "```forge-task {   \"id\": \"RUN-03\",",
+      "ownerAgents": [
+        "solo-mode-engineer"
+      ],
+      "dependencies": [
+        "SOLO-RUN-1"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "RUN-03",
+          "title": "Persist and validate the solo run save",
+          "description": "Implement the versioned run save under fieldbound.run.v1 covering run state, seed, PRNG state, optional battle snapshot and optional pending reward. Validate every field before use, remove only the run key on unknown versions or corruption, handle storage quota and unavailable storage without crashing, and expose save, load and clear. Do not render UI.",
+          "ownerAgent": "solo-mode-engineer",
+          "dependencies": [
+            "RUN-01",
+            "RUN-02",
+            "ENG-05"
+          ],
+          "expectedOutputs": [
+            "src/persistence/run-save.ts",
+            "src/persistence/run-save.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/persistence/run-save.test.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "A valid save round-trips run, seed, PRNG state and battle snapshot",
+              "Unknown versions, corrupt JSON and invalid snapshots are discarded without affecting other keys",
+              "RUN-FR-05: Autosave the run to one versioned localStorage slot after every settled action, including card plays, turn ends, reward choices, encounter starts and run end, and offer Continue Run on load with the exact saved battle.",
+              "RUN-FR-06: Discard a save whose schema version is unknown or whose JSON, run state or battle snapshot fails validation, remove only the run key, and return to the menu without crashing or partially restoring.",
+              "RUN-FR-08: Accept an integer seed query parameter for deterministic runs, use a random 32-bit seed otherwise, and persist seed and PRNG state so a reload resumes the same sequence.",
+              "VIS-NFR-05: After the initial same-origin asset load, make no network requests and transmit no data; all saves, settings and statistics stay in localStorage under Fieldbound keys.",
+              "VIS-SEC-02: Include no analytics, telemetry, third-party scripts, remote fonts or remote images; the production audit must observe zero cross-origin requests."
+            ],
+            "acceptanceCriteria": [
+              "Saving then loading restores the same run and battle state",
+              "An unknown schemaVersion removes only fieldbound.run.v1 and returns null",
+              "Corrupt JSON, a missing battle snapshot for a battle phase and an invalid card id are rejected",
+              "A quota error returns an unavailable status and leaves in-memory play possible",
+              "The module never reads or writes fieldbound.settings.v1 or fieldbound.stats.v1"
+            ],
+            "constraints": [
+              "Use an injectable storage adapter so tests avoid the real browser store",
+              "Validation must precede any state reconstruction"
+            ],
+            "references": [
+              "docs/PRD.md#8. Security and Privacy",
+              "docs/features/solo-run.md#4. UI / Interaction Design",
+              "docs/features/solo-run.md#RUN-FR-05",
+              "docs/features/solo-run.md#RUN-FR-06",
+              "docs/features/solo-run.md#RUN-FR-08",
+              "docs/PRD.md#VIS-NFR-05",
+              "docs/PRD.md#VIS-SEC-02"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.run-03",
+          "inputs": [
+            "work.run-01",
+            "work.run-02",
+            "work.eng-05",
+            "work.run-06"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "SOLO-RUN-3",
+      "title": "Phase 3: Solo Flow",
+      "feature": "Solo Run",
+      "description": "```forge-task {   \"id\": \"RUN-04\",",
+      "ownerAgents": [
+        "frontend-engineer"
+      ],
+      "dependencies": [
+        "SOLO-RUN-2"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "RUN-04",
+          "title": "Build the solo controller, seed handling and screens",
+          "description": "Create the solo run controller over the battle engine, seed parsing from ?seed=, autosave hooks after settled actions, and the setup, overview, reward and result screens wired into App. Cover deck selection through battle plus reward and result screens with interaction tests. Do not implement the duel.",
+          "ownerAgent": "frontend-engineer",
+          "dependencies": [
+            "SHL-03",
+            "RUN-02",
+            "RUN-03",
+            "RUN-06"
+          ],
+          "expectedOutputs": [
+            "src/state/run-controller.ts",
+            "src/state/run-controller.test.ts",
+            "src/persistence/seed.ts",
+            "src/persistence/seed.test.ts",
+            "src/ui/screens/SoloSetupScreen.tsx",
+            "src/ui/screens/RunOverviewScreen.tsx",
+            "src/ui/screens/RewardScreen.tsx",
+            "src/ui/screens/RunResultScreen.tsx",
+            "src/App.tsx",
+            "src/App.solo.test.tsx"
+          ],
+          "validationCommands": [
+            "npm test -- src/App.solo.test.tsx src/state/run-controller.test.ts",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The solo flow is reachable from the menu and runs setup, battle, reward and result through App",
+              "Every settled action triggers a save and the run seed is taken from the query parameter when present",
+              "RUN-FR-01: Start a solo run from one of the four starter decks at 40 health and run a fixed ladder of Cinder Warden, Rime Sentinel, Storm Herald and The Hollow Field, carrying health, deck and turn totals between battles.",
+              "RUN-FR-02: After each normal-encounter victory heal 12 health capped at 40, grant one mandatory reward choice, and start the next battle only after the reward resolves; a boss victory ends the run without a reward.",
+              "RUN-FR-04: Track encounters cleared, total turns, cards added and damage taken, and show a victory or defeat result with New Run and Menu actions.",
+              "RUN-FR-08: Accept an integer seed query parameter for deterministic runs, use a random 32-bit seed otherwise, and persist seed and PRNG state so a reload resumes the same sequence."
+            ],
+            "acceptanceCriteria": [
+              "Menu to solo setup lists four decks and Start Run opens the first battle",
+              "The run overview shows 1 of 4, current health and deck size",
+              "A forced victory shows the reward screen with three options and the heal rule at low health",
+              "Choosing a reward adds the card and opens the next battle",
+              "A boss victory and a defeat each show the result screen with encounters, turns and cards added",
+              "A valid ?seed= produces the same first hand across two runs and an invalid value is ignored",
+              "A save is written after a card play and after a completed turn"
+            ],
+            "constraints": [
+              "Do not duplicate battle rules in the controller or screens",
+              "Do not add a routing library",
+              "Do not implement Continue Run or duel wiring",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package.",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/PRD.md#10. System States / Lifecycle",
+              "docs/features/solo-run.md#4. UI / Interaction Design",
+              "docs/features/solo-run.md#RUN-FR-01",
+              "docs/features/solo-run.md#RUN-FR-02",
+              "docs/features/solo-run.md#RUN-FR-04",
+              "docs/features/solo-run.md#RUN-FR-08",
+              "docs/PRD.md#VIS-CON-01",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.run-04",
+          "inputs": [
+            "work.shl-03",
+            "work.run-02",
+            "work.run-03",
+            "work.run-06"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "RUN-05",
+          "title": "Restore a saved run and offer Continue Run",
+          "description": "Load and validate the run save on boot, show Continue Run on the menu only when it is valid, restore the exact battle, reward or result screen, and remove invalid saves without an error dialog. Add tests through App for a valid save, a corrupt save and a seed-preserved reload. Do not change run rules or the save schema.",
+          "ownerAgent": "frontend-engineer",
+          "dependencies": [
+            "RUN-04"
+          ],
+          "expectedOutputs": [
+            "src/state/resume-run.ts",
+            "src/state/resume-run.test.ts",
+            "src/ui/screens/MenuScreen.tsx",
+            "src/App.tsx",
+            "src/App.continue.test.tsx"
+          ],
+          "validationCommands": [
+            "npm test -- src/App.continue.test.tsx src/state/resume-run.test.ts",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "A valid save exposes Continue Run and restores the exact saved screen and battle",
+              "An invalid save hides Continue Run and is removed",
+              "RUN-FR-05: Autosave the run to one versioned localStorage slot after every settled action, including card plays, turn ends, reward choices, encounter starts and run end, and offer Continue Run on load with the exact saved battle.",
+              "RUN-FR-06: Discard a save whose schema version is unknown or whose JSON, run state or battle snapshot fails validation, remove only the run key, and return to the menu without crashing or partially restoring.",
+              "RUN-FR-08: Accept an integer seed query parameter for deterministic runs, use a random 32-bit seed otherwise, and persist seed and PRNG state so a reload resumes the same sequence.",
+              "VIS-NFR-06: Validate every persisted payload against its schema version before use; on corrupt, foreign or unknown-version data, discard only the affected key and continue with defaults."
+            ],
+            "acceptanceCriteria": [
+              "With no save the menu omits Continue Run",
+              "A saved mid-battle state restores the same health, hand, energy, field and enemy plan",
+              "A saved reward state restores the same three offers",
+              "A corrupt or unknown-version save shows the menu without Continue Run and removes only the run key",
+              "A reloaded run replays the same next draw for the stored seed"
+            ],
+            "constraints": [
+              "Resume must use the engine snapshot validator, not a parallel parser",
+              "Do not surface raw storage errors to the player"
+            ],
+            "references": [
+              "docs/PRD.md#10. System States / Lifecycle",
+              "docs/features/solo-run.md#4. UI / Interaction Design",
+              "docs/features/solo-run.md#RUN-FR-05",
+              "docs/features/solo-run.md#RUN-FR-06",
+              "docs/features/solo-run.md#RUN-FR-08",
+              "docs/PRD.md#VIS-NFR-06"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.run-05",
+          "inputs": [
+            "work.run-04",
+            "work.run-03"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "LOCAL-DUEL-1",
+      "title": "Phase 1: Match Model",
+      "feature": "Local Duel",
+      "description": "```forge-task {   \"id\": \"DUEL-01\",",
+      "ownerAgents": [
+        "duel-mode-engineer"
+      ],
+      "dependencies": [
+        "GAME-SHELL-PRESENTATION-3"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "DUEL-01",
+          "title": "Implement the best-of-three match model",
+          "description": "Build the pure duel match model: create a match from two locked deck ids and a seed, derive a distinct round seed, alternate the first player P1/P2/P1, record round winners, end at two wins, advance rounds, and expose rematch with the same decks plus new seed and change-decks reset. Do not persist or render UI.",
+          "ownerAgent": "duel-mode-engineer",
+          "dependencies": [
+            "ENG-07",
+            "CNT-02"
+          ],
+          "expectedOutputs": [
+            "src/duel/match.ts",
+            "src/duel/match.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/duel/match.test.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The match is first to two wins with alternating first player and locked decks",
+              "Rematch keeps decks, resets the score and uses a new seed",
+              "DUEL-FR-02: Play best-of-three with full resets per round (health, defense, field, statuses, hands, decks and energy), first to two wins, and first-player order alternating Player 1, Player 2, Player 1.",
+              "DUEL-FR-05: At match end show the winner and series score with Rematch (same locked decks and a new seed), Change decks (return to setup) and Menu actions; never persist or resume a duel."
+            ],
+            "acceptanceCriteria": [
+              "A 2-0 series completes after round 2 and a 1-1 series advances to round 3",
+              "Round 1 starts with Player 1, round 2 with Player 2 and round 3 with Player 1",
+              "Each round seed differs from the match seed and from the other round seeds",
+              "Recording a third win is rejected once the match is complete",
+              "Rematch keeps both deck ids, sets wins to 0-0, returns to round 1 and changes the seed",
+              "Change decks clears the match and returns to the setup phase"
+            ],
+            "constraints": [
+              "No localStorage, React or screen imports",
+              "Deck ids must resolve against the content catalog",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/PRD.md#10. System States / Lifecycle",
+              "docs/features/local-duel.md#4. UI / Interaction Design",
+              "docs/features/local-duel.md#DUEL-FR-02",
+              "docs/features/local-duel.md#DUEL-FR-05",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.duel-01",
+          "inputs": [
+            "work.eng-07",
+            "work.cnt-02",
+            "work.shl-04",
+            "work.shl-05",
+            "work.shl-06",
+            "work.shl-07"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "LOCAL-DUEL-2",
+      "title": "Phase 2: Round Controller",
+      "feature": "Local Duel",
+      "description": "```forge-task {   \"id\": \"DUEL-02\",",
+      "ownerAgents": [
+        "duel-mode-engineer"
+      ],
+      "dependencies": [
+        "LOCAL-DUEL-1"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "DUEL-02",
+          "title": "Gate duel turns behind privacy and hide the off-turn hand",
+          "description": "Wrap the symmetric battle engine for a duel round: create both sides from locked decks and the round seed, begin with a pending privacy screen, reject actions until dismissed, expose only the active viewer's hand, hand off after end turn, detect the round winner and stop input at round end. Do not render screens or persist.",
+          "ownerAgent": "duel-mode-engineer",
+          "dependencies": [
+            "DUEL-01"
+          ],
+          "expectedOutputs": [
+            "src/duel/round.ts",
+            "src/duel/round.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/duel/round.test.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "Every turn starts behind a pending privacy gate and accepts no action until dismissal",
+              "Only the active side's hand is exposed and the opponent is represented by a count",
+              "DUEL-FR-02: Play best-of-three with full resets per round (health, defense, field, statuses, hands, decks and energy), first to two wins, and first-player order alternating Player 1, Player 2, Player 1.",
+              "DUEL-FR-04: Render only the active player's hand during their turn; the opponent sees a card count instead of card faces, and the privacy screen contains no card name, cost, intent, health or field information.",
+              "DUEL-FR-06: Accept input only from the active side after the privacy screen is dismissed, reject duplicate or out-of-turn actions, and ignore all actions once a round or match is complete."
+            ],
+            "acceptanceCriteria": [
+              "A new round reports privacyPending true and viewer set to the match first player",
+              "Play and end-turn calls before dismissal return an error and leave state unchanged",
+              "After dismissal the active hand returns five cards while the opponent hand returns only a count",
+              "Ending a turn switches the viewer and sets privacyPending true again",
+              "A lethal play ends the round, records the winner and rejects every later action",
+              "Both sides use the same engine actions as solo with independent health, energy and decks",
+              "No localStorage key is read or written by the round controller"
+            ],
+            "constraints": [
+              "Do not call the AI planner",
+              "Do not copy damage or draw rules into the controller",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/PRD.md#10. System States / Lifecycle",
+              "docs/features/local-duel.md#4. UI / Interaction Design",
+              "docs/features/local-duel.md#DUEL-FR-02",
+              "docs/features/local-duel.md#DUEL-FR-04",
+              "docs/features/local-duel.md#DUEL-FR-06",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.duel-02",
+          "inputs": [
+            "work.duel-01"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "LOCAL-DUEL-3",
+      "title": "Phase 3: Duel UI",
+      "feature": "Local Duel",
+      "description": "```forge-task {   \"id\": \"DUEL-03\",",
+      "ownerAgents": [
+        "frontend-engineer"
+      ],
+      "dependencies": [
+        "LOCAL-DUEL-2"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "DUEL-03",
+          "title": "Build the duel setup, privacy, battle and result screens",
+          "description": "Create the two-step deck setup, full-screen privacy interstitial, duel battle screen with two player panels and only the active hand, round result and match result, all wired through App. Cover setup, privacy dismissal, hidden-hand assertions, score progression, rematch and change decks with interaction tests. Do not persist duel state.",
+          "ownerAgent": "frontend-engineer",
+          "dependencies": [
+            "DUEL-02",
+            "SHL-07"
+          ],
+          "expectedOutputs": [
+            "src/ui/screens/DuelSetupScreen.tsx",
+            "src/ui/screens/PrivacyScreen.tsx",
+            "src/ui/screens/DuelBattleScreen.tsx",
+            "src/ui/screens/RoundResultScreen.tsx",
+            "src/ui/screens/MatchResultScreen.tsx",
+            "src/App.tsx",
+            "src/App.duel.test.tsx"
+          ],
+          "validationCommands": [
+            "npm test -- src/App.duel.test.tsx",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The full duel flow is reachable from the menu and shows both decks only after both confirmations",
+              "The privacy screen unmounts the battle and only the active hand is rendered during a turn",
+              "DUEL-FR-01: Set up a local duel by having Player 1 and then Player 2 choose a starter deck from the four available decks; lock both choices for the match and reveal both only after the second confirmation.",
+              "DUEL-FR-03: Show a full-screen opaque privacy interstitial before every turn and before the first turn of each round; it must name the player to take the device, hide the board and both hands, require an explicit tap or Enter, and never auto-dismiss.",
+              "DUEL-FR-04: Render only the active player's hand during their turn; the opponent sees a card count instead of card faces, and the privacy screen contains no card name, cost, intent, health or field information.",
+              "DUEL-FR-05: At match end show the winner and series score with Rematch (same locked decks and a new seed), Change decks (return to setup) and Menu actions; never persist or resume a duel.",
+              "DUEL-FR-06: Accept input only from the active side after the privacy screen is dismissed, reject duplicate or out-of-turn actions, and ignore all actions once a round or match is complete."
+            ],
+            "acceptanceCriteria": [
+              "Menu to Local Duel shows step 1 for Player 1 and step 2 for Player 2 without revealing the first choice during step 2",
+              "The summary reveals both decks and Start Match opens a privacy screen naming Player 1",
+              "While privacy is shown the battle DOM is absent and no card name is queryable",
+              "Dismissing privacy renders only the active player's five cards and the opponent's count",
+              "Ending a turn shows the other player's privacy screen before their hand appears",
+              "A 2-0 series shows the match result with Rematch, Change decks and Menu",
+              "Rematch keeps the decks, resets the score and starts at Player 1 privacy",
+              "Reloading during a duel returns to the menu with no Continue Run entry"
+            ],
+            "constraints": [
+              "The privacy screen must be opaque and must not auto-dismiss",
+              "Escape must not dismiss the privacy screen",
+              "Do not add a duel save key",
+              "VIS-CON-03: Ship no backend, accounts, cloud save, telemetry or remote API; persist only the run, settings and stats keys in localStorage, and never transmit them."
+            ],
+            "references": [
+              "docs/PRD.md#10. System States / Lifecycle",
+              "docs/features/local-duel.md#4. UI / Interaction Design",
+              "docs/features/local-duel.md#DUEL-FR-01",
+              "docs/features/local-duel.md#DUEL-FR-03",
+              "docs/features/local-duel.md#DUEL-FR-04",
+              "docs/features/local-duel.md#DUEL-FR-05",
+              "docs/features/local-duel.md#DUEL-FR-06",
+              "docs/PRD.md#VIS-CON-03"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.duel-03",
+          "inputs": [
+            "work.duel-02",
+            "work.shl-07"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "RELEASE-VERIFICATION-1",
+      "title": "Phase 1: Browser Harness",
+      "feature": "Release Verification",
+      "description": "```forge-task {   \"id\": \"REL-01\",",
+      "ownerAgents": [
+        "qa-automation-engineer"
+      ],
+      "dependencies": [
+        "SOLO-RUN-3",
+        "LOCAL-DUEL-3"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "REL-01",
+          "title": "Set up the Playwright harness and smoke journey",
+          "description": "Add a Playwright configuration that builds and serves the static app on port 4173 with Chromium, Firefox and WebKit projects, shared helpers for seeding, navigation, privacy dismissal, greedy turns, horizontal-scroll checks and console collection, and a smoke spec that loads the menu on all three projects. Do not implement the long journeys.",
+          "ownerAgent": "qa-automation-engineer",
+          "dependencies": [
+            "SHL-01"
+          ],
+          "expectedOutputs": [
+            "playwright.config.ts",
+            "tests/e2e/helpers.ts",
+            "tests/e2e/smoke.spec.ts"
+          ],
+          "validationCommands": [
+            "npm run test:e2e -- tests/e2e/smoke.spec.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The harness runs against the production build and provides deterministic seed navigation",
+              "Smoke coverage runs on Chromium, Firefox and WebKit",
+              "REL-FR-01: Provide a Playwright suite against the built static app that drives a seeded full solo run from deck selection to the boss and verifies that a mid-battle page reload resumes the saved battle.",
+              "VIS-NFR-04: Use one seeded PRNG for every random decision so a fixed seed and action sequence reproduce identical shuffles, rewards, enemy plans and battle outcomes."
+            ],
+            "acceptanceCriteria": [
+              "The webServer command builds and serves dist on 127.0.0.1:4173 and fails if the port is taken by another app",
+              "The config defines chromium, firefox and webkit projects",
+              "openApp appends a numeric seed parameter and lands on the menu",
+              "The smoke spec passes on all three projects with no console error",
+              "Helpers fail the test rather than silently skipping when an element is missing"
+            ],
+            "constraints": [
+              "Do not mock the app or inject game state",
+              "Use only Playwright and the committed app",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package."
+            ],
+            "references": [
+              "docs/PRD.md#11. Analytics / Success Metrics",
+              "docs/features/release-verification.md#4. UI / Interaction Design",
+              "docs/features/release-verification.md#REL-FR-01",
+              "docs/PRD.md#VIS-NFR-04",
+              "docs/PRD.md#VIS-CON-01"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.rel-01",
+          "inputs": [
+            "work.shl-01",
+            "work.run-04",
+            "work.run-05",
+            "work.duel-03"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "REL-02",
+          "title": "Drive a full seeded solo run with reload resume",
+          "description": "Write the Chromium solo journey: start an Ember run, play the greedy policy to the boss, retry up to five seeds only when a run ends before the boss, reload mid-battle and assert Continue Run restores health, energy and hand size, then assert the victory result and updated record. Do not alter game code to make the test pass.",
+          "ownerAgent": "qa-automation-engineer",
+          "dependencies": [
+            "REL-01",
+            "RUN-05"
+          ],
+          "expectedOutputs": [
+            "tests/e2e/solo-run.spec.ts"
+          ],
+          "validationCommands": [
+            "npm run test:e2e -- tests/e2e/solo-run.spec.ts --project=chromium",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "At least one seeded run reaches the boss through the real UI",
+              "A mid-battle reload resumes the exact saved battle",
+              "REL-FR-01: Provide a Playwright suite against the built static app that drives a seeded full solo run from deck selection to the boss and verifies that a mid-battle page reload resumes the saved battle."
+            ],
+            "acceptanceCriteria": [
+              "The spec completes a run from deck selection to the boss without writing localStorage directly",
+              "A page reload mid-battle shows Continue Run and restores the same health, energy and hand size",
+              "The run reaches the boss within five deterministic seeds or the test fails with the attempted seeds listed",
+              "The victory result reports four encounters cleared and the stats key is updated",
+              "No console error is recorded during the journey"
+            ],
+            "constraints": [
+              "Do not use a debug menu or bypass the UI",
+              "Keep the Chromium run under 180 seconds",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package."
+            ],
+            "references": [
+              "docs/PRD.md#11. Analytics / Success Metrics",
+              "docs/features/release-verification.md#4. UI / Interaction Design",
+              "docs/features/release-verification.md#REL-FR-01",
+              "docs/PRD.md#VIS-CON-01"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.rel-02",
+          "inputs": [
+            "work.rel-01",
+            "work.run-05",
+            "work.run-04",
+            "work.duel-03"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "REL-03",
+          "title": "Drive a best-of-three duel with privacy assertions",
+          "description": "Write the Chromium duel journey: choose Ember and Frost, start the match, and for every turn assert the privacy interstitial names the expected player, the battle DOM and all card names are absent, dismiss it, assert exactly one hand is rendered, play greedy cards and end the turn. Continue to a 2-0 or 2-1 result, then exercise Rematch. Do not weaken privacy checks to make the test pass.",
+          "ownerAgent": "qa-automation-engineer",
+          "dependencies": [
+            "REL-01",
+            "DUEL-03"
+          ],
+          "expectedOutputs": [
+            "tests/e2e/duel.spec.ts"
+          ],
+          "validationCommands": [
+            "npm run test:e2e -- tests/e2e/duel.spec.ts --project=chromium"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "A full best-of-three completes through the UI with a privacy interstitial before every turn",
+              "No inactive hand or card name is visible during privacy or an active turn",
+              "REL-FR-02: Drive a seeded local duel to a best-of-three result while asserting that every turn is preceded by the privacy interstitial, the battle DOM is absent during it and only the active hand is visible.",
+              "DUEL-FR-03: Show a full-screen opaque privacy interstitial before every turn and before the first turn of each round; it must name the player to take the device, hide the board and both hands, require an explicit tap or Enter, and never auto-dismiss."
+            ],
+            "acceptanceCriteria": [
+              "Every zero-health result follows exactly one visible RoundResult with the correct score",
+              "At every privacy screen the battle container is absent and no known card name is queryable",
+              "After dismissal exactly one hand of five card buttons is visible and the opponent shows a count",
+              "The match ends at two wins and the result screen shows the series score",
+              "Rematch resets the score to 0-0 and shows the Player 1 privacy screen",
+              "No console error is recorded"
+            ],
+            "constraints": [
+              "Do not inspect or modify localStorage",
+              "Do not skip rounds; reach the result through real play",
+              "VIS-CON-03: Ship no backend, accounts, cloud save, telemetry or remote API; persist only the run, settings and stats keys in localStorage, and never transmit them."
+            ],
+            "references": [
+              "docs/PRD.md#11. Analytics / Success Metrics",
+              "docs/features/release-verification.md#4. UI / Interaction Design",
+              "docs/features/release-verification.md#REL-FR-02",
+              "docs/features/local-duel.md#DUEL-FR-03",
+              "docs/PRD.md#VIS-CON-03"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.rel-03",
+          "inputs": [
+            "work.rel-01",
+            "work.duel-03",
+            "work.run-04",
+            "work.run-05"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "REL-04",
+          "title": "Verify responsive layout, keyboard play and reduced motion",
+          "description": "Write the responsive and accessibility spec for all three browser projects at 375x667, 768x1024 and 1280x800. Assert no horizontal scroll, five reachable cards and a 44px target, keyboard-only card play and end turn, Escape focus restore, reduced-motion persistence after reload, and zero console errors. Do not change product code.",
+          "ownerAgent": "qa-automation-engineer",
+          "dependencies": [
+            "REL-01",
+            "SHL-07"
+          ],
+          "expectedOutputs": [
+            "tests/e2e/responsive-a11y.spec.ts"
+          ],
+          "validationCommands": [
+            "npm run test:e2e -- tests/e2e/responsive-a11y.spec.ts"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "All three viewports have no horizontal scroll and keep every hand card reachable",
+              "A turn is playable with the keyboard and reduced motion persists",
+              "REL-FR-03: Verify at 375x667, 768x1024 and 1280x800 that the page has no horizontal scroll, all five hand cards are reachable, keyboard-only play works, reduced motion removes transforms and no console error occurs.",
+              "VIS-NFR-01: Render without horizontal page scroll from 375px through 1440px, keep all five hand cards reachable at 375px, and center the board at a maximum width of 1080px on wider screens.",
+              "VIS-NFR-03: Support keyboard-only play, visible focus, 44px minimum interactive targets, text labels beside element colors, dialog focus trapping and reduced-motion behavior; no formal WCAG audit is required in v1.",
+              "VIS-NFR-07: Support the current and previous major versions of Chrome, Edge, Firefox and Safari, including iOS 16 or newer Safari on a 375px viewport."
+            ],
+            "acceptanceCriteria": [
+              "document.scrollWidth never exceeds the viewport width at any of the three sizes",
+              "Tab reaches five card buttons and End Turn, Enter plays a card and E ends the turn",
+              "Every interactive target measures at least 44 by 44 CSS pixels at 375px",
+              "Escape closes the card detail and focus returns to the invoking card",
+              "After enabling Reduce motion and reloading, the root attribute is true and computed transition duration is at most 1ms",
+              "The spec passes on Chromium, Firefox and WebKit with no console error"
+            ],
+            "constraints": [
+              "Use real viewport emulation rather than CSS overrides",
+              "Do not assert screenshots or pixel colors",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package."
+            ],
+            "references": [
+              "docs/PRD.md#9. Accessibility",
+              "docs/features/release-verification.md#4. UI / Interaction Design",
+              "docs/features/release-verification.md#REL-FR-03",
+              "docs/PRD.md#VIS-NFR-01",
+              "docs/PRD.md#VIS-NFR-03",
+              "docs/PRD.md#VIS-NFR-07",
+              "docs/PRD.md#VIS-CON-01"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.rel-04",
+          "inputs": [
+            "work.rel-01",
+            "work.shl-07",
+            "work.run-04",
+            "work.run-05",
+            "work.duel-03"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "RELEASE-VERIFICATION-2",
+      "title": "Phase 2: Build, Deploy and Budget",
+      "feature": "Release Verification",
+      "description": "```forge-task {   \"id\": \"REL-05\",",
+      "ownerAgents": [
+        "qa-automation-engineer"
+      ],
+      "dependencies": [
+        "RELEASE-VERIFICATION-1"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "REL-05",
+          "title": "Audit the subpath static build and commit CI and Pages workflows",
+          "description": "Add a Node audit that builds with the GitHub Pages base path, serves dist under that prefix, fetches the HTML, scripts, styles and manifest, and fails on missing files or external subresources. The same script then launches Chromium, loads the subpath build, plays one card, and fails on any console error or cross-origin request. It also scans application source for dangerouslySetInnerHTML, eval( and new Function. Commit CI and Pages workflows and replace the README with run, test, build, deploy and asset-swap instructions. Do not change application behavior.",
+          "ownerAgent": "qa-automation-engineer",
+          "dependencies": [
+            "REL-01",
+            "REL-02",
+            "REL-03",
+            "REL-04"
+          ],
+          "expectedOutputs": [
+            "scripts/check-build.mjs",
+            ".github/workflows/ci.yml",
+            ".github/workflows/pages.yml",
+            "README.md"
+          ],
+          "validationCommands": [
+            "node scripts/check-build.mjs"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The production build serves correctly from a project subpath with no cross-origin requests",
+              "CI runs typecheck, tests, build and E2E, and Pages deploys main",
+              "REL-FR-04: Commit CI and GitHub Pages workflows that run typecheck, unit and integration tests, build and Playwright, then deploy dist from main under the repository base path; document local static serving.",
+              "REL-FR-06: Document run, test, build and deploy commands plus the SVG asset-swap contract and manifest schema in README.md and docs/ASSET-SPEC.md.",
+              "VIS-NFR-05: After the initial same-origin asset load, make no network requests and transmit no data; all saves, settings and statistics stay in localStorage under Fieldbound keys.",
+              "VIS-SEC-02: Include no analytics, telemetry, third-party scripts, remote fonts or remote images; the production audit must observe zero cross-origin requests."
+            ],
+            "acceptanceCriteria": [
+              "The audit build uses VITE_BASE=/Card-Game-Project/ and every referenced script, style and manifest file returns 200",
+              "The built output contains no external http or https subresource URL",
+              "Chromium loads the subpath build, plays one card from the hand, and reports no console error and no cross-origin request",
+              "The source scan fails the audit on dangerouslySetInnerHTML, eval( or new Function anywhere under src",
+              "ci.yml runs npm ci, typecheck, tests, build and Playwright on push and pull request",
+              "pages.yml builds with the repository base path, uploads dist and deploys on main",
+              "README documents dev, test, build, preview, E2E, deploy and the manifest swap procedure"
+            ],
+            "constraints": [
+              "No deployment secrets or vendor-specific runtime code",
+              "The audit must fail on a missing asset rather than warn",
+              "VIS-CON-02: Produce a static dist build that works from a GitHub Pages project subpath and from the local preview server; resolve every asset through the Vite base URL and write no host-specific runtime behavior.",
+              "VIS-CON-03: Ship no backend, accounts, cloud save, telemetry or remote API; persist only the run, settings and stats keys in localStorage, and never transmit them."
+            ],
+            "references": [
+              "docs/PRD.md#6. Technical Architecture",
+              "docs/features/release-verification.md#4. UI / Interaction Design",
+              "docs/features/release-verification.md#REL-FR-04",
+              "docs/features/release-verification.md#REL-FR-06",
+              "docs/PRD.md#VIS-NFR-05",
+              "docs/PRD.md#VIS-SEC-02",
+              "docs/PRD.md#VIS-CON-02",
+              "docs/PRD.md#VIS-CON-03"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.rel-05",
+          "inputs": [
+            "work.rel-01",
+            "work.rel-02",
+            "work.rel-03",
+            "work.rel-04"
+          ],
+          "timeoutMs": 3600000
+        },
+        {
+          "id": "REL-06",
+          "title": "Enforce the production bundle budget",
+          "description": "Add a Node budget audit that builds the app, gzip-compresses emitted JavaScript and CSS, prints per-file sizes and fails above 300 KB total. Also fail when a manifest entry has no file. Do not minify away functionality or change the build config.",
+          "ownerAgent": "qa-automation-engineer",
+          "dependencies": [
+            "REL-05"
+          ],
+          "expectedOutputs": [
+            "scripts/check-budget.mjs"
+          ],
+          "validationCommands": [
+            "node scripts/check-budget.mjs"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "Initial JavaScript plus CSS stays at or below 300 KB gzip",
+              "Every manifest entry resolves to an existing file",
+              "REL-FR-05: Enforce a production budget of at most 300 KB gzip for initial JavaScript plus CSS, zero cross-origin requests after load and complete manifest coverage with no missing asset file.",
+              "VIS-NFR-02: Keep initial JavaScript plus CSS at or below 300 KB gzip in the production build, make card actions visible within 100ms of input, and avoid layout shift when SVGs load."
+            ],
+            "acceptanceCriteria": [
+              "The script prints each emitted JS and CSS file with raw and gzip bytes and a total",
+              "A total above 307200 bytes exits non-zero with the overage shown",
+              "The check fails when an asset manifest entry points to a missing file",
+              "A clean build exits zero and reports the remaining headroom"
+            ],
+            "constraints": [
+              "Measure the production build, not the dev server",
+              "Do not exclude a file from the total to pass",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package."
+            ],
+            "references": [
+              "docs/PRD.md#7. Non-Functional Requirements",
+              "docs/features/release-verification.md#4. UI / Interaction Design",
+              "docs/features/release-verification.md#REL-FR-05",
+              "docs/PRD.md#VIS-NFR-02",
+              "docs/PRD.md#VIS-CON-01"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.rel-06",
+          "inputs": [
+            "work.rel-05",
+            "work.rel-01",
+            "work.rel-02",
+            "work.rel-03",
+            "work.rel-04"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    },
+    {
+      "id": "RELEASE-VERIFICATION-3",
+      "title": "Phase 3: Human Review",
+      "feature": "Release Verification",
+      "description": "```forge-task {   \"id\": \"REL-HR-1\",",
+      "ownerAgents": [],
+      "dependencies": [
+        "RELEASE-VERIFICATION-2"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "REL-HR-1",
+          "title": "Human release review of both journeys",
+          "description": "A human reviewer plays the running production build on a 390x844 phone viewport and a 1280x800 desktop viewport: completes a solo run, reloads mid-battle and resumes, and plays a local duel to a match result with the privacy screen before every turn. The reviewer records what was exercised, card readability at 375px, any hand leak, console and network observations, and a pass or fail with concrete issues in docs/reviews/v1-release-review.json.",
+          "dependencies": [
+            "REL-02",
+            "REL-03",
+            "REL-04",
+            "REL-05",
+            "REL-06"
+          ],
+          "expectedOutputs": [],
+          "validationCommands": [],
+          "contract": {
+            "version": 1,
+            "kind": "human-review",
+            "requirements": [
+              "The reviewer completed both primary journeys against the running system",
+              "The review records readability, privacy and runtime observations",
+              "REL-FR-01: Provide a Playwright suite against the built static app that drives a seeded full solo run from deck selection to the boss and verifies that a mid-battle page reload resumes the saved battle.",
+              "REL-FR-02: Drive a seeded local duel to a best-of-three result while asserting that every turn is preceded by the privacy interstitial, the battle DOM is absent during it and only the active hand is visible.",
+              "REL-FR-03: Verify at 375x667, 768x1024 and 1280x800 that the page has no horizontal scroll, all five hand cards are reachable, keyboard-only play works, reduced motion removes transforms and no console error occurs.",
+              "REL-FR-04: Commit CI and GitHub Pages workflows that run typecheck, unit and integration tests, build and Playwright, then deploy dist from main under the repository base path; document local static serving.",
+              "REL-FR-05: Enforce a production budget of at most 300 KB gzip for initial JavaScript plus CSS, zero cross-origin requests after load and complete manifest coverage with no missing asset file.",
+              "REL-FR-06: Document run, test, build and deploy commands plus the SVG asset-swap contract and manifest schema in README.md and docs/ASSET-SPEC.md."
+            ],
+            "acceptanceCriteria": [
+              "The record states the viewports used and confirms a full solo run, a mid-battle reload resume and a full duel were exercised",
+              "The reviewer confirms five cards were readable at 375px without zoom or lists the exact unreadable cards",
+              "The reviewer confirms no hand appeared during any privacy screen",
+              "The record lists console errors and cross-origin requests, or states that none were observed",
+              "The result is pass or fail with concrete issues; subjective polish alone cannot pass a journey that did not complete"
+            ],
+            "constraints": [
+              "Do not approve a rehearsal or a component-only check",
+              "Do not record automated test output as a human journey",
+              "VIS-CON-04: Keep v1 free of online multiplayer, deckbuilding, card upgrades, rarity, meta-progression, native packaging, PWA installation, music, voice and particle-heavy effects."
+            ],
+            "references": [
+              "docs/PRD.md#11. Analytics / Success Metrics",
+              "docs/features/release-verification.md#4. UI / Interaction Design",
+              "docs/features/solo-run.md#4. UI / Interaction Design",
+              "docs/features/local-duel.md#4. UI / Interaction Design",
+              "docs/features/release-verification.md#REL-FR-01",
+              "docs/features/release-verification.md#REL-FR-02",
+              "docs/features/release-verification.md#REL-FR-03",
+              "docs/features/release-verification.md#REL-FR-04",
+              "docs/features/release-verification.md#REL-FR-05",
+              "docs/features/release-verification.md#REL-FR-06",
+              "docs/PRD.md#VIS-CON-04"
+            ],
+            "reviewFile": "docs/reviews/v1-release-review.json"
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.rel-hr-1",
+          "inputs": [
+            "work.rel-02",
+            "work.rel-03",
+            "work.rel-04",
+            "work.rel-05",
+            "work.rel-06"
+          ],
+          "timeoutMs": 3600000
+        }
+      ]
+    }
+  ],
+  "warnings": [],
+  "responsibilityMatrixPath": "c:\\dev-work\\Card-Game-Project\\docs\\agent-responsibility-matrix.md"
+}

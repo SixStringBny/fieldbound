@@ -1,0 +1,23 @@
+{
+  "content-designer": {
+    "primary": "deepseek/deepseek-flash"
+  },
+  "duel-mode-engineer": {
+    "primary": "deepseek/deepseek-flash"
+  },
+  "frontend-engineer": {
+    "primary": "deepseek/deepseek-flash"
+  },
+  "qa-automation-engineer": {
+    "primary": "deepseek/deepseek-flash"
+  },
+  "rules-engineer": {
+    "primary": "deepseek/deepseek-flash"
+  },
+  "solo-mode-engineer": {
+    "primary": "deepseek/deepseek-flash"
+  },
+  "ux-engineer": {
+    "primary": "deepseek/deepseek-flash"
+  }
+}

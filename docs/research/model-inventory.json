@@ -1,34 +1,49 @@
 {
   "opencode_cli": {
     "available": true,
-    "last_verified": "2026-10-28T18:12:20.343Z",
+    "last_verified": "2026-10-28T19:26:14.830Z",
     "models": [
       {
-        "id": "ollama/gemma4:e2b"
+        "id": "deepseek/deepseek-flash"
       },
       {
-        "id": "opencode/beam-free"
+        "id": "deepseek/deepseek-v4-pro"
       },
       {
-        "id": "opencode/big-pickle"
+        "id": "ollama/gemma4:e2b",
+        "capabilities": {}
       },
       {
-        "id": "opencode/deepseek-v4.1-flash-free"
+        "id": "opencode/beam-free",
+        "capabilities": {}
       },
       {
-        "id": "opencode/flint-40b-free"
+        "id": "opencode/big-pickle",
+        "capabilities": {}
       },
       {
-        "id": "opencode/glm-5.3-flash-free"
+        "id": "opencode/deepseek-v4.1-flash-free",
+        "capabilities": {}
       },
       {
-        "id": "opencode/mimo-v2.6-flash-free"
+        "id": "opencode/flint-40b-free",
+        "capabilities": {}
       },
       {
-        "id": "opencode/nemotron-3.5-lightning-free"
+        "id": "opencode/glm-5.3-flash-free",
+        "capabilities": {}
       },
       {
-        "id": "opencode/nemotron-3.5-super-vl-free"
+        "id": "opencode/mimo-v2.6-flash-free",
+        "capabilities": {}
+      },
+      {
+        "id": "opencode/nemotron-3.5-lightning-free",
+        "capabilities": {}
+      },
+      {
+        "id": "opencode/nemotron-3.5-super-vl-free",
+        "capabilities": {}
       }
     ],
     "diagnostics": {
@@ -37,9 +52,9 @@
         "models"
       ],
       "exitCode": 0,
-      "raw_output": "ollama/gemma4:e2b\r\nopencode/beam-free\r\nopencode/big-pickle\r\nopencode/deepseek-v4.1-flash-free\r\nopencode/flint-40b-free\r\nopencode/glm-5.3-flash-free\r\nopencode/mimo-v2.6-flash-free\r\nopencode/nemotron-3.5-lightning-free\r\nopencode/nemotron-3.5-super-vl-free\r\n",
+      "raw_output": "deepseek/deepseek-flash\r\ndeepseek/deepseek-v4-pro\r\nollama/gemma4:e2b\r\nopencode/beam-free\r\nopencode/big-pickle\r\nopencode/deepseek-v4.1-flash-free\r\nopencode/flint-40b-free\r\nopencode/glm-5.3-flash-free\r\nopencode/mimo-v2.6-flash-free\r\nopencode/nemotron-3.5-lightning-free\r\nopencode/nemotron-3.5-super-vl-free\r\n",
       "stderr": ""
     }
   },
-  "last_verified": "2026-10-28T18:12:20.343Z"
+  "last_verified": "2026-10-28T19:26:14.830Z"
 }

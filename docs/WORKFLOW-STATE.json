@@ -1,0 +1,338 @@
+{
+  "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
+  "startedAt": "2026-10-28T19:16:00.642Z",
+  "lastUpdatedAt": "2026-10-28T19:51:53.462Z",
+  "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
+  "manifestVersion": "1.0",
+  "harness": "opencode",
+  "status": "running",
+  "currentPhase": "BATTLE-ENGINE-RULES-1",
+  "tasks": {
+    "ENG-00": {
+      "taskId": "ENG-00",
+      "status": "complete",
+      "ownerAgent": "frontend-engineer",
+      "attempt": 5,
+      "outputFiles": [
+        "package.json",
+        "package-lock.json",
+        "vite.config.ts",
+        "tsconfig.json",
+        "index.html",
+        "src/main.tsx",
+        "src/App.tsx",
+        "src/App.test.tsx",
+        "src/test/setup.ts",
+        "src/styles/base.css",
+        "src/vite-env.d.ts"
+      ],
+      "startedAt": "2026-10-28T19:48:36.739Z",
+      "usage": {
+        "inputTokens": 29360,
+        "outputTokens": 6010,
+        "cacheReadTokens": 815616,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 20024,
+        "costUsd": 0.022471248,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "failed",
+          "reason": "\u001b[0m\r\n> frontend-engineer · deepseek-v4.1-flash-free\r\n\u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Connect a provider or subscribe to OpenCode Go to keep going, or switch models.\r\n",
+          "resultPath": "docs/artifacts/ENG-00.2026-10-28T19-16-02-579Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reasoningTokens": 0,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0,
+            "costUsd": 0,
+            "source": "harness"
+          }
+        },
+        {
+          "attempt": 2,
+          "outcome": "failed",
+          "reason": "\u001b[0m\r\n> frontend-engineer · deepseek-v4.1-flash-free\r\n\u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Connect a provider or subscribe to OpenCode Go to keep going, or switch models.\r\n",
+          "resultPath": "docs/artifacts/ENG-00.2026-10-28T19-16-08-619Z.attempt-2.result.json",
+          "usage": {
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reasoningTokens": 0,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0,
+            "costUsd": 0,
+            "source": "harness"
+          }
+        },
+        {
+          "attempt": 3,
+          "outcome": "failed",
+          "reason": "\u001b[0m\r\n> frontend-engineer · deepseek-v4.1-flash-free\r\n\u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Connect a provider or subscribe to OpenCode Go to keep going, or switch models.\r\n",
+          "resultPath": "docs/artifacts/ENG-00.2026-10-28T19-16-14-782Z.attempt-3.result.json",
+          "usage": {
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reasoningTokens": 0,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0,
+            "costUsd": 0,
+            "source": "harness"
+          }
+        },
+        {
+          "attempt": 5,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/ENG-00.2026-10-28T19-51-53-454Z.attempt-5.result.json",
+          "usage": {
+            "inputTokens": 29360,
+            "outputTokens": 6010,
+            "reasoningTokens": 20024,
+            "cacheReadTokens": 815616,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.022471248,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-28T19:51:53.460Z",
+      "agentOutput": "I'll start by reading the execution file and orienting myself in the project.\r\nPrior attempts left substantial work in the tree. Before changing anything, let me verify the current state against the required commands.\r\nValidation commands pass on the existing tree. Now let me audit the deeper acceptance criteria (CSP split, subpath build, documented scripts) and the referenced docs.\r\nThe task-specific criteria look covered by the existing scaffold, but I must prove the subpath and CSP split rather than assume it. Running the build audit and budget gates now.\r\nAll required gates pass, including the subpath/CSP audit. Let me additionally verify the actual `npm run dev` process (not just the programmatic server) and run the full unit suite before reporting.\r\nDev HTML confirmed CSP-free over a real `npm run dev` process while `dist/index.html` carries the policy. Running the three exact validation commands one final time in order.\r\nThe scaffold is complete and every gate passes. I'll make one small in-scope strengthening to the composition-root test so it asserts the root container and skip-link wiring directly, then re-run the required checks.\r\nOne last pass of the full unit suite and budget gate so every result I report reflects the final tree.\r\n## Outcome\n\nENG-00 is complete and verified from the repository root. The workspace is a Vite 8 / React 19 / strict TypeScript 7 scaffold with:\n\n- A base-path-aware static build driven by `VITE_BASE`\n- A build-only Vite plugin that injects the same-origin CSP into `dist/index.html` only\n- Vitest in jsdom with a real `App` composition-root test\n- A Playwright configuration stub and all nine required npm scripts\n- A single 12-kind `Screen` union in `App.tsx`, with only the placeholder shell mounted (game screens remain for their own tasks)\n\nThe only version deviation is jsdom `29.0.0` instead of PRD `30.1.3`, because jsdom 30.1.3 declares `engines: ^22.22.2 || ^24.15.0 || >=26.0.0` while this workspace runs Node `22.13.0`. It is recorded in `README.md`; every other package matches the verified PRD 6.1 set.\n\n## Verification (observed)\n\n| Gate | Result |\n|---|---|\n| `npm test -- src/App.test.tsx` | 1 file / 2 tests passed |\n| `npm test` | 1 file / 2 tests passed |\n| `npm run typecheck` | passed |\n| `npm run build` | passed (69.08 kB gzip JS) |\n| `npm run check:build` | passed at `/Card-Game-Project/`: CSP before first script, assets under base and served 200, dev HTML CSP-free, source scan clean |\n| `npm run check:budget` | 69,210 B / 307,200 B gzip |\n| `npm run dev` smoke | HTTP 200, no CSP meta, `/src/main.tsx` present |\n\n## Files created or changed\n\n**Changed in this pass**\n\n- `src/App.test.tsx` — strengthened the composition-root test to assert `#app-root`, the `main-content` skip target and the skip-link `href`.\n\n**Task file set delivered and verified** (preserved from the in-progress attempt)\n\n- `package.json`\n- `package-lock.json`\n- `vite.config.ts`\n- `tsconfig.json`\n- `index.html`\n- `playwright.config.ts`\n- `src/main.tsx`\n- `src/App.tsx`\n- `src/App.test.tsx`\n- `src/test/setup.ts`\n- `src/styles/base.css`\n- `src/vite-env.d.ts`\n- `scripts/check-build.mjs`\n- `scripts/check-budget.mjs`\n- `tests/e2e/.gitkeep`\n- `README.md` (scripts, base path, security and toolchain notes)\n\n```forge-result\n{\n  \"summary\": \"Completed ENG-00: the Vite 8/React 19/strict TypeScript 7 scaffold builds from a non-root VITE_BASE, injects a same-origin CSP only into production HTML, runs Vitest in jsdom with a real App composition-root test, ships a Playwright stub and all nine required npm scripts, and documents the scripts plus the one Node-forced jsdom fallback.\",\n  \"decisions\": [\n    \"Pinned React/React DOM 19.3.1, Vite 8.3.5, @vitejs/plugin-react 6.1.2, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; no state, routing or CSS framework dependency was added.\",\n    \"Pinned jsdom 29.0.0 instead of the PRD's 30.1.3 because 30.1.3 declares engines ^22.22.2 || ^24.15.0 || >=26.0.0 while the verified runtime is Node 22.13.0; the deviation is recorded in README.md and no other package deviates.\",\n    \"The CSP is injected by a Vite plugin with apply: 'build' at head-prepend, so dist HTML carries it before the first script while the dev server stays CSP-free for React Fast Refresh.\",\n    \"App.tsx owns the single 12-kind Screen union and mounts only the placeholder shell; gameplay screens are deliberately left to their own tasks per the task constraint.\"\n  ],\n  \"interfaces\": [\n    \"src/App.tsx exports SCREEN_KINDS, ScreenKind, Screen, INITIAL_SCREEN and App().\",\n    \"vite.config.ts exports normalizeBase(rawBase) and reads VITE_BASE from the environment or VITE_ env files.\",\n    \"package.json exposes dev, build, preview, typecheck, test, test:e2e, serve:dist, check:build and check:budget.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/App.test.tsx: 1 file / 2 tests passed.\",\n    \"npm test: 1 file / 2 tests passed.\",\n    \"npm run typecheck: passed.\",\n    \"npm run build: passed; JS 220.78 kB raw / 69.08 kB gzip.\",\n    \"npm run check:build: passed at base /Card-Game-Project/ (CSP before first script, both assets resolve and serve 200, dev HTML has no CSP, source scan clean).\",\n    \"npm run check:budget: 69,210 B gzip of a 307,200 B budget.\",\n    \"npm run dev smoke: HTTP 200, no CSP meta, /src/main.tsx present.\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-eng-00-001"
+    },
+    "ENG-01": {
+      "taskId": "ENG-01",
+      "status": "pending",
+      "ownerAgent": "rules-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "ENG-02": {
+      "taskId": "ENG-02",
+      "status": "pending",
+      "ownerAgent": "rules-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "ENG-03": {
+      "taskId": "ENG-03",
+      "status": "pending",
+      "ownerAgent": "rules-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "ENG-04": {
+      "taskId": "ENG-04",
+      "status": "pending",
+      "ownerAgent": "rules-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "ENG-05": {
+      "taskId": "ENG-05",
+      "status": "pending",
+      "ownerAgent": "rules-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "ENG-06": {
+      "taskId": "ENG-06",
+      "status": "pending",
+      "ownerAgent": "rules-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "ENG-07": {
+      "taskId": "ENG-07",
+      "status": "pending",
+      "ownerAgent": "rules-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "CNT-01": {
+      "taskId": "CNT-01",
+      "status": "pending",
+      "ownerAgent": "content-designer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "CNT-02": {
+      "taskId": "CNT-02",
+      "status": "pending",
+      "ownerAgent": "content-designer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "CNT-03": {
+      "taskId": "CNT-03",
+      "status": "pending",
+      "ownerAgent": "content-designer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "SHL-01": {
+      "taskId": "SHL-01",
+      "status": "pending",
+      "ownerAgent": "frontend-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "SHL-02": {
+      "taskId": "SHL-02",
+      "status": "pending",
+      "ownerAgent": "ux-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "SHL-03": {
+      "taskId": "SHL-03",
+      "status": "pending",
+      "ownerAgent": "frontend-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "SHL-04": {
+      "taskId": "SHL-04",
+      "status": "pending",
+      "ownerAgent": "ux-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "SHL-05": {
+      "taskId": "SHL-05",
+      "status": "pending",
+      "ownerAgent": "ux-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "SHL-06": {
+      "taskId": "SHL-06",
+      "status": "pending",
+      "ownerAgent": "frontend-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "SHL-07": {
+      "taskId": "SHL-07",
+      "status": "pending",
+      "ownerAgent": "frontend-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "RUN-01": {
+      "taskId": "RUN-01",
+      "status": "pending",
+      "ownerAgent": "solo-mode-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "RUN-02": {
+      "taskId": "RUN-02",
+      "status": "pending",
+      "ownerAgent": "solo-mode-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "RUN-06": {
+      "taskId": "RUN-06",
+      "status": "pending",
+      "ownerAgent": "solo-mode-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "RUN-03": {
+      "taskId": "RUN-03",
+      "status": "pending",
+      "ownerAgent": "solo-mode-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "RUN-04": {
+      "taskId": "RUN-04",
+      "status": "pending",
+      "ownerAgent": "frontend-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "RUN-05": {
+      "taskId": "RUN-05",
+      "status": "pending",
+      "ownerAgent": "frontend-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "DUEL-01": {
+      "taskId": "DUEL-01",
+      "status": "pending",
+      "ownerAgent": "duel-mode-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "DUEL-02": {
+      "taskId": "DUEL-02",
+      "status": "pending",
+      "ownerAgent": "duel-mode-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "DUEL-03": {
+      "taskId": "DUEL-03",
+      "status": "pending",
+      "ownerAgent": "frontend-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "REL-01": {
+      "taskId": "REL-01",
+      "status": "pending",
+      "ownerAgent": "qa-automation-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "REL-02": {
+      "taskId": "REL-02",
+      "status": "pending",
+      "ownerAgent": "qa-automation-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "REL-03": {
+      "taskId": "REL-03",
+      "status": "pending",
+      "ownerAgent": "qa-automation-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "REL-04": {
+      "taskId": "REL-04",
+      "status": "pending",
+      "ownerAgent": "qa-automation-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "REL-05": {
+      "taskId": "REL-05",
+      "status": "pending",
+      "ownerAgent": "qa-automation-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "REL-06": {
+      "taskId": "REL-06",
+      "status": "pending",
+      "ownerAgent": "qa-automation-engineer",
+      "attempt": 0,
+      "outputFiles": []
+    },
+    "REL-HR-1": {
+      "taskId": "REL-HR-1",
+      "status": "pending",
+      "attempt": 0,
+      "outputFiles": []
+    }
+  },
+  "blockers": [],
+  "auditLog": [],
+  "sessions": {}
+}
