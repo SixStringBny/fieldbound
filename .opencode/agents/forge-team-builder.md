@@ -26,6 +26,15 @@ Run **`forge-build-agent-team`** against canonical vision and features, for init
 
 ---
 
+## Responsibilities
+
+1. **Resolve the input documents** - Find the canonical `docs/PRD.md` plus `docs/features/*.md` for an initial team, or the registered new features for an increment, and refuse to proceed when no requirement source exists.
+2. **Generate or extend the team** - Run `forge-build-agent-team` to write specialist agent files under the detected harness agents directory, with stable names, `mode: all` and non-overlapping ownership.
+3. **Persist the skill handoff** - Write `docs/SKILL-CANDIDATES.json` with the planned candidate names, consumers and actions for the independent skills stage, without creating skill packages.
+4. **Validate and report** - Run the package validators and present the generated team, feature coverage and any authoring repairs to the user.
+
+---
+
 ## Collaboration
 
 - **forge-build-prd**, **forge-decompose-prd**, **forge-build-feature-prd** skills - Upstream authoring skills that produce the inputs I consume.

@@ -1,0 +1,45 @@
+{
+  "opencode_cli": {
+    "available": true,
+    "last_verified": "2026-10-28T18:12:20.343Z",
+    "models": [
+      {
+        "id": "ollama/gemma4:e2b"
+      },
+      {
+        "id": "opencode/beam-free"
+      },
+      {
+        "id": "opencode/big-pickle"
+      },
+      {
+        "id": "opencode/deepseek-v4.1-flash-free"
+      },
+      {
+        "id": "opencode/flint-40b-free"
+      },
+      {
+        "id": "opencode/glm-5.3-flash-free"
+      },
+      {
+        "id": "opencode/mimo-v2.6-flash-free"
+      },
+      {
+        "id": "opencode/nemotron-3.5-lightning-free"
+      },
+      {
+        "id": "opencode/nemotron-3.5-super-vl-free"
+      }
+    ],
+    "diagnostics": {
+      "command": [
+        "opencode",
+        "models"
+      ],
+      "exitCode": 0,
+      "raw_output": "ollama/gemma4:e2b\r\nopencode/beam-free\r\nopencode/big-pickle\r\nopencode/deepseek-v4.1-flash-free\r\nopencode/flint-40b-free\r\nopencode/glm-5.3-flash-free\r\nopencode/mimo-v2.6-flash-free\r\nopencode/nemotron-3.5-lightning-free\r\nopencode/nemotron-3.5-super-vl-free\r\n",
+      "stderr": ""
+    }
+  },
+  "last_verified": "2026-10-28T18:12:20.343Z"
+}

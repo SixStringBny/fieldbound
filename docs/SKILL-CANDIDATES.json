@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "candidates": [
+    {
+      "name": "seeded-determinism-and-replay",
+      "description": "Apply the single 32-bit seeded PRNG, its serialized state and the fixed consumption order for shuffles, reward offers, enemy plans and round seeds so seeded runs, saves and browser journeys replay identically.",
+      "consumers": ["rules-engineer", "solo-mode-engineer", "duel-mode-engineer", "qa-automation-engineer"],
+      "action": "create",
+      "reason": "Determinism spans ENG-FR-05, RUN-FR-08, DUEL-FR-02 and the seeded Playwright journeys; the ordering, state-travel and no-Math.random rules are fragile, repeated in four places and not covered by any existing package."
+    },
+    {
+      "name": "versioned-local-persistence",
+      "description": "Implement the three versioned Fieldbound localStorage keys with validate-before-use, discard-only-the-affected-key, injectable storage adapters and in-memory fallback when storage is full or unavailable.",
+      "consumers": ["solo-mode-engineer", "frontend-engineer"],
+      "action": "create",
+      "reason": "Settings, run save and stats repeat the same versioned-payload contract across SHL-FR-07, RUN-FR-05, RUN-FR-06 and RUN-FR-07, and the narrow-corruption and quota rules are easy to get subtly wrong; no existing package covers project persistence."
+    },
+    {
+      "name": "portrait-first-board-and-accessibility",
+      "description": "Build and verify the 375px-to-1080px board layout, 44px targets, glyph-plus-label element cues, focus trapping, polite live announcements and the reduced-motion contract shared by the shell and the release checks.",
+      "consumers": ["ux-engineer", "frontend-engineer", "qa-automation-engineer"],
+      "action": "create",
+      "reason": "The same responsive and accessibility invariants are built in SHL-02, SHL-04 and SHL-07 and asserted again in REL-04, with project-specific traps such as hand-row scrolling versus page scroll; no existing package encodes them."
+    },
+    {
+      "name": "placeholder-asset-manifest",
+      "description": "Generate deterministic SVG placeholders, publish the 41-entry asset manifest with spec metadata, resolve files through a base-URL-aware loader and keep the documented swap contract intact.",
+      "consumers": ["content-designer", "ux-engineer", "qa-automation-engineer"],
+      "action": "create",
+      "reason": "CNT-FR-05 and CNT-FR-06, the shell asset rendering and the build audits all depend on one id-to-file mapping with byte-stable regeneration; the rules are procedural and repeated across features rather than one-off."
+    },
+    {
+      "name": "static-build-origin-audit",
+      "description": "Produce and audit the GitHub Pages subpath build with build-only CSP injection, zero cross-origin requests after load, a 307200-byte gzip budget and committed CI and Pages workflows.",
+      "consumers": ["qa-automation-engineer", "frontend-engineer"],
+      "action": "create",
+      "reason": "The base-path, CSP-injection and origin constraints originate in ENG-00 and VIS-SEC-01 and are then proved by REL-05 and REL-06; the sequence fails silently when applied from memory, so it warrants a reusable checklist."
+    },
+    {
+      "name": "balance-tuning",
+      "description": "Tune card, health, heal and enemy numbers from self-play and playtest evidence.",
+      "consumers": ["content-designer", "rules-engineer"],
+      "action": "omit",
+      "reason": "VIS-CON-07 freezes every number for v1 and section 13 defers tuning to a documented follow-up, so encoding a tuning process now would contradict the current scope."
+    },
+    {
+      "name": "human-release-review",
+      "description": "Perform the single human release review of both journeys and record readability, privacy and runtime observations.",
+      "consumers": [],
+      "action": "omit",
+      "reason": "REL-HR-1 is a human-review task with no model owner; packaging it as a skill would invite an agent to fabricate the sign-off that the task exists to keep human."
+    }
+  ]
+}

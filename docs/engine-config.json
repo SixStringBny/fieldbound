@@ -9,6 +9,6 @@
   "autoCommit": true,
   "logHarnessActivity": false,
   "subagents": "",
-  "executionMode": "auto",
+  "executionMode": "manual",
   "selectedTaskIds": []
 }
