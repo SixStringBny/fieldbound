@@ -1,0 +1,291 @@
+[
+  {
+    "id": "ember-cinder-jab",
+    "name": "Cinder Jab",
+    "element": "ember",
+    "type": "attack",
+    "cost": 1,
+    "damage": 3
+  },
+  {
+    "id": "ember-ember-lance",
+    "name": "Ember Lance",
+    "element": "ember",
+    "type": "attack",
+    "cost": 2,
+    "damage": 4,
+    "piercing": true
+  },
+  {
+    "id": "ember-ash-guard",
+    "name": "Ash Guard",
+    "element": "ember",
+    "type": "ward",
+    "cost": 1,
+    "defense": 2
+  },
+  {
+    "id": "ember-kindled-fury",
+    "name": "Kindled Fury",
+    "element": "ember",
+    "type": "attack",
+    "cost": 2,
+    "damage": 3,
+    "fieldBonus": {
+      "damage": 2
+    }
+  },
+  {
+    "id": "ember-inferno",
+    "name": "Inferno",
+    "element": "ember",
+    "type": "attack",
+    "cost": 3,
+    "damage": 7
+  },
+  {
+    "id": "frost-frost-shard",
+    "name": "Frost Shard",
+    "element": "frost",
+    "type": "attack",
+    "cost": 1,
+    "damage": 3
+  },
+  {
+    "id": "frost-ice-needle",
+    "name": "Ice Needle",
+    "element": "frost",
+    "type": "attack",
+    "cost": 2,
+    "damage": 4,
+    "piercing": true
+  },
+  {
+    "id": "frost-rime-ward",
+    "name": "Rime Ward",
+    "element": "frost",
+    "type": "ward",
+    "cost": 1,
+    "defense": 2
+  },
+  {
+    "id": "frost-shatter",
+    "name": "Shatter",
+    "element": "frost",
+    "type": "attack",
+    "cost": 2,
+    "damage": 2,
+    "fieldBonus": {
+      "damage": 4
+    }
+  },
+  {
+    "id": "frost-deep-freeze",
+    "name": "Deep Freeze",
+    "element": "frost",
+    "type": "utility",
+    "cost": 2,
+    "draw": 1,
+    "status": {
+      "kind": "weaken",
+      "stacks": 1,
+      "target": "opponent"
+    }
+  },
+  {
+    "id": "gale-gust",
+    "name": "Gust",
+    "element": "gale",
+    "type": "attack",
+    "cost": 1,
+    "damage": 3
+  },
+  {
+    "id": "gale-wind-needle",
+    "name": "Wind Needle",
+    "element": "gale",
+    "type": "attack",
+    "cost": 1,
+    "damage": 2,
+    "piercing": true
+  },
+  {
+    "id": "gale-tailwind",
+    "name": "Tailwind",
+    "element": "gale",
+    "type": "ward",
+    "cost": 1,
+    "defense": 2,
+    "draw": 1
+  },
+  {
+    "id": "gale-cyclone",
+    "name": "Cyclone",
+    "element": "gale",
+    "type": "attack",
+    "cost": 2,
+    "damage": 4,
+    "fieldBonus": {
+      "damage": 2
+    }
+  },
+  {
+    "id": "gale-updraft",
+    "name": "Updraft",
+    "element": "gale",
+    "type": "utility",
+    "cost": 0,
+    "draw": 1
+  },
+  {
+    "id": "stone-stone-fist",
+    "name": "Stone Fist",
+    "element": "stone",
+    "type": "attack",
+    "cost": 1,
+    "damage": 4
+  },
+  {
+    "id": "stone-stone-spike",
+    "name": "Stone Spike",
+    "element": "stone",
+    "type": "attack",
+    "cost": 2,
+    "damage": 4,
+    "piercing": true
+  },
+  {
+    "id": "stone-bulwark",
+    "name": "Bulwark",
+    "element": "stone",
+    "type": "ward",
+    "cost": 2,
+    "defense": 3
+  },
+  {
+    "id": "stone-avalanche",
+    "name": "Avalanche",
+    "element": "stone",
+    "type": "attack",
+    "cost": 3,
+    "damage": 6,
+    "fieldBonus": {
+      "damage": 2
+    }
+  },
+  {
+    "id": "stone-resonance",
+    "name": "Resonance",
+    "element": "stone",
+    "type": "ward",
+    "cost": 1,
+    "defense": 1,
+    "fieldBonus": {
+      "defense": 2
+    }
+  },
+  {
+    "id": "neutral-plain-strike",
+    "name": "Plain Strike",
+    "element": "neutral",
+    "type": "attack",
+    "cost": 1,
+    "damage": 3
+  },
+  {
+    "id": "neutral-elemental-blow",
+    "name": "Elemental Blow",
+    "element": "neutral",
+    "type": "attack",
+    "cost": 2,
+    "damage": 5
+  },
+  {
+    "id": "neutral-probe",
+    "name": "Probe",
+    "element": "neutral",
+    "type": "utility",
+    "cost": 0,
+    "draw": 1
+  },
+  {
+    "id": "neutral-sift",
+    "name": "Sift",
+    "element": "neutral",
+    "type": "utility",
+    "cost": 1,
+    "draw": 2
+  },
+  {
+    "id": "neutral-channel",
+    "name": "Channel",
+    "element": "neutral",
+    "type": "utility",
+    "cost": 0,
+    "energy": 1
+  },
+  {
+    "id": "neutral-surge",
+    "name": "Surge",
+    "element": "neutral",
+    "type": "utility",
+    "cost": 1,
+    "energy": 2
+  },
+  {
+    "id": "neutral-expose",
+    "name": "Expose",
+    "element": "neutral",
+    "type": "utility",
+    "cost": 1,
+    "status": {
+      "kind": "weaken",
+      "stacks": 1,
+      "target": "opponent"
+    }
+  },
+  {
+    "id": "neutral-second-wind",
+    "name": "Second Wind",
+    "element": "neutral",
+    "type": "utility",
+    "cost": 2,
+    "status": {
+      "kind": "regen",
+      "stacks": 2,
+      "target": "self"
+    }
+  },
+  {
+    "id": "shift-ember",
+    "name": "Ember Shift",
+    "element": "neutral",
+    "type": "shift",
+    "cost": 1,
+    "shiftTo": "ember"
+  },
+  {
+    "id": "shift-frost",
+    "name": "Frost Shift",
+    "element": "neutral",
+    "type": "shift",
+    "cost": 1,
+    "shiftTo": "frost"
+  },
+  {
+    "id": "shift-gale",
+    "name": "Gale Shift",
+    "element": "neutral",
+    "type": "shift",
+    "cost": 1,
+    "shiftTo": "gale"
+  },
+  {
+    "id": "shift-stone",
+    "name": "Stone Shift",
+    "element": "neutral",
+    "type": "shift",
+    "cost": 1,
+    "shiftTo": "stone"
+  }
+]

@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-28T21:04:02.805Z",
+  "lastUpdatedAt": "2026-10-28T21:06:12.934Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "BATTLE-ENGINE-RULES-4",
+  "currentPhase": "CARD-ENEMY-CONTENT-1",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -456,10 +456,48 @@
     },
     "CNT-01": {
       "taskId": "CNT-01",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "content-designer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/content/cards.json",
+        "src/content/cards.ts",
+        "src/content/cards.test.ts"
+      ],
+      "startedAt": "2026-10-28T21:04:03.343Z",
+      "usage": {
+        "inputTokens": 40853,
+        "outputTokens": 10761,
+        "reasoningTokens": 13258,
+        "cacheReadTokens": 555136,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.022204758,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/CNT-01.2026-10-28T21-06-12-928Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 40853,
+            "outputTokens": 10761,
+            "reasoningTokens": 13258,
+            "cacheReadTokens": 555136,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.022204758,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-28T21:06:12.932Z",
+      "agentOutput": "I'll start by reading the execution file and the referenced documentation.\r\nNow let me read the engine types and the PRD sections.\r\nI have the full picture. Now creating the catalog JSON.\r\nAll checks pass. Here is the summary of the work.\n\n## Files created\n\n- `src/content/cards.json` — the 32 documented cards, in documented order, with only supported effect fields (absent effects omitted).\n- `src/content/cards.ts` — typed re-export (`CARDS`, `CARD_IDS`, `byId`, `cardById`) with no gameplay logic.\n- `src/content/cards.test.ts` — frozen-table comparison plus a pure `auditCatalog` invariant checker and fixture failures.\n\n## Verification performed\n\n- `npm test -- src/content/cards.test.ts` → 1 file, 18 tests passed, exit 0.\n- `npm run typecheck` → exit 0 (strict, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`).\n- `npm test` (full suite, for regression evidence) → 10 files, 388 tests passed.\n- Data sanity counts: 32 total; elements ember 5 / frost 5 / gale 5 / stone 5 / neutral 12 (8 Neutral + 4 Shift); types attack 15 / ward 5 / utility 8 / shift 4; costs 0–3 present.\n\n```forge-result\n{\n  \"summary\": \"Authored the frozen 32-card v1 catalog as data, a typed module with a byId lookup that returns undefined for unknown ids, and a catalog test that freezes the documented table and enforces counts, unique ids/names, cost bounds, supported effect fields, status kinds and per-element attack/Ward/piercing/field-payoff coverage.\",\n  \"decisions\": [\n    \"cards.json lists the table verbatim in documented order with unused effect fields omitted, so no zero-valued placeholders exist and no formula or UI text lives in content.\",\n    \"cards.ts narrows the JSON module's widened element/type strings with a single documented cast and exports CARDS, CARD_IDS, Object.freeze'd byId and cardById; byId is a plain Record so it satisfies the engine's CardCatalog directly.\",\n    \"The test freezes values with toStrictEqual against an EXPECTED_CARDS table (catching an added, removed or retuned card) in addition to the required structural audits, matching the VIS-CON-07 freeze.\",\n    \"All shape rules live in a pure auditCatalog(cards) helper, so fixture tests can prove the exact messages produced when a card is removed, duplicated, corrupted with an unsupported status/formula field, or when an element loses its only Ward.\",\n    \"Per-element role coverage is checked from the shipped data (attack, ward, piercing attack, fieldBonus on the card's own element) and further pinned to Kindled Fury, Shatter, Cyclone, Avalanche and Resonance.\",\n    \"Each card is also passed through the engine's exported cardExecutionProblem, so content is proven executable by the engine rather than re-validated by duplicated rules.\"\n  ],\n  \"interfaces\": [\n    \"src/content/cards.ts exports CARDS: readonly CardDefinition[], CARD_IDS: readonly string[], byId: Readonly<Record<string, CardDefinition>> (assignable to engine CardCatalog), cardById(id: string): CardDefinition | undefined.\",\n    \"byId is frozen; indexing an unknown id yields undefined under noUncheckedIndexedAccess and never throws.\",\n    \"src/content/cards.test.ts exports auditCatalog(cards: readonly CardDefinition[]): string[] returning deterministic violation messages, [] for a legal catalog.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/content/cards.test.ts: exit 0, 18 passed\",\n    \"npm run typecheck: exit 0\",\n    \"npm test: exit 0, 388 passed across 10 files (regression check)\"\n  ],\n  \"unresolved\": []\n}\n```\n\nNo decks, enemies or assets were added; `docs/artifacts/` was not modified or committed.\r\n",
+      "artifactId": "work-cnt-01-001",
+      "inputArtifactIds": [
+        "work-eng-01-001",
+        "work-eng-06-001",
+        "work-eng-07-001"
+      ]
     },
     "CNT-02": {
       "taskId": "CNT-02",
