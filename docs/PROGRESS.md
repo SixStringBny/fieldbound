@@ -1,9 +1,9 @@
 # Project Progress
 
 ## Current State
-**Phase**: CARD-ENEMY-CONTENT-1
+**Phase**: CARD-ENEMY-CONTENT-2
 **Status**: In Progress
-**Last Updated**: 2026-10-28T21:06:12.935Z
+**Last Updated**: 2026-10-28T21:08:03.754Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -27,12 +27,13 @@
   - Files: src/engine/self-play.test.ts
 - [x] Phase CARD-ENEMY-CONTENT-1, Task CNT-01: Author and validate the 32-card catalog (@content-designer)
   - Files: src/content/cards.json, src/content/cards.ts, src/content/cards.test.ts
+- [x] Phase CARD-ENEMY-CONTENT-2, Task CNT-02: Build starter decks and enemy definitions (@content-designer)
+  - Files: src/content/decks.json, src/content/enemies.json, src/content/decks.ts, src/content/enemies.ts, src/content/content.test.ts
 
 ## Current Task
 - None currently running
 
 ## Remaining
-- [ ] Phase CARD-ENEMY-CONTENT-2: Phase 2: Decks and Enemies
 - [ ] Phase CARD-ENEMY-CONTENT-3: Phase 3: Assets
 - [ ] Phase GAME-SHELL-PRESENTATION-1: Phase 1: Navigation Shell
 - [ ] Phase GAME-SHELL-PRESENTATION-2: Phase 2: Battle Presentation

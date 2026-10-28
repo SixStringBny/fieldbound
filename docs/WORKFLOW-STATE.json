@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-28T21:06:12.934Z",
+  "lastUpdatedAt": "2026-10-28T21:08:03.752Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "CARD-ENEMY-CONTENT-1",
+  "currentPhase": "CARD-ENEMY-CONTENT-2",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -501,10 +501,48 @@
     },
     "CNT-02": {
       "taskId": "CNT-02",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "content-designer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/content/decks.json",
+        "src/content/enemies.json",
+        "src/content/decks.ts",
+        "src/content/enemies.ts",
+        "src/content/content.test.ts"
+      ],
+      "startedAt": "2026-10-28T21:06:13.296Z",
+      "usage": {
+        "inputTokens": 34999,
+        "outputTokens": 11200,
+        "reasoningTokens": 7712,
+        "cacheReadTokens": 951808,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.019452473999999997,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/CNT-02.2026-10-28T21-08-03-746Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 34999,
+            "outputTokens": 11200,
+            "reasoningTokens": 7712,
+            "cacheReadTokens": 951808,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.019452473999999997,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-28T21:08:03.750Z",
+      "agentOutput": "Now I'll author the deck and enemy data.\r\n```forge-result\n{\"summary\":\"Authored the four frozen 10-card starter decks and four enemy definitions as data plus typed lookups, and added a content test that freezes both tables, resolves every referenced card id, enforces 5 element / 3 Neutral / 2 Shift composition with the directional Shift pairs, verifies the 12-card all-Shift boss deck and counter-element bias, checks the 30/35/40/60 health ladder and unique ids, and proves the audits fail on corrupted fixtures. `npm test -- src/content/content.test.ts` (28 tests) and `npm run typecheck` both pass.\",\"decisions\":[\"Deck ids are `deck-ember`, `deck-frost`, `deck-gale` and `deck-stone`; the docs name decks only by element, and consumers can avoid depending on the spelling via `deckByElement`.\",\"`decks.ts` exports `STARTER_DECKS`, `DECK_IDS`, frozen `byId`, `deckById` and `deckByElement`; `enemies.ts` exports `ENEMIES` in ladder order, `ENEMY_IDS`, frozen `byId` and `enemyById`.\",\"The Neutral enemy is treated as the boss by shape (12-card deck, all four Shifts, `counterElementBias: true`); non-boss enemies must be 10 cards with no behaviour flag.\",\"Deck validation classifies Shift cards separately from the other Neutral cards, so the required 5 element + 3 Neutral + 2 Shift split is exact and a foreign-element card is reported.\",\"The directional Shift pair is checked against the engine's frozen `FIELD_BEATS` mapping (Ember→Frost, Frost→Gale, Gale→Stone, Stone→Ember) rather than a duplicated local table.\",\"Audits are pure exported functions over deck/enemy arrays, matching the CNT-01 pattern, so fixture tests assert exact failure messages for a repeated Shift, a dropped boss Shift, unknown card ids, duplicate enemy ids and a broken health ladder.\"],\"interfaces\":[\"src/content/decks.ts: STARTER_DECKS: readonly DeckDefinition[]; DECK_IDS: readonly string[]; byId: Readonly<Record<string, DeckDefinition>>; deckById(id: string): DeckDefinition | undefined; deckByElement(element: FieldElement): DeckDefinition | undefined.\",\"src/content/enemies.ts: ENEMIES: readonly EnemyDefinition[] (ladder order); ENEMY_IDS: readonly string[]; byId: Readonly<Record<string, EnemyDefinition>>; enemyById(id: string): EnemyDefinition | undefined.\",\"src/content/content.test.ts exports auditDeck(deck): string[] and auditEnemies(enemies): string[], both returning [] for legal content and deterministic violation messages otherwise.\",\"All lookups return undefined for unknown ids and never throw; both lookup records are frozen.\"],\"tests\":[\"npm test -- src/content/content.test.ts: exit 0, 28 passed\",\"npm run typecheck: exit 0\"],\"unresolved\":[]}\n```\n\nFiles created:\n- `src/content/decks.json`\n- `src/content/decks.ts`\n- `src/content/enemies.json`\n- `src/content/enemies.ts`\n- `src/content/content.test.ts`\n\nNo files outside this set were modified; `docs/artifacts/` was left untouched.\r\n",
+      "artifactId": "work-cnt-02-001",
+      "inputArtifactIds": [
+        "work-cnt-01-001"
+      ]
     },
     "CNT-03": {
       "taskId": "CNT-03",

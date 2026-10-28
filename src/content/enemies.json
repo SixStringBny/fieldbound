@@ -1,0 +1,77 @@
+[
+  {
+    "id": "enemy-cinder-warden",
+    "name": "Cinder Warden",
+    "element": "ember",
+    "maxHealth": 30,
+    "deck": [
+      "ember-cinder-jab",
+      "ember-cinder-jab",
+      "ember-ember-lance",
+      "ember-ash-guard",
+      "ember-kindled-fury",
+      "ember-inferno",
+      "neutral-plain-strike",
+      "neutral-channel",
+      "shift-ember",
+      "shift-frost"
+    ]
+  },
+  {
+    "id": "enemy-rime-sentinel",
+    "name": "Rime Sentinel",
+    "element": "frost",
+    "maxHealth": 35,
+    "deck": [
+      "frost-frost-shard",
+      "frost-frost-shard",
+      "frost-ice-needle",
+      "frost-rime-ward",
+      "frost-shatter",
+      "frost-deep-freeze",
+      "neutral-plain-strike",
+      "neutral-channel",
+      "shift-frost",
+      "shift-gale"
+    ]
+  },
+  {
+    "id": "enemy-storm-herald",
+    "name": "Storm Herald",
+    "element": "gale",
+    "maxHealth": 40,
+    "deck": [
+      "gale-gust",
+      "gale-gust",
+      "gale-wind-needle",
+      "gale-tailwind",
+      "gale-cyclone",
+      "gale-updraft",
+      "neutral-plain-strike",
+      "neutral-channel",
+      "shift-gale",
+      "shift-stone"
+    ]
+  },
+  {
+    "id": "enemy-hollow-field",
+    "name": "The Hollow Field",
+    "element": "neutral",
+    "maxHealth": 60,
+    "deck": [
+      "neutral-plain-strike",
+      "neutral-plain-strike",
+      "neutral-elemental-blow",
+      "neutral-elemental-blow",
+      "neutral-expose",
+      "neutral-expose",
+      "neutral-second-wind",
+      "neutral-sift",
+      "shift-ember",
+      "shift-frost",
+      "shift-gale",
+      "shift-stone"
+    ],
+    "counterElementBias": true
+  }
+]

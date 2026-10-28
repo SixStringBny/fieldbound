@@ -1,0 +1,70 @@
+[
+  {
+    "id": "deck-ember",
+    "name": "Ember",
+    "element": "ember",
+    "cards": [
+      "ember-cinder-jab",
+      "ember-ember-lance",
+      "ember-ash-guard",
+      "ember-kindled-fury",
+      "ember-inferno",
+      "neutral-plain-strike",
+      "neutral-probe",
+      "neutral-channel",
+      "shift-ember",
+      "shift-frost"
+    ]
+  },
+  {
+    "id": "deck-frost",
+    "name": "Frost",
+    "element": "frost",
+    "cards": [
+      "frost-frost-shard",
+      "frost-ice-needle",
+      "frost-rime-ward",
+      "frost-shatter",
+      "frost-deep-freeze",
+      "neutral-plain-strike",
+      "neutral-probe",
+      "neutral-channel",
+      "shift-frost",
+      "shift-gale"
+    ]
+  },
+  {
+    "id": "deck-gale",
+    "name": "Gale",
+    "element": "gale",
+    "cards": [
+      "gale-gust",
+      "gale-wind-needle",
+      "gale-tailwind",
+      "gale-cyclone",
+      "gale-updraft",
+      "neutral-plain-strike",
+      "neutral-probe",
+      "neutral-channel",
+      "shift-gale",
+      "shift-stone"
+    ]
+  },
+  {
+    "id": "deck-stone",
+    "name": "Stone",
+    "element": "stone",
+    "cards": [
+      "stone-stone-fist",
+      "stone-stone-spike",
+      "stone-bulwark",
+      "stone-avalanche",
+      "stone-resonance",
+      "neutral-plain-strike",
+      "neutral-probe",
+      "neutral-channel",
+      "shift-stone",
+      "shift-ember"
+    ]
+  }
+]
