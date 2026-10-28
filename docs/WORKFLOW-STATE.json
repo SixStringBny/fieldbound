@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-28T20:25:35.052Z",
+  "lastUpdatedAt": "2026-10-28T20:35:57.667Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -192,10 +192,46 @@
     },
     "ENG-02": {
       "taskId": "ENG-02",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "rules-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/engine/damage.ts",
+        "src/engine/damage.test.ts"
+      ],
+      "startedAt": "2026-10-28T20:32:39.271Z",
+      "usage": {
+        "inputTokens": 35444,
+        "outputTokens": 8250,
+        "reasoningTokens": 27071,
+        "cacheReadTokens": 719744,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.028668432,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/ENG-02.2026-10-28T20-35-57-659Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 35444,
+            "outputTokens": 8250,
+            "reasoningTokens": 27071,
+            "cacheReadTokens": 719744,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.028668432,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-28T20:35:57.664Z",
+      "agentOutput": "I'll start by reading the execution file for this task.\r\nNow I'll implement the damage module.\r\nImplementation is complete and verified. Here is the outcome.\n\n## Files created\n\n- `src/engine/damage.ts` — pure field matchup, damage pipeline, defense cap and Ward resolution\n- `src/engine/damage.test.ts` — 84 table-driven and boundary tests\n\nNo other files were changed by me (the orchestrator's own `docs/EXECUTION-AUDIT.jsonl` / `docs/WORKFLOW-STATE.json` edits are engine bookkeeping).\n\n## What it contains\n\n- `resolveMatchup(field, element)` — one function covering all 25 field/attack-element pairs, including Neutral, with the frozen cycle Ember → Frost → Gale → Stone → Ember.\n- `resolveAttack(input)` — the ordered pipeline: base + card field bonus → Focus/Weaken modifier (floored at 0) → empowered `+2`/pierce or countered `max(1, ceil(raw/2))`/no-pierce → persistent defense unless piercing. Returns a breakdown (`matchup`, `matchBonus`, `cardBonus`, `rawDamage`, `piercing`, `defenseApplied`) for intent preview and UI explanation.\n- `resolveWard(input)` — base defense + matching `+2` + card field bonus, all before the `DEFENSE_CAP` clamp; reports `gained` so a capped Ward cannot inflate defense.\n- `clampDefense(value)` — single definition of the `[0, 8]` contract for battle state, Wards and snapshot validation.\n- Exported frozen constants: `FIELD_ATTACK_BONUS`, `FIELD_WARD_BONUS`, `COUNTERED_DAMAGE_MINIMUM`, `FIELD_BEATS`.\n\n```forge-result\n{\n  \"summary\": \"Implemented ENG-FR-02 in src/engine/damage.ts: the 25-pair field matrix, the ordered damage pipeline (base, Focus/Weaken modifier, field bonus, countered ceiling-half floor of 1 before defense, piercing override), the [0,8] defense cap and matching-Ward defense with card field bonuses, plus 84 passing table-driven and boundary tests.\",\n  \"decisions\": [\n    \"resolveMatchup(field, element) is the single 5x5 authority; a Neutral field or a Neutral attack element is always 'neutral', so Neutral never empowers or counters anything.\",\n    \"Focus and Weaken enter as a pre-computed net statusModifier; stack consumption stays in status.ts (ENG-03) so the damage module never reads or mutates counters while the pipeline order remains frozen.\",\n    \"CardDefinition.fieldBonus (damage/defense) is executed as data: it applies only when the card's element matches the field. For attacks it joins the base before the status step; for Wards it is added after the automatic +2 and before the cap. This keeps card-conditional bonuses out of battle/content code per VIS-CON-08 and card-content 4.2.\",\n    \"A countered attack floors at max(1, ceil(raw/2)) before defense even when the base and statuses reduce raw to 0, and armor can still reduce it to 0; there is no post-defense floor.\",\n    \"Defense inputs are clamped to [0, DEFENSE_CAP] inside the pipeline so an out-of-contract state cannot bypass the cap; negative or non-finite defense is treated as 0.\",\n    \"resolveAttack returns intermediate values (matchup, matchBonus, cardBonus, rawDamage, piercing, defenseApplied) so the intent preview and UI can explain numbers without recomputing any rule.\"\n  ],\n  \"interfaces\": [\n    \"damage.ts exports types MatchupKind ('empowered'|'countered'|'neutral'), AttackInput, AttackResolution, WardInput, WardResolution.\",\n    \"damage.ts exports constants FIELD_ATTACK_BONUS=2, FIELD_WARD_BONUS=2, COUNTERED_DAMAGE_MINIMUM=1, and FIELD_BEATS (FieldElement -> FieldElement).\",\n    \"damage.ts exports resolveMatchup(field: Element, element: Element): MatchupKind.\",\n    \"damage.ts exports resolveAttack(input: AttackInput): AttackResolution - fields baseDamage, cardBonus, statusModifier, matchup, matchBonus, rawDamage, piercing, defenseApplied, damage.\",\n    \"damage.ts exports resolveWard(input: WardInput): WardResolution - fields matchup, matchBonus, cardBonus, gained, defense.\",\n    \"damage.ts exports clampDefense(value: number): number.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/engine/damage.test.ts: exit 0, 84 tests passed\",\n    \"npm run typecheck: exit 0\",\n    \"npm test -- src/engine: exit 0, 2 files / 112 tests passed (includes the engine purity scan over damage.ts: no Math.random, no framework/content/storage imports)\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-eng-02-001",
+      "inputArtifactIds": [
+        "work-eng-01-001",
+        "work-eng-00-001"
+      ]
     },
     "ENG-03": {
       "taskId": "ENG-03",
@@ -414,9 +450,7 @@
       "outputFiles": []
     }
   },
-  "blockers": [
-    "Task 'NOPE' not found in workflow state."
-  ],
+  "blockers": [],
   "auditLog": [],
   "sessions": {}
 }

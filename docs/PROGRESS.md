@@ -3,7 +3,7 @@
 ## Current State
 **Phase**: BATTLE-ENGINE-RULES-2
 **Status**: In Progress
-**Last Updated**: 2026-10-28T20:25:35.053Z
+**Last Updated**: 2026-10-28T20:35:57.669Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -13,6 +13,8 @@
   - Files: package.json, package-lock.json, vite.config.ts, tsconfig.json, index.html, src/main.tsx, src/App.tsx, src/App.test.tsx, src/test/setup.ts, src/styles/base.css, src/vite-env.d.ts
 - [x] Phase BATTLE-ENGINE-RULES-2, Task ENG-01: Define engine types and the seeded PRNG (@rules-engineer)
   - Files: src/engine/types.ts, src/engine/rng.ts, src/engine/rng.test.ts, docs/engine-config.json
+- [x] Phase BATTLE-ENGINE-RULES-2, Task ENG-02: Resolve field matchup, damage, defense and piercing (@rules-engineer)
+  - Files: src/engine/damage.ts, src/engine/damage.test.ts
 
 ## Current Task
 - None currently running
@@ -38,7 +40,7 @@
 - [ ] Phase RELEASE-VERIFICATION-3: Phase 3: Human Review
 
 ## Blockers
-- Task 'NOPE' not found in workflow state.
+- None
 
 ## Validation Gaps
 - None reported
