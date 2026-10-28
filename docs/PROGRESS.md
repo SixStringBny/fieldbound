@@ -1,9 +1,9 @@
 # Project Progress
 
 ## Current State
-**Phase**: BATTLE-ENGINE-RULES-3
+**Phase**: BATTLE-ENGINE-RULES-4
 **Status**: In Progress
-**Last Updated**: 2026-10-28T20:49:14.142Z
+**Last Updated**: 2026-10-28T20:58:21.501Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -21,6 +21,8 @@
   - Files: src/engine/battle.ts, src/engine/battle.test.ts
 - [x] Phase BATTLE-ENGINE-RULES-3, Task ENG-05: Serialize and restore battle snapshots (@rules-engineer)
   - Files: src/engine/snapshot.ts, src/engine/snapshot.test.ts
+- [x] Phase BATTLE-ENGINE-RULES-4, Task ENG-06: Plan enemy turns and compute the intent preview (@rules-engineer)
+  - Files: src/engine/ai.ts, src/engine/intent.ts, src/engine/ai.test.ts, src/engine/intent.test.ts, src/engine/battle.ts
 
 ## Current Task
 - None currently running

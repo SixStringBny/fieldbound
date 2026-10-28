@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-28T20:49:14.141Z",
+  "lastUpdatedAt": "2026-10-28T20:58:21.499Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "BATTLE-ENGINE-RULES-3",
+  "currentPhase": "BATTLE-ENGINE-RULES-4",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -367,10 +367,49 @@
     },
     "ENG-06": {
       "taskId": "ENG-06",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "rules-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/engine/ai.ts",
+        "src/engine/intent.ts",
+        "src/engine/ai.test.ts",
+        "src/engine/intent.test.ts",
+        "src/engine/battle.ts"
+      ],
+      "startedAt": "2026-10-28T20:49:14.515Z",
+      "usage": {
+        "inputTokens": 48911,
+        "outputTokens": 27695,
+        "reasoningTokens": 63637,
+        "cacheReadTokens": 4031616,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.074230698,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/ENG-06.2026-10-28T20-58-21-491Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 48911,
+            "outputTokens": 27695,
+            "reasoningTokens": 63637,
+            "cacheReadTokens": 4031616,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.074230698,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-28T20:58:21.496Z",
+      "agentOutput": "I'll start by reading the execution file and the referenced documentation.\r\nNow I have the full picture. Let me write the intent preview module first.\r\nNow the planner test suite.\r\nNow the intent preview test suite.\r\nThe core suite passes. Now let me harden the Shift rule against the acceptance wording — a Shift for the enemy's own element (or the boss's counter element) should qualify even if the only affordable attack is unmatched, which is the literal \"preferred over an unmatched attack\" case.\r\nLet me add a pruning bound to the lethal search so self-play planning stays fast when a kill is impossible.\r\nLet me sanity-check planner cost under a 200-seed AI-vs-AI sweep like the next task will run (temporary file, removed afterwards).\r\nAll required checks pass. Here is the delivered work.\n\n## Files created\n\n- `src/engine/ai.ts` — deterministic enemy planner plus end-of-turn housekeeping\n- `src/engine/intent.ts` — plan simulation and live preview recomputation\n- `src/engine/ai.test.ts` — 29 planner tests\n- `src/engine/intent.test.ts` — 31 preview tests\n\n## File changed\n\n- `src/engine/battle.ts` — exported the existing `cardExecutionProblem` guard (one-line visibility change) so the planner, preview and reducer share exactly one card-shape rule\n\n```forge-result\n{\n  \"summary\": \"Implemented ENG-06: a deterministic enemy planner (lethal, Ward-at-12, enabling Shift with boss counter-element bias, attacks by field match/damage-per-energy/card id, then Wards and utility), an intent-preview simulator that recomputes live numbers without re-choosing cards, and end-of-turn housekeeping that draws the next enemy hand before planning. Every candidate is evaluated through the same resolveAttack/resolveWard/consumeAttackStatuses/applyStatus helpers as the battle reducer, with typed rejections for unknown, unsupported and unaffordable cards. Added 60 focused tests, including reducer-parity and snapshot round-trip coverage.\",\n  \"decisions\": [\n    \"planEnemyTurn(state, catalog, enemy, side='opponent') is pure and seed-independent: no PRNG reads or writes, and ties resolve by card id then instance id.\",\n    \"The lethal search enumerates permutations of the hand by increasing length (shortest kill wins), then lexicographically by card id/instance id. A generous damage-ceiling prune skips any subtree that cannot reach 0, keeping 200-battle sweeps well under budget.\",\n    \"A Shift qualifies when it changes the field and either sets the enemy's own element, sets the boss counter element, or enables an affordable matching attack. The explicit element rules win so 'own element before an unmatched attack' is reachable without a matching card in hand.\",\n    \"The Ward-at-12 check uses health after the next turn's Regen tick, since that is the health the Ward will actually execute at; zero-gain Wards at the defense cap are skipped as no-ops.\",\n    \"Plan simulation starts at TURN_START_ENERGY (3) and ticks one Regen stack, matching the enemy's next turn start rather than its leftover energy. A stored preview preserves the stored turn and side.\",\n    \"Draw effects are not simulated: the plan is a fixed list of cards already held, so a drawn card cannot join the plan or change a displayed total.\",\n    \"Step damage is the full expected hit, not capped by remaining player health, so overkill is visible and every planned step survives a preview that turns lethal early.\",\n    \"prepareEnemyTurn is called after the enemy's endTurn: it fills the next hand with drawCards, then plans, then stores the telegraph. Solo controllers should capture state.enemyPlan before ending the player's turn because ENG-04's endTurn clears it while passing control.\"\n  ],\n  \"interfaces\": [\n    \"ai.ts: prepareEnemyTurn(state: BattleState, catalog: CardCatalog, enemy: EnemyPlanProfile | null = null, side: Side = 'opponent'): BattleState\",\n    \"ai.ts: planEnemyTurn(state: BattleState, catalog: CardCatalog, enemy: EnemyPlanProfile | null = null, side: Side = 'opponent'): EnemyPlan | null\",\n    \"ai.ts: counteringElement(element: Element): FieldElement | null and type EnemyPlanProfile = Pick<EnemyDefinition, 'counterElementBias'>\",\n    \"intent.ts: simulateEnemyPlan(input: PlanSimulationInput): EngineResult<PlanSimulation, PlanErrorCode>\",\n    \"intent.ts: previewEnemyPlan(state: BattleState, catalog: CardCatalog): EngineResult<EnemyPlan | null, PlanErrorCode>\",\n    \"intent.ts: planTurnFor(state, side), lastPlanStep(simulation), PlannedCard, PlanSimulation, PlanErrorCode\",\n    \"battle.ts: cardExecutionProblem(card: CardDefinition): string | null is now exported for planner/preview parity\"\n  ],\n  \"tests\": [\n    \"npm test -- src/engine/ai.test.ts src/engine/intent.test.ts: exit 0, 60 tests passed\",\n    \"npm run typecheck: exit 0\",\n    \"npm test (full engine and app suite): exit 0, 363 tests passed\",\n    \"Repository grep over src/engine for Math.random: no matches; no React/DOM/storage/content imports\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-eng-06-001",
+      "inputArtifactIds": [
+        "work-eng-04-001",
+        "work-eng-05-001"
+      ]
     },
     "ENG-07": {
       "taskId": "ENG-07",

@@ -491,8 +491,12 @@ function checkActionAllowed(
  * Reports why a definition cannot be executed, or null when it can. The check
  * is data-driven: no id appears here. Shift targets must be one of the four
  * field elements, because a shift can never set Neutral.
+ *
+ * Exported so the enemy planner and the intent preview reject exactly the same
+ * definitions the reducer would reject: affordability and card shape stay one
+ * rule shared by player, AI and preview (VIS-CON-08).
  */
-function cardExecutionProblem(card: CardDefinition): string | null {
+export function cardExecutionProblem(card: CardDefinition): string | null {
   if (!(ELEMENTS as readonly string[]).includes(card.element)) {
     return `card "${String(card.id)}" has unknown element ${String(card.element)}`;
   }
