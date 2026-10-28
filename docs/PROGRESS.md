@@ -1,9 +1,9 @@
 # Project Progress
 
 ## Current State
-**Phase**: BATTLE-ENGINE-RULES-2
+**Phase**: BATTLE-ENGINE-RULES-3
 **Status**: In Progress
-**Last Updated**: 2026-10-28T20:37:36.382Z
+**Last Updated**: 2026-10-28T20:45:04.492Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -17,6 +17,8 @@
   - Files: src/engine/damage.ts, src/engine/damage.test.ts
 - [x] Phase BATTLE-ENGINE-RULES-2, Task ENG-03: Apply Focus, Weaken and Regen stacks (@rules-engineer)
   - Files: src/engine/status.ts, src/engine/status.test.ts
+- [x] Phase BATTLE-ENGINE-RULES-3, Task ENG-04: Implement the legal battle state machine (@rules-engineer)
+  - Files: src/engine/battle.ts, src/engine/battle.test.ts
 
 ## Current Task
 - None currently running

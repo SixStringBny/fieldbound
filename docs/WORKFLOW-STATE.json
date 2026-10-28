@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-28T20:37:36.380Z",
+  "lastUpdatedAt": "2026-10-28T20:45:04.491Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "BATTLE-ENGINE-RULES-2",
+  "currentPhase": "BATTLE-ENGINE-RULES-3",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -278,10 +278,47 @@
     },
     "ENG-04": {
       "taskId": "ENG-04",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "rules-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/engine/battle.ts",
+        "src/engine/battle.test.ts"
+      ],
+      "startedAt": "2026-10-28T20:37:36.769Z",
+      "usage": {
+        "inputTokens": 59776,
+        "outputTokens": 25686,
+        "reasoningTokens": 51810,
+        "cacheReadTokens": 3258368,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.065239104,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/ENG-04.2026-10-28T20-45-04-485Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 59776,
+            "outputTokens": 25686,
+            "reasoningTokens": 51810,
+            "cacheReadTokens": 3258368,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.065239104,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-28T20:45:04.489Z",
+      "agentOutput": "I'll start by reading the execution file for ENG-04.\r\nNow I'll implement the battle state machine.\r\nImplemented ENG-04 in `src/engine/battle.ts` with a sibling 75-test suite. Both required validation commands pass, and the full engine suite still passes (240 tests).\n\n**Files created**\n- `src/engine/battle.ts`\n- `src/engine/battle.test.ts`\n\n**What it provides**\n- `createBattle(setup)` — validated seeded setup: deck shuffle, 5-card deal for both sides, 3 energy, Neutral field, 0 defense, 40 default player health / configured enemy health, typed setup errors.\n- `playCard(state, action, catalog)` — atomic, side-explicit card resolution (shift → Ward → heal → attack → status → draw → energy → discard), with cost/phase/turn/battle-end validation.\n- `endTurn(state, action)` — discards the hand, passes control, resets the next side to exactly 3 energy, ticks Regen, draws back to 5, clears the consumed plan.\n- `drawCards(state, side, count)` — the enemy housekeeping primitive: reshuffles discard on an empty deck and burns overdraw.\n- `canPlayCard(...)` and `otherSide(...)` — single-source affordability check and side mapping for controllers/UI.\n\n```forge-result\n{\n  \"summary\": \"Implemented ENG-04: the legal, symmetric battle state machine with validated seeded setup, atomic card play, turn loop, draw/reshuffle/overdraw, energy reset, persistence of defense and field, and victory/defeat settlement. Added 75 table-driven and boundary tests.\",\n  \"decisions\": [\n    \"endTurn performs the whole transition atomically: discard the acting hand, pass control, set the next side's energy to exactly 3, tick its Regen and draw it back to 5. This makes every turn start observable and keeps unspent energy from accumulating.\",\n    \"Setup consumes the battle PRNG in a frozen order (shuffle player deck, shuffle opponent deck, deal player hand, deal opponent hand). Instance ids are `side:deckIndex:cardId`, unique for the battle and stable across JSON.\",\n    \"The enemy's next hand is drawn at the end of its own turn with `drawCards`; the following turn-start fill is then a no-op because the hand is already full, so the telegraph stays exact without AI logic in this module.\",\n    \"endTurn clears `enemyPlan` because a plan always describes a future enemy turn and its instance ids are invalidated once the enemy acts; ENG-06 sets the new plan after ending its own turn.\",\n    \"The played card leaves the hand before effects resolve, so a draw card can use the slot it frees; overdraw still burns anything above five. Burned cards leave the battle (no zone) and cannot return through a reshuffle.\",\n    \"Effect order is fixed: pay cost, shift, Ward defense, heal, attack (spending Focus/Weaken before damage), apply status, draw, gain energy, move the played card to discard. A card that both shifts and attacks attacks under the new field.\",\n    \"Attack resolution is keyed on `type === 'attack'` (so a zero-damage attack still spends statuses); the defense effect is keyed on the presence of `defense`, so a zero-base Ward with a field bonus still applies it.\",\n    \"Defense is persistent and is not consumed by absorbed damage, matching the frozen 'persistent defense' wording and open question 1.\",\n    \"Setup supports carried health (`health` below `maxHealth` for solo) and a `startingSide` option so duel rounds can give either human turn 1 without a second battle model.\",\n    \"Rejections are typed and happen before any copy is made: battle-ended outranks out-of-turn, so a settled battle has exactly one reason. drawCards is a no-op on a settled battle.\",\n    \"canPlayCard was exported so the UI does not re-implement cost/affordability checks (VIS-CON-08).\"\n  ],\n  \"interfaces\": [\n    \"battle.ts exports `CardCatalog` (`Readonly<Record<string, CardDefinition>>`), `BattleSideSetup` ({ element, cards, maxHealth?, health? }) and `BattleSetup` ({ seed, player, opponent, catalog, startingSide? }).\",\n    \"battle.ts exports `createBattle(setup: BattleSetup): EngineResult<BattleState>`.\",\n    \"battle.ts exports `playCard(state, action: PlayCardAction, catalog): PlayCardResult` and `endTurn(state, action: EndTurnAction): EndTurnResult`.\",\n    \"battle.ts exports `drawCards(state, side: Side, count: number): BattleState` and `canPlayCard(state, side, instanceId, catalog): boolean`.\",\n    \"battle.ts exports `otherSide(side: Side): Side`.\",\n    \"ENG-05 can snapshot plain BattleState; ENG-06 can simulate with playCard and use drawCards + canPlayCard; solo/duel call the same side-explicit actions.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/engine/battle.test.ts: exit 0, 75 passed\",\n    \"npm run typecheck: exit 0\",\n    \"npm test (full regression): exit 0, 240 passed\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-eng-04-001",
+      "inputArtifactIds": [
+        "work-eng-02-001",
+        "work-eng-03-001",
+        "work-eng-01-001"
+      ]
     },
     "ENG-05": {
       "taskId": "ENG-05",
