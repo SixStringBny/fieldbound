@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-28T21:17:41.479Z",
+  "lastUpdatedAt": "2026-10-28T21:30:25.135Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "GAME-SHELL-PRESENTATION-1",
+  "currentPhase": "GAME-SHELL-PRESENTATION-2",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -682,10 +682,62 @@
     },
     "SHL-02": {
       "taskId": "SHL-02",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "ux-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/styles/tokens.css",
+        "src/styles/board.css",
+        "src/ui/components/BattleBoard.tsx",
+        "src/ui/components/EnemyPanel.tsx",
+        "src/ui/components/FieldBanner.tsx",
+        "src/ui/components/PlayerPanel.tsx",
+        "src/ui/components/Hand.tsx",
+        "src/ui/components/CardView.tsx",
+        "src/ui/components/CardDetail.tsx",
+        "src/ui/components/AssetImage.tsx",
+        "src/ui/components/BattleBoard.test.tsx",
+        "src/ui/components/CardView.test.tsx",
+        "src/ui/components/ElementCue.tsx",
+        "src/ui/components/StatMeter.tsx",
+        "src/ui/components/StatusList.tsx",
+        "src/ui/components/card-presentation.ts",
+        "src/ui/components/view-types.ts"
+      ],
+      "startedAt": "2026-10-28T21:17:41.874Z",
+      "usage": {
+        "inputTokens": 91531,
+        "outputTokens": 41162,
+        "reasoningTokens": 74198,
+        "cacheReadTokens": 13195008,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.122530674,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/SHL-02.2026-10-28T21-30-25-129Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 91531,
+            "outputTokens": 41162,
+            "reasoningTokens": 74198,
+            "cacheReadTokens": 13195008,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.122530674,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-28T21:30:25.133Z",
+      "agentOutput": "I'll start by reading the execution file.\r\nNow I have the full picture. Let me create the design tokens first.\r\nI'll add a temporary browser harness to verify the real 375px layout, then remove it.\r\nAll required checks pass and the temporary browser harness has been removed. Final report:\n\n```forge-result\n{\"summary\":\"Implemented SHL-02: the design-token and board stylesheets, a props-only portrait-first battle board (enemy panel, field banner, player panel, hand, card face, detail sheet and manifest-backed images), 375px-safe hand scrolling, 44px targets, glyph-plus-label element cues, labelled image fallbacks and focus-restoring detail dismissal. All specified tests, the full suite, typecheck and a real-browser 375–1280px layout pass succeed.\",\"decisions\":[\"Field matchup facts are passed into BattleBoard/FieldBanner as FieldMatchup (empowered, countered, beatenBy) from the controller instead of duplicating the engine's FIELD_BEATS cycle in the presentation layer; per-card matchup is derived only from those facts.\",\"Unaffordable cards stay focusable with aria-disabled=\\\"true\\\" and reject activation, per the project board skill; the visible and accessible text includes \\\"unaffordable\\\" so the state never depends on dimming or colour.\",\"CardDetail is a modal sheet that closes on backdrop tap, the 44px close button and Escape, moves focus to the close button on open, locks body scrolling and restores focus to the invoking card on unmount; focus trapping remains SHL-07's task.\",\"AssetImage reserves the manifest width/height with an aspect-ratio box and width/height attributes, so SVG decode cannot shift the board. A failed or unknown asset renders a bordered role=\\\"img\\\" fallback carrying the asset label and \\\"Art unavailable\\\".\",\"Board CSS is imported by BattleBoard so the presentation layer is self-contained; .shell[data-screen='battle'] widens the existing App main to the 1080px token without editing App.tsx or base.css.\",\"Cards with no damage or defense fall back to draw, energy, heal, status or shift as their primary face value so every card has a meaningful primary number and spoken accessible name.\",\"jsdom cannot measure layout, so BattleBoard.test.tsx asserts the 375px/1080px/44px/reduced-motion contract against the shipped CSS and structure, while a temporary Chromium harness verified the real pixels; REL-04 owns the committed Playwright spec.\"],\"interfaces\":[\"src/ui/components/BattleBoard.tsx: BattleBoardProps { state: BattleState; enemy: EnemyDefinition; fieldMatchup: FieldMatchup | null; cards: CardCatalogView; baseUrl: string; onPlayCard(instanceId: string): void; onEndTurn(): void }, BattleBoard().\",\"src/ui/components/FieldBanner.tsx: FieldMatchup { empowered: FieldElement; countered: FieldElement; beatenBy: FieldElement }, FieldBannerProps { field: Element; matchup: FieldMatchup | null; baseUrl: string }.\",\"src/ui/components/CardView.tsx: CardViewProps { card: CardDefinition; instanceId: string; affordable: boolean; baseUrl: string; onInspect(instanceId: string): void }. Renders a native button with aria-disabled when unaffordable.\",\"src/ui/components/CardDetail.tsx: CardDetailProps { card; instanceId; field: Element; matchup: CardMatchup; affordable; baseUrl; onPlay(instanceId); onClose() }; CardMatchup = 'empowered' | 'countered' | 'neutral'.\",\"src/ui/components/Hand.tsx: HandProps { hand: readonly CardInstance[]; cards: CardCatalogView; energy: number; baseUrl: string; onInspect(instanceId: string): void }.\",\"src/ui/components/AssetImage.tsx: AssetImageProps { assetId: string; baseUrl: string; alt: string; kind: 'card' | 'enemy' | 'field' }; resolves through resolveAsset/assetById; data-asset-fallback marks the labelled fallback.\",\"Supporting: EnemyPanelProps { enemy; side; plan; cards; baseUrl }, PlayerPanelProps { side }, StatMeterProps { label; visibleLabel; value; max; tone }, StatusListProps { statuses; ownerLabel }, CardCatalogView = Readonly<Record<string, CardDefinition | undefined>>, ElementCue/ELEMENT_DISPLAY/STATUS_DISPLAY/CARD_TYPE_LABELS.\",\"src/styles/tokens.css: --fb-target 44px, --fb-board-max 1080px, --fb-card-width clamp(6rem,26vw,8rem), spacing/radius/text tokens, --fb-motion-{draw,play,damage,shift,lift}, and --fb-<element>-{bg,accent,ink,shade}.\",\"Layout hooks: .battle-board, .enemy-panel, .field-banner, .player-panel, .hand/.hand__row, .card-view, .card-detail, .asset-image; data-element, data-field, data-affordable, data-instance-id, data-card-id and data-card-detail-layer.\"],\"tests\":[\"npm test -- src/ui/components/BattleBoard.test.tsx src/ui/components/CardView.test.tsx: exit 0, 27 tests in 2 files.\",\"npm run typecheck: exit 0.\",\"npm test (full suite): exit 0, 478 tests in 15 files.\",\"npm run build: exit 0; a targeted Vite build that includes BattleBoard also exits 0 and emits the board CSS and manifest images.\",\"Temporary Chromium harness (installed Chrome channel, removed after the check): 375x667, 390x844, 768x1024 and 1280x800 all report document scrollWidth === clientWidth; board width 1080 at 1280; five cards reachable inside the hand scroller; cards >=97.5px wide, End Turn 128x49, detail close 44x44 and Play 49px high; Escape returns focus to the invoking card.\"],\"warnings\":[\"The browser preview observed a pre-existing /favicon.ico 404 caused by the shell's index.html having no icon; no board component produced a console error. This is outside SHL-02 but may trip REL-04's zero-console-error assertion.\",\"Pixel-level overflow and target measurements are not representable in jsdom; BattleBoard.test.tsx validates the stylesheet contract and the temporary real-browser pass covered the pixels. REL-04 still owns the committed cross-browser spec.\"],\"unresolved\":[]}\n```\n\n## Files created\n\n- `src/styles/tokens.css`\n- `src/styles/board.css`\n- `src/ui/components/BattleBoard.tsx`\n- `src/ui/components/BattleBoard.test.tsx`\n- `src/ui/components/EnemyPanel.tsx`\n- `src/ui/components/FieldBanner.tsx`\n- `src/ui/components/PlayerPanel.tsx`\n- `src/ui/components/Hand.tsx`\n- `src/ui/components/CardView.tsx`\n- `src/ui/components/CardView.test.tsx`\n- `src/ui/components/CardDetail.tsx`\n- `src/ui/components/AssetImage.tsx`\n- `src/ui/components/ElementCue.tsx`\n- `src/ui/components/card-presentation.ts`\n- `src/ui/components/StatMeter.tsx`\n- `src/ui/components/StatusList.tsx`\n- `src/ui/components/view-types.ts`\n\nNo existing application source file was modified. (`docs/EXECUTION-AUDIT.jsonl` and `docs/WORKFLOW-STATE.json` are execution-harness state files and were not edited by this task.)\r\n",
+      "artifactId": "work-shl-02-001",
+      "inputArtifactIds": [
+        "work-shl-01-001",
+        "work-cnt-03-001",
+        "work-eng-01-001"
+      ]
     },
     "SHL-03": {
       "taskId": "SHL-03",

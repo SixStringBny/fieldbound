@@ -1,0 +1,1035 @@
+/**
+ * Fieldbound battle board layout (SHL-FR-02, SHL-FR-03, SHL-FR-08).
+ *
+ * Portrait-first: one column from 375px up, the hand in a horizontally
+ * scrollable snap row, and a sticky control bar. The page itself never scrolls
+ * sideways; only the hand row may. At 640px+ the same vertical order sits in a
+ * centred container capped at 1080px (the router's `.shell` is widened for the
+ * battle screen by the rule below).
+ *
+ * Colour is never the only cue: every element renders a glyph and a word in the
+ * markup, and the field matchup is stated in text. Transitions are decorative
+ * and collapse to 1ms with no transform when reduced motion is active, whether
+ * from the OS preference or the explicit `data-reduced-motion` override.
+ */
+
+/* The App shell caps ordinary screens at 42rem; the battle board gets the
+   1080px contract from VIS-NFR-01. Higher specificity beats base.css. */
+.shell[data-screen='battle'] {
+  max-width: var(--fb-board-max);
+}
+
+.battle-board {
+  --fb-element-bg: var(--fb-neutral-bg);
+  --fb-element-accent: var(--fb-neutral-accent);
+  --fb-element-ink: var(--fb-neutral-ink);
+  --fb-element-shade: var(--fb-neutral-shade);
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--fb-space-3);
+  width: 100%;
+  max-width: var(--fb-board-max);
+  min-width: 0;
+  margin: 0 auto;
+  padding: 0 0 var(--fb-space-4);
+  color: var(--fb-ink);
+  font-family: var(--fb-font-ui);
+  font-size: var(--fb-text-body);
+  line-height: var(--fb-line-body);
+}
+
+.battle-board > *,
+.hand,
+.hand__row,
+.hand__item,
+.enemy-panel,
+.enemy-panel__body,
+.player-panel,
+.field-banner,
+.field-banner__body,
+.battle-controls {
+  min-width: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Element tokens on a subtree                                                */
+/* -------------------------------------------------------------------------- */
+
+[data-element='ember'],
+[data-field='ember'] {
+  --fb-element-bg: var(--fb-ember-bg);
+  --fb-element-accent: var(--fb-ember-accent);
+  --fb-element-ink: var(--fb-ember-ink);
+  --fb-element-shade: var(--fb-ember-shade);
+}
+
+[data-element='frost'],
+[data-field='frost'] {
+  --fb-element-bg: var(--fb-frost-bg);
+  --fb-element-accent: var(--fb-frost-accent);
+  --fb-element-ink: var(--fb-frost-ink);
+  --fb-element-shade: var(--fb-frost-shade);
+}
+
+[data-element='gale'],
+[data-field='gale'] {
+  --fb-element-bg: var(--fb-gale-bg);
+  --fb-element-accent: var(--fb-gale-accent);
+  --fb-element-ink: var(--fb-gale-ink);
+  --fb-element-shade: var(--fb-gale-shade);
+}
+
+[data-element='stone'],
+[data-field='stone'] {
+  --fb-element-bg: var(--fb-stone-bg);
+  --fb-element-accent: var(--fb-stone-accent);
+  --fb-element-ink: var(--fb-stone-ink);
+  --fb-element-shade: var(--fb-stone-shade);
+}
+
+[data-element='neutral'],
+[data-field='neutral'] {
+  --fb-element-bg: var(--fb-neutral-bg);
+  --fb-element-accent: var(--fb-neutral-accent);
+  --fb-element-ink: var(--fb-neutral-ink);
+  --fb-element-shade: var(--fb-neutral-shade);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Element cue: glyph plus word, always                                        */
+/* -------------------------------------------------------------------------- */
+
+.element-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  color: var(--fb-element-shade);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.element-cue__glyph {
+  font-family: var(--fb-font-glyph);
+  font-size: 1.05em;
+  line-height: 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Board header                                                               */
+/* -------------------------------------------------------------------------- */
+
+.battle-board__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fb-space-1) var(--fb-space-3);
+}
+
+.battle-board__turn {
+  color: var(--fb-ink-soft);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.battle-board__outcome {
+  color: var(--fb-danger);
+  font-weight: 700;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Panels                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.enemy-panel,
+.player-panel,
+.field-banner {
+  border: var(--fb-border);
+  border-radius: var(--fb-radius-lg);
+  background: linear-gradient(180deg, var(--fb-paper) 0%, #f8efdd 100%);
+  box-shadow: var(--fb-shadow);
+  padding: var(--fb-space-3);
+}
+
+.enemy-panel {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: var(--fb-space-3);
+  align-items: start;
+  border-left: 6px solid var(--fb-element-accent);
+}
+
+.enemy-panel__portrait {
+  display: block;
+  overflow: hidden;
+  border: 2px solid var(--fb-element-accent);
+  border-radius: var(--fb-radius-md);
+  background: var(--fb-parchment-deep);
+}
+
+.enemy-panel__body {
+  display: grid;
+  gap: var(--fb-space-2);
+}
+
+.enemy-panel__title {
+  font-family: var(--fb-font-body);
+  font-size: 1.125rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.enemy-panel__element {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fb-space-2);
+  font-size: var(--fb-text-small);
+}
+
+.enemy-panel__intent {
+  display: grid;
+  gap: var(--fb-space-1);
+  padding-top: var(--fb-space-2);
+  border-top: 1px dashed rgb(43 36 25 / 22%);
+}
+
+.enemy-panel__intent-title {
+  font-size: 0.9375rem;
+}
+
+.enemy-panel__totals {
+  font-size: var(--fb-text-small);
+  font-weight: 600;
+}
+
+.enemy-panel__lethal {
+  color: var(--fb-danger);
+  font-size: var(--fb-text-small);
+  font-weight: 700;
+}
+
+.enemy-panel__steps {
+  display: grid;
+  gap: var(--fb-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.enemy-panel__step {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.6rem;
+  padding: 0.35rem 0.5rem;
+  border-left: 3px solid var(--fb-element-accent);
+  border-radius: 0 var(--fb-radius-sm) var(--fb-radius-sm) 0;
+  background: rgb(43 36 25 / 5%);
+  font-size: var(--fb-text-small);
+}
+
+.enemy-panel__step-name {
+  font-weight: 700;
+}
+
+.enemy-panel__step-detail {
+  color: var(--fb-ink-soft);
+}
+
+.enemy-panel__empty {
+  color: var(--fb-ink-soft);
+  font-size: var(--fb-text-small);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Stat meters                                                                */
+/* -------------------------------------------------------------------------- */
+
+.stat-meter {
+  display: grid;
+  gap: 2px;
+}
+
+.stat-meter__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fb-space-2);
+  font-size: 0.875rem;
+}
+
+.stat-meter__label {
+  font-weight: 600;
+}
+
+.stat-meter__value {
+  color: var(--fb-ink-soft);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stat-meter__track {
+  position: relative;
+  height: 0.75rem;
+  overflow: hidden;
+  border: 1px solid rgb(43 36 25 / 16%);
+  border-radius: var(--fb-radius-pill);
+  background: rgb(43 36 25 / 12%);
+}
+
+.stat-meter__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--fb-accent);
+}
+
+.stat-meter--health .stat-meter__fill {
+  background: linear-gradient(90deg, #9f1d1d, #d97706);
+}
+
+.stat-meter--defense .stat-meter__fill {
+  background: linear-gradient(90deg, var(--fb-frost-bg), var(--fb-frost-accent));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Statuses                                                                   */
+/* -------------------------------------------------------------------------- */
+
+.status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fb-text-small);
+}
+
+.status-list__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid rgb(43 36 25 / 18%);
+  border-radius: var(--fb-radius-pill);
+  background: rgb(255 253 247 / 85%);
+}
+
+.status-list__glyph {
+  font-family: var(--fb-font-glyph);
+}
+
+.status-list__stacks {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-list--empty {
+  color: var(--fb-ink-soft);
+  font-size: var(--fb-text-small);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Field banner                                                               */
+/* -------------------------------------------------------------------------- */
+
+.field-banner {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: var(--fb-space-3);
+  align-items: center;
+  border-left: 6px solid var(--fb-element-accent);
+}
+
+.field-banner__art {
+  display: block;
+  overflow: hidden;
+  border: 2px solid var(--fb-element-accent);
+  border-radius: var(--fb-radius-md);
+}
+
+.field-banner__body {
+  display: grid;
+  gap: var(--fb-space-1);
+}
+
+.field-banner__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--fb-font-body);
+  font-size: 1.0625rem;
+  line-height: 1.2;
+}
+
+.field-banner__matchup {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.field-banner__matchup strong {
+  color: var(--fb-element-shade);
+}
+
+.field-banner__cycle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fb-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.field-banner__cycle-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid rgb(43 36 25 / 18%);
+  border-radius: var(--fb-radius-pill);
+  background: rgb(255 253 247 / 80%);
+  font-size: var(--fb-text-tiny);
+}
+
+.field-banner__cycle-step[aria-current='step'] {
+  border-color: var(--fb-element-bg);
+  background: var(--fb-element-bg);
+}
+
+.field-banner__cycle-step[aria-current='step'] .element-cue {
+  color: var(--fb-element-ink);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Player panel and energy                                                    */
+/* -------------------------------------------------------------------------- */
+
+.player-panel {
+  display: grid;
+  gap: var(--fb-space-2);
+  border-left: 6px solid var(--fb-element-accent);
+}
+
+.player-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fb-space-1) var(--fb-space-2);
+}
+
+.player-panel__title {
+  font-family: var(--fb-font-body);
+  font-size: 1.0625rem;
+  line-height: 1.2;
+}
+
+.player-panel__element {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fb-space-2);
+  font-size: var(--fb-text-small);
+}
+
+.player-panel__energy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fb-space-2);
+  padding-top: var(--fb-space-1);
+  border-top: 1px dashed rgb(43 36 25 / 18%);
+}
+
+.player-panel__energy-text {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.energy-pips {
+  display: flex;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.energy-pip {
+  display: grid;
+  width: 0.9rem;
+  height: 0.9rem;
+  place-items: center;
+  border: 1px solid var(--fb-element-shade);
+  border-radius: 50%;
+  color: transparent;
+  font-size: 0.5rem;
+  line-height: 1;
+}
+
+.energy-pip--on {
+  background: var(--fb-element-bg);
+  color: var(--fb-element-ink);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Hand                                                                       */
+/* -------------------------------------------------------------------------- */
+
+.hand {
+  display: grid;
+  gap: var(--fb-space-1);
+}
+
+.hand__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fb-space-1) var(--fb-space-2);
+}
+
+.hand__title {
+  font-family: var(--fb-font-body);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.hand__hint {
+  color: var(--fb-ink-soft);
+  font-size: var(--fb-text-small);
+}
+
+/* The only horizontal scroller in the product. `contain` stops a swipe from
+   chaining to the page; `min-width: 0` keeps the flex parent from expanding to
+   the sum of its children. */
+.hand__row {
+  display: flex;
+  gap: var(--fb-space-2);
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: var(--fb-space-1) var(--fb-space-1) var(--fb-space-3);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  list-style: none;
+}
+
+.hand__item {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.hand__empty {
+  padding: var(--fb-space-2);
+  color: var(--fb-ink-soft);
+  font-size: 0.9375rem;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Card face                                                                  */
+/* -------------------------------------------------------------------------- */
+
+.card-view {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto auto auto auto;
+  gap: 0.2rem;
+  width: var(--fb-card-width);
+  min-width: var(--fb-target);
+  min-height: var(--fb-target);
+  padding: 0.45rem 0.45rem 0.55rem;
+  border: 2px solid var(--fb-element-accent);
+  border-radius: var(--fb-radius-md);
+  background: linear-gradient(180deg, var(--fb-paper) 0%, #f8efdd 100%);
+  color: var(--fb-ink);
+  font: inherit;
+  text-align: left;
+  touch-action: manipulation;
+  cursor: pointer;
+  transition:
+    transform var(--fb-motion-lift) var(--fb-ease),
+    border-color var(--fb-motion-lift) var(--fb-ease),
+    box-shadow var(--fb-motion-lift) var(--fb-ease);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card-view:active {
+  transform: translateY(1px);
+}
+
+@media (hover: hover) {
+  .card-view:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--fb-shadow-raised);
+  }
+}
+
+.card-view[data-affordable='false'] {
+  border-color: var(--fb-ink-soft);
+  background: #efe6d3;
+  color: var(--fb-ink-soft);
+  cursor: not-allowed;
+}
+
+.card-view:focus-visible {
+  outline: var(--fb-focus-ring) solid var(--fb-focus);
+  outline-offset: 3px;
+}
+
+.card-view__cost {
+  position: absolute;
+  top: 0.3rem;
+  left: 0.3rem;
+  z-index: 1;
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border: 2px solid var(--fb-element-accent);
+  border-radius: 50%;
+  background: var(--fb-element-bg);
+  color: var(--fb-element-ink);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.card-view__art {
+  display: block;
+  overflow: hidden;
+  border-radius: var(--fb-radius-sm);
+}
+
+.card-view__name {
+  display: -webkit-box;
+  min-height: 2.3em;
+  overflow: hidden;
+  font-family: var(--fb-font-body);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.card-view .element-cue {
+  font-size: var(--fb-text-tiny);
+}
+
+.card-view__primary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-weight: 700;
+}
+
+.card-view__primary-value {
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.card-view__primary-label {
+  font-size: var(--fb-text-tiny);
+  font-weight: 600;
+}
+
+.card-view__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+}
+
+.card-view__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: var(--fb-radius-sm);
+  background: var(--fb-element-accent);
+  color: var(--fb-element-shade);
+  font-size: var(--fb-text-tiny);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.card-view__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--fb-danger);
+  font-size: var(--fb-text-tiny);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.card-view[data-affordable='false'] .card-view__state {
+  color: var(--fb-danger);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Manifest-backed images                                                     */
+/* -------------------------------------------------------------------------- */
+
+.asset-image {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  background: var(--fb-parchment-deep);
+}
+
+.asset-image__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.asset-image__fallback {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: var(--fb-space-1);
+  border: 2px dashed var(--fb-ink-soft);
+  border-radius: inherit;
+  background: var(--fb-parchment);
+  color: var(--fb-ink);
+  text-align: center;
+}
+
+.asset-image__fallback-glyph {
+  font-family: var(--fb-font-glyph);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.asset-image__fallback-label {
+  font-size: var(--fb-text-tiny);
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.asset-image__fallback-note {
+  color: var(--fb-ink-soft);
+  font-size: 0.625rem;
+  line-height: 1.2;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Card detail dialog                                                         */
+/* -------------------------------------------------------------------------- */
+
+.card-detail-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(20 15 10 / 58%);
+}
+
+.card-detail {
+  position: relative;
+  width: min(100%, 34rem);
+  max-height: min(90dvh, 48rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--fb-space-5) var(--fb-space-4)
+    calc(var(--fb-space-5) + env(safe-area-inset-bottom));
+  border: 2px solid var(--fb-element-accent);
+  border-radius: var(--fb-radius-lg) var(--fb-radius-lg) 0 0;
+  background: var(--fb-paper);
+  box-shadow: var(--fb-shadow-raised);
+  color: var(--fb-ink);
+}
+
+.card-detail__close {
+  position: absolute;
+  top: var(--fb-space-2);
+  right: var(--fb-space-2);
+  display: grid;
+  width: var(--fb-target);
+  height: var(--fb-target);
+  place-items: center;
+  border: 1px solid rgb(43 36 25 / 24%);
+  border-radius: 50%;
+  background: var(--fb-paper);
+  color: var(--fb-ink);
+  font: inherit;
+  font-size: 1.125rem;
+  cursor: pointer;
+}
+
+.card-detail__close:focus-visible,
+.card-detail__play:focus-visible {
+  outline: var(--fb-focus-ring) solid var(--fb-focus);
+  outline-offset: 3px;
+}
+
+.card-detail__kicker {
+  padding-right: 3rem;
+  color: var(--fb-ink-soft);
+  font-size: var(--fb-text-small);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.card-detail__title {
+  padding-right: 3rem;
+  font-family: var(--fb-font-body);
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.card-detail__primary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-top: var(--fb-space-1);
+  font-weight: 700;
+}
+
+.card-detail__primary-value {
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.card-detail__primary-label {
+  color: var(--fb-ink-soft);
+  font-size: var(--fb-text-small);
+  font-weight: 600;
+}
+
+.card-detail__art {
+  width: 6.5rem;
+  margin-top: var(--fb-space-3);
+}
+
+.card-detail__section-title {
+  margin-top: var(--fb-space-4);
+  font-size: 1rem;
+}
+
+.card-detail__effects {
+  display: grid;
+  gap: 0.25rem;
+  margin: var(--fb-space-1) 0 0;
+  padding-left: 1.15rem;
+}
+
+.card-detail__matchup {
+  margin-top: var(--fb-space-4);
+  padding: var(--fb-space-2) var(--fb-space-3);
+  border-left: 4px solid var(--fb-element-accent);
+  background: rgb(43 36 25 / 6%);
+  font-weight: 600;
+}
+
+.card-detail__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fb-space-1);
+  margin-top: var(--fb-space-2);
+}
+
+.card-detail__play {
+  width: 100%;
+  min-height: var(--fb-target);
+  margin-top: var(--fb-space-4);
+  padding: 0.7rem 1.1rem;
+  border: 1px solid var(--fb-accent);
+  border-radius: 12px;
+  background: var(--fb-accent);
+  color: #fffaf0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.card-detail__play:disabled {
+  border-color: #b8a68a;
+  background: #d9cbb3;
+  color: #5b4f3d;
+  cursor: not-allowed;
+}
+
+.card-detail__note {
+  margin-top: var(--fb-space-2);
+  color: var(--fb-ink-soft);
+  font-size: var(--fb-text-small);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Sticky controls                                                            */
+/* -------------------------------------------------------------------------- */
+
+.battle-controls {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fb-space-2);
+  padding: 0.6rem 0.75rem;
+  padding-bottom: max(0.6rem, env(safe-area-inset-bottom));
+  border: 1px solid rgb(43 36 25 / 18%);
+  border-radius: var(--fb-radius-md);
+  background: rgb(255 253 247 / 96%);
+  box-shadow: 0 -8px 24px rgb(43 36 25 / 10%);
+  backdrop-filter: blur(6px);
+}
+
+.battle-controls__energy {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.battle-controls__end {
+  min-width: 8rem;
+  min-height: var(--fb-target);
+  padding: 0.7rem 1.1rem;
+  border: 1px solid var(--fb-accent);
+  border-radius: 12px;
+  background: var(--fb-accent);
+  color: #fffaf0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.battle-controls__end:focus-visible {
+  outline: var(--fb-focus-ring) solid var(--fb-focus);
+  outline-offset: 3px;
+}
+
+.battle-controls__end:disabled {
+  border-color: #b8a68a;
+  background: #d9cbb3;
+  color: #5b4f3d;
+  cursor: not-allowed;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Breakpoints                                                                */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 640px) {
+  .enemy-panel {
+    grid-template-columns: 8rem minmax(0, 1fr);
+    gap: var(--fb-space-4);
+    padding: var(--fb-space-4);
+  }
+
+  .field-banner {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    padding: var(--fb-space-4);
+  }
+
+  .player-panel {
+    padding: var(--fb-space-4);
+  }
+
+  .card-detail {
+    border-radius: var(--fb-radius-lg);
+  }
+
+  .card-detail-layer {
+    align-items: center;
+    padding: var(--fb-space-5);
+  }
+}
+
+@media (min-width: 1024px) {
+  .battle-board {
+    gap: var(--fb-space-4);
+  }
+
+  .hand__row {
+    gap: var(--fb-space-3);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced motion: OS preference and explicit override, both directions       */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .card-view,
+  .card-detail,
+  .card-detail__close,
+  .card-detail__play,
+  .battle-controls__end {
+    transition-duration: 1ms;
+  }
+
+  .card-view,
+  .card-view:active,
+  .card-view:hover {
+    transform: none;
+  }
+}
+
+[data-reduced-motion='true'] .card-view,
+[data-reduced-motion='true'] .card-detail,
+[data-reduced-motion='true'] .card-detail__close,
+[data-reduced-motion='true'] .card-detail__play,
+[data-reduced-motion='true'] .battle-controls__end {
+  transition-duration: 1ms;
+}
+
+[data-reduced-motion='true'] .card-view,
+[data-reduced-motion='true'] .card-view:active,
+[data-reduced-motion='true'] .card-view:hover {
+  transform: none;
+}
+
+/* An explicit "motion on" choice wins over the OS media query. */
+[data-reduced-motion='false'] .card-view {
+  transition-duration: var(--fb-motion-lift);
+}
+
+[data-reduced-motion='false'] .card-view:active {
+  transform: translateY(1px);
+}
+
+@media (hover: hover) {
+  [data-reduced-motion='false'] .card-view:hover {
+    transform: translateY(-2px);
+  }
+}

@@ -1,0 +1,120 @@
+/**
+ * Fieldbound design tokens (SHL-FR-02, SHL-FR-04, VIS-NFR-01, VIS-NFR-03).
+ *
+ * One custom-property file for the whole presentation layer: surfaces, text,
+ * the shared element palette, spacing, radii, target sizes and motion
+ * durations. Components consume these variables instead of restating values,
+ * so a palette or density change is one edit here.
+ *
+ * Plain CSS only: no framework, no CSS-in-JS, no remote font. The element hex
+ * values are the published palette from docs/ASSET-SPEC.md; art and chrome
+ * stay consistent without duplicating colours in TSX.
+ */
+:root {
+  color-scheme: light;
+
+  /* ---------------------------------------------------------------------- */
+  /* Surfaces and ink                                                       */
+  /* ---------------------------------------------------------------------- */
+  --fb-paper: #fffdf7;
+  --fb-parchment: #f3ead7;
+  --fb-parchment-deep: #e6d7bb;
+  --fb-ink: #2b2419;
+  --fb-ink-soft: #5b4f3d;
+  --fb-accent: #7a3f1d;
+  --fb-accent-strong: #62300f;
+  --fb-focus: #1d4ed8;
+  --fb-danger: #9f1d1d;
+
+  --fb-border: 1px solid rgb(43 36 25 / 18%);
+  --fb-border-strong: 2px solid rgb(43 36 25 / 28%);
+  --fb-panel: rgb(255 252 244 / 84%);
+  --fb-shadow: 0 18px 40px rgb(43 36 25 / 12%);
+  --fb-shadow-raised: 0 10px 24px rgb(43 36 25 / 16%);
+
+  /* ---------------------------------------------------------------------- */
+  /* Shape and density                                                      */
+  /* ---------------------------------------------------------------------- */
+  --fb-radius-sm: 8px;
+  --fb-radius-md: 14px;
+  --fb-radius-lg: 20px;
+  --fb-radius-pill: 999px;
+
+  /* The one measured target size: every interactive box is at least this. */
+  --fb-target: 44px;
+  --fb-focus-ring: 2px;
+
+  /* 375px-first card width; caps at 8rem (128px) and grows to ~120px+ on
+     tablet/desktop. 26vw at 375px is 97.5px, comfortably above the 64px
+     visible-card floor. */
+  --fb-card-width: clamp(6rem, 26vw, 8rem);
+
+  /* Board contract: centred at 1080px maximum, never wider. */
+  --fb-board-max: 1080px;
+
+  /* ---------------------------------------------------------------------- */
+  /* Type                                                                   */
+  /* ---------------------------------------------------------------------- */
+  --fb-font-body:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia,
+    ui-serif, serif;
+  --fb-font-ui:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --fb-font-glyph:
+    "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", ui-sans-serif,
+    sans-serif;
+
+  --fb-text-body: 1rem;
+  --fb-text-small: 0.8125rem;
+  --fb-text-tiny: 0.6875rem;
+  --fb-line-body: 1.55;
+
+  /* ---------------------------------------------------------------------- */
+  /* Spacing                                                                */
+  /* ---------------------------------------------------------------------- */
+  --fb-space-1: 0.25rem;
+  --fb-space-2: 0.5rem;
+  --fb-space-3: 0.75rem;
+  --fb-space-4: 1rem;
+  --fb-space-5: 1.5rem;
+  --fb-space-6: 2rem;
+
+  /* ---------------------------------------------------------------------- */
+  /* Motion (SHL-FR-04 / game-shell 4.5)                                    */
+  /* ---------------------------------------------------------------------- */
+  --fb-motion-draw: 180ms;
+  --fb-motion-play: 160ms;
+  --fb-motion-damage: 400ms;
+  --fb-motion-shift: 300ms;
+  --fb-motion-lift: 120ms;
+  --fb-ease: cubic-bezier(0.2, 0, 0.2, 1);
+
+  /* ---------------------------------------------------------------------- */
+  /* Element palette (docs/ASSET-SPEC.md section 4)                         */
+  /* ---------------------------------------------------------------------- */
+  --fb-ember-bg: #7f1d1d;
+  --fb-ember-accent: #f59e0b;
+  --fb-ember-ink: #fff7ed;
+  --fb-ember-shade: #450a0a;
+
+  --fb-frost-bg: #1e3a8a;
+  --fb-frost-accent: #a5f3fc;
+  --fb-frost-ink: #eff6ff;
+  --fb-frost-shade: #172554;
+
+  --fb-gale-bg: #115e59;
+  --fb-gale-accent: #a7f3d0;
+  --fb-gale-ink: #ecfdf5;
+  --fb-gale-shade: #042f2e;
+
+  --fb-stone-bg: #5b4636;
+  --fb-stone-accent: #d6b98c;
+  --fb-stone-ink: #fdf6e3;
+  --fb-stone-shade: #2f241b;
+
+  --fb-neutral-bg: #374151;
+  --fb-neutral-accent: #e5e7eb;
+  --fb-neutral-ink: #f9fafb;
+  --fb-neutral-shade: #111827;
+}
