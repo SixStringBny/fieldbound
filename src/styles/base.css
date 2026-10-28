@@ -291,6 +291,33 @@ ul {
   text-align: center;
 }
 
+.battle-screen {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.battle-screen__head {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+}
+
+.battle-screen__head .shell__eyebrow {
+  margin: 0;
+}
+
+.battle-screen__error {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgb(122 63 29 / 38%);
+  border-radius: 12px;
+  background: rgb(122 63 29 / 8%);
+  color: var(--fb-ink);
+  font-weight: 600;
+}
+
 @media (min-width: 640px) {
   .app-root {
     justify-content: center;

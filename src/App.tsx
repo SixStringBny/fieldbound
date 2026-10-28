@@ -7,15 +7,28 @@
  * without a matching route. Screens dispatch navigation intents; only this file
  * decides which screen is mounted.
  *
- * Surfaces that later tasks build (settings, solo, battle, duel) resolve to a
- * single shared notice until then. That keeps the menu's entries alive and the
- * router exhaustive without creating empty screen files that a later task would
- * have to delete.
+ * Surfaces that later tasks build (settings, solo, duel) resolve to a single
+ * shared notice until then. That keeps the menu's entries alive and the router
+ * exhaustive without creating empty screen files that a later task would have
+ * to delete. The battle surface is built and owned by SHL-03.
  */
 
 import { useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
+import { byId as cardCatalog } from './content/cards';
+import { deckByElement } from './content/decks';
+import { enemyById } from './content/enemies';
+import {
+  createBattleControllerState,
+  useBattleController,
+} from './state/battle-controller';
+import type {
+  BattleControllerConfig,
+  BattleControllerState,
+} from './state/battle-controller';
+import type { EngineResult } from './engine/types';
 import { emitCue } from './ui/events';
+import { BattleScreen } from './ui/screens/BattleScreen';
 import { HowToPlayScreen } from './ui/screens/HowToPlayScreen';
 import { MenuScreen } from './ui/screens/MenuScreen';
 
@@ -64,6 +77,38 @@ export const SCREENS: ScreenByKind = {
 
 export const INITIAL_SCREEN: Screen = SCREENS.menu;
 
+/**
+ * The interim practice encounter the composition root mounts on the battle
+ * screen. Solo setup (RUN-04) will replace it with the run's own battle; until
+ * then it gives the menu and the test-only entry point a real, playable fight
+ * built from the frozen Ember starter deck against the first ladder enemy.
+ */
+const PRACTICE_BATTLE_SEED = 7;
+
+function buildPracticeBattleConfig(): BattleControllerConfig | null {
+  const deck = deckByElement('ember');
+  const enemy = enemyById('enemy-cinder-warden');
+
+  if (deck === undefined || enemy === undefined) {
+    return null;
+  }
+
+  return {
+    seed: PRACTICE_BATTLE_SEED,
+    player: { element: deck.element, cards: deck.cards },
+    opponent: {
+      element: enemy.element,
+      cards: enemy.deck,
+      maxHealth: enemy.maxHealth,
+    },
+    cards: cardCatalog,
+    enemy,
+  };
+}
+
+const PRACTICE_BATTLE_CONFIG: BattleControllerConfig | null =
+  buildPracticeBattleConfig();
+
 export interface AppProps {
   /**
    * Test-only entry point: mount the composition root directly on a surface.
@@ -75,11 +120,18 @@ export interface AppProps {
    * absent otherwise; the menu never offers a resume that cannot be restored.
    */
   readonly hasSave?: boolean;
+  /**
+   * Test-only: mount a controlled battle instead of the built-in practice
+   * encounter. Production routes always use the practice battle until RUN-04
+   * supplies the run's own battle.
+   */
+  readonly battleConfig?: BattleControllerConfig;
 }
 
 export function App({
   initialScreen = INITIAL_SCREEN,
   hasSave = false,
+  battleConfig,
 }: AppProps = {}) {
   const [screen, setScreen] = useState<Screen>(initialScreen);
 
@@ -91,6 +143,8 @@ export function App({
   const pending = (title: string): ReactNode => (
     <PendingSurface title={title} onBack={() => navigate('menu')} />
   );
+
+  const battle = battleConfig ?? PRACTICE_BATTLE_CONFIG;
 
   const routes: { readonly [Kind in ScreenKind]: ReactNode } = {
     menu: (
@@ -108,7 +162,7 @@ export function App({
     settings: pending('Settings'),
     'solo-setup': pending('Solo setup'),
     'run-overview': pending('Run overview'),
-    battle: pending('Battle'),
+    battle: <BattleRoute config={battle} onExit={() => navigate('menu')} />,
     reward: pending('Reward'),
     'run-result': pending('Run result'),
     'duel-setup': pending('Duel setup'),
@@ -132,6 +186,82 @@ export function App({
         {routes[screen.kind]}
       </main>
     </div>
+  );
+}
+
+/**
+ * The battle route. The controller is created once per mount; a bad setup is a
+ * typed failure rendered as a recoverable panel, never a thrown string.
+ */
+function BattleRoute({
+  config,
+  onExit,
+}: {
+  readonly config: BattleControllerConfig | null;
+  readonly onExit: () => void;
+}) {
+  const [initial] = useState<
+    EngineResult<BattleControllerState> | null
+  >(() =>
+    config === null ? null : createBattleControllerState(config),
+  );
+
+  if (initial === null) {
+    return (
+      <BattleUnavailable
+        message="The frozen starter content is missing the Ember deck or the first enemy."
+        onExit={onExit}
+      />
+    );
+  }
+
+  if (!initial.ok) {
+    return <BattleUnavailable message={initial.error.message} onExit={onExit} />;
+  }
+
+  return <BattleSession initialState={initial.value} onExit={onExit} />;
+}
+
+/** Keeps the hook unconditional: mounted only once a battle exists. */
+function BattleSession({
+  initialState,
+  onExit,
+}: {
+  readonly initialState: BattleControllerState;
+  readonly onExit: () => void;
+}) {
+  const controller = useBattleController(initialState);
+
+  return (
+    <BattleScreen
+      state={controller.state}
+      baseUrl={import.meta.env.BASE_URL}
+      onPlayCard={controller.playCard}
+      onEndTurn={controller.endTurn}
+      onExit={onExit}
+    />
+  );
+}
+
+function BattleUnavailable({
+  message,
+  onExit,
+}: {
+  readonly message: string;
+  readonly onExit: () => void;
+}) {
+  return (
+    <section className="shell__panel" aria-labelledby="battle-unavailable-title">
+      <h1 className="shell__page-title" id="battle-unavailable-title">
+        Battle
+      </h1>
+      <p className="shell__copy">The battle could not start: {message}</p>
+      <p>
+        <button type="button" className="shell__button" onClick={onExit}>
+          Back to menu
+        </button>
+      </p>
+    </section>
   );
 }
 
