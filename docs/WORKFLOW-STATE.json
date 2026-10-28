@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-28T21:13:35.451Z",
+  "lastUpdatedAt": "2026-10-28T21:17:41.479Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "CARD-ENEMY-CONTENT-3",
+  "currentPhase": "GAME-SHELL-PRESENTATION-1",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -632,10 +632,53 @@
     },
     "SHL-01": {
       "taskId": "SHL-01",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "frontend-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/App.tsx",
+        "src/App.navigation.test.tsx",
+        "src/ui/screens/MenuScreen.tsx",
+        "src/ui/screens/HowToPlayScreen.tsx",
+        "src/ui/events.ts",
+        "src/App.test.tsx",
+        "src/styles/base.css"
+      ],
+      "startedAt": "2026-10-28T21:13:35.941Z",
+      "usage": {
+        "inputTokens": 43485,
+        "outputTokens": 12754,
+        "reasoningTokens": 24057,
+        "cacheReadTokens": 1878016,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.034243397999999994,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/SHL-01.2026-10-28T21-17-41-473Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 43485,
+            "outputTokens": 12754,
+            "reasoningTokens": 24057,
+            "cacheReadTokens": 1878016,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.034243397999999994,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-28T21:17:41.477Z",
+      "agentOutput": "I'll start by reading the execution file and relevant documentation.\r\nNow I'll write the event bus, screens, router, styles and tests.\r\nI'll prove the compile-time exhaustiveness claim by temporarily adding an unknown screen kind.\r\nAll requirements are implemented and verified. Final summary:\n\n## What was built\n\n**`src/App.tsx`** — the composition root now owns a real router. `SCREEN_KINDS`/`ScreenByKind`/`Screen`/`SCREENS`/`INITIAL_SCREEN` are exported; `App` takes the test-only `initialScreen` and `hasSave` props (both defaulted), keeps the active screen in `useState`, emits a `ui` cue on every navigation, and renders the active route under the existing skip link and `main#main-content` landmark (now tagged with `data-screen`). The route table is a mapped type over `ScreenKind`, so adding a union member without a route is a compile error — verified by temporarily adding `'unknown-screen'`, which produced TS2741 twice, then restoring the file. Unbuilt surfaces share one explicitly-labelled pending notice rather than ten empty screen files.\n\n**`src/ui/screens/MenuScreen.tsx`** — Play Solo, Local Duel, How to Play and Settings always, plus Continue Run only when `hasSave` is true (third position, per the screen-flow table), each with a described hint and 44px targets.\n\n**`src/ui/screens/HowToPlayScreen.tsx`** — prose reference for the three-step turn, the three-energy rule, the shared field and full Ember→Frost→Gale→Stone→Ember cycle, empowered/countered effects, persistent defense capped at 8, Focus/Weaken/Regen, both modes and the win condition; Back at the top and a Back to menu footer action.\n\n**`src/ui/events.ts`** — typed cue bus (`CUE_NAMES`, `CueName`, `CueEvent`, `UiEventBus`), a shared `uiEvents` instance, `emitCue`, and `createUiEventBus()` for isolation. Delivery copies the listener set, unsubscribes are idempotent, and a throwing speaker cannot break other subscribers.\n\n**Tests** — `src/App.navigation.test.tsx` (11 tests) covers the menu, the Continue Run gate, How to Play/Back, menu-to-surface navigation, routing of all 12 kinds, the rules phrases, and four bus behaviours incl. the App-emitted cue. `src/App.test.tsx` was updated from the old scaffold placeholder panel to the new menu shell.\n\n## Files created or changed\n\n- `src/App.tsx` (changed)\n- `src/App.navigation.test.tsx` (created)\n- `src/App.test.tsx` (changed — old \"Workspace ready\" assertion replaced)\n- `src/ui/events.ts` (created)\n- `src/ui/screens/MenuScreen.tsx` (created)\n- `src/ui/screens/HowToPlayScreen.tsx` (created)\n- `src/styles/base.css` (changed — menu, rules and button styles using existing tokens)\n\n## Commands run\n\n- `npm test -- src/App.navigation.test.tsx` → 11 passed\n- `npm run typecheck` → exit 0\n- `npm test` → 451 passed across 13 files\n- `npm run build` (with `VITE_BASE=/fieldbound-test/`) → exit 0; CSP meta present and assets under the subpath\n- `npm run check:build` (same base) → build audit passed\n\n```forge-result\n{\"summary\":\"Implemented SHL-01: an exhaustive App router over the 12-kind Screen union with menu, how-to-play, test-only initialScreen and a hasSave-gated Continue Run, a typed cue event bus, and a rules reference covering energy, the Ember/Frost/Gale/Stone cycle, defense, statuses and both modes. Verified with 11 navigation tests, typecheck, the full 451-test suite and a subpath build/CSP audit.\",\"decisions\":[\"SCREENS is typed as a mapped type over ScreenKind and the route table repeats that mapped type, so adding an unknown screen kind fails typecheck without a cast; this was confirmed by temporarily adding 'unknown-screen' (TS2741) and restoring the file.\",\"Continue Run is omitted entirely when hasSave is false rather than rendered disabled, because RUN-05 and my brief require a corrupt or absent save to hide the resume entry.\",\"Surfaces owned by later tasks resolve to one shared PendingSurface notice inside App.tsx instead of separate empty screen files; this keeps the union exhaustive and the menu entries live without creating placeholder screens that later tasks must delete.\",\"Menu, How to Play, Local Duel and Settings navigate through the union; Continue Run currently targets battle with an inline note that RUN-05 will route it to the screen stored in the validated save.\",\"Every navigation emits the 'ui' cue on the shared bus, giving the event bus a real producer now so SHL-06 only needs to subscribe, unlock audio and play.\",\"The UI event bus carries cue events only; announcement events are left to SHL-07 when the live region exists.\",\"App tags the main landmark with data-screen so routing assertions and later QA journeys do not depend on screen copy.\",\"Added menu, rules and button CSS to src/styles/base.css using the existing custom properties, including a data-reduced-motion branch, so the shell is usable before SHL-02 supplies tokens.css and board.css.\"],\"interfaces\":[\"src/App.tsx: SCREEN_KINDS, ScreenKind, ScreenByKind, Screen, SCREENS, INITIAL_SCREEN, AppProps { initialScreen?: Screen; hasSave?: boolean }, App().\",\"src/ui/events.ts: CUE_NAMES, CueName, CueEvent, UiEvent, UiEventListener, UiEventBus { emit, emitCue, subscribe }, createUiEventBus(), uiEvents, emitCue(cue).\",\"src/ui/screens/MenuScreen.tsx: MenuScreenProps { hasSave, onPlaySolo, onLocalDuel, onContinueRun, onHowToPlay, onSettings }, MenuScreen().\",\"src/ui/screens/HowToPlayScreen.tsx: HowToPlayScreenProps { onBack }, HowToPlayScreen().\",\"App renders main#main-content with data-screen=<kind> and keeps the skip link to #main-content.\"],\"tests\":[\"npm test -- src/App.navigation.test.tsx: exit 0, 11 tests passed\",\"npm run typecheck: exit 0\",\"npm test: exit 0, 451 tests across 13 files\",\"npm run build with VITE_BASE=/fieldbound-test/: exit 0; CSP meta precedes the first script and assets resolve under the subpath\",\"npm run check:build with VITE_BASE=/fieldbound-test/: Build audit passed\",\"Exhaustiveness probe: adding 'unknown-screen' to SCREEN_KINDS made npm run typecheck exit 1 with TS2741 on SCREENS and routes; file restored and typecheck re-run green\"],\"unresolved\":[]}\n```\r\n",
+      "artifactId": "work-shl-01-001",
+      "inputArtifactIds": [
+        "work-eng-00-001",
+        "work-eng-06-001",
+        "work-eng-07-001",
+        "work-cnt-03-001"
+      ]
     },
     "SHL-02": {
       "taskId": "SHL-02",

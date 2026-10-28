@@ -146,6 +146,151 @@ ul {
   outline-offset: 3px;
 }
 
+.shell__header--compact {
+  padding-bottom: 1.25rem;
+}
+
+.shell__title--page {
+  font-size: clamp(2.25rem, 10vw, 3.5rem);
+}
+
+.shell__page-title {
+  font-size: 1.5rem;
+}
+
+.shell__panel > p {
+  margin-top: 0.6rem;
+}
+
+.shell__button,
+.shell__back {
+  min-height: 44px;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.shell__button {
+  padding: 0.7rem 1.25rem;
+  border: 1px solid var(--fb-accent);
+  background: var(--fb-accent);
+  color: #fffaf0;
+}
+
+.shell__back {
+  padding: 0.55rem 1.25rem;
+  border: 1px solid rgb(122 63 29 / 32%);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fb-ink);
+}
+
+.shell__button:hover {
+  background: #62300f;
+}
+
+.shell__back:hover {
+  border-color: var(--fb-accent);
+}
+
+.menu__list {
+  display: grid;
+  gap: 0.9rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menu__item {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.menu__entry {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgb(122 63 29 / 30%);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fffdf7 0%, #f7ecd8 100%);
+  color: var(--fb-ink);
+  font: inherit;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.menu__entry:hover {
+  border-color: var(--fb-accent);
+}
+
+.menu__entry:active {
+  transform: translateY(1px);
+}
+
+.menu__hint {
+  padding: 0 1rem;
+  color: var(--fb-ink-soft);
+  font-size: 0.9375rem;
+}
+
+.rules {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.rules__steps {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.rules__cycle {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.9rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rules__cycle li {
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--fb-accent);
+  border-radius: 0 8px 8px 0;
+  background: rgb(122 63 29 / 6%);
+  font-weight: 600;
+}
+
+.rules__statuses {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.85rem 0 0;
+}
+
+.rules__status dt {
+  font-weight: 600;
+}
+
+.rules__status dd {
+  margin: 0.15rem 0 0;
+  color: var(--fb-ink-soft);
+}
+
+.rules__heading {
+  margin-top: 1.1rem;
+  font-size: 1.0625rem;
+}
+
+.rules__footer {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
 @media (min-width: 640px) {
   .app-root {
     justify-content: center;
@@ -165,4 +310,20 @@ ul {
   html {
     scroll-behavior: auto;
   }
+
+  .menu__entry {
+    transition: none;
+  }
+
+  .menu__entry:active {
+    transform: none;
+  }
+}
+
+[data-reduced-motion='true'] .menu__entry {
+  transition: none;
+}
+
+[data-reduced-motion='true'] .menu__entry:active {
+  transform: none;
 }
