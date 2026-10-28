@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-28T20:58:21.499Z",
+  "lastUpdatedAt": "2026-10-28T21:04:02.805Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -413,10 +413,46 @@
     },
     "ENG-07": {
       "taskId": "ENG-07",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "rules-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/engine/self-play.test.ts"
+      ],
+      "startedAt": "2026-10-28T20:58:21.952Z",
+      "usage": {
+        "inputTokens": 64676,
+        "outputTokens": 15340,
+        "reasoningTokens": 32761,
+        "cacheReadTokens": 3636224,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.049470672000000014,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/ENG-07.2026-10-28T21-04-02-795Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 64676,
+            "outputTokens": 15340,
+            "reasoningTokens": 32761,
+            "cacheReadTokens": 3636224,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.049470672000000014,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-28T21:04:02.803Z",
+      "agentOutput": "I'll start by reading the execution file and the referenced documentation.\r\nNow I have the full picture of the public engine API. Let me write the self-play integration test.\r\nAll checks pass. Final verification of the exact task command and working tree state:\r\n## Files created or changed\n\n| File | Change |\n|------|--------|\n| `src/engine/self-play.test.ts` | **Created** — seeded AI-versus-AI self-play integration suite over the public engine API |\n\nNo other files were modified. The two `docs/` entries in `git status` are the execution engine's own run-state files (pre-existing before this task); `docs/artifacts/ENG-07.md` was read only.\n\n## What the suite covers\n\n- **200 seeded battles** (seeds `0..199`, rotating through four themed fixture matchups: ember/frost with a boss opponent, frost/gale, gale/stone, stone/ember) driven by `planEnemyTurn` for both sides, executed with `canPlayCard` + `playCard`, closed with `endTurn`.\n- **Termination guard**: all 200 settle (observed 5–12 turns); the harness checks `state.turn > MAX_BATTLE_TURNS` before acting, and a deliberately non-damaging Ward/draw matchup returns `turn-limit` at turn 101 instead of hanging.\n- **Per-action invariants** on both sides: non-negative integer energy, hand ≤ 5, defense ∈ `[0, 8]`, health ∈ `[0, maxHealth]`, status stacks within `3/3/2`, unique instance ids per zone, known card ids, coherent phase/outcome/health, and a verified final snapshot round-trip.\n- **Turn-start rules**: exactly 3 energy and a hand filled to 5 on every turn, even after the fixture energy-granting utility pushes energy to 4 mid-turn (200 battles prove both halves).\n- **Legality probes** that assert rejected actions leave the state byte-identical (snapshot string, including the PRNG counter): out-of-turn play/end-turn (`not-active-side`), a cost-3 card at 0 energy (`unaffordable-card`), and all four actions after settlement (`battle-ended`), including status clearing and a null telegraph.\n- **Replay determinism**: one recorded seed + action log is replayed twice and both snapshots are compared byte-for-byte against the recorded final snapshot.\n\n```forge-result\n{\n  \"summary\": \"Added src/engine/self-play.test.ts: 200 seeded AI-versus-AI battles over themed fixture decks, asserting settlement within the 100-turn guard, per-action resource/hand/defense/health/status bounds, planned-card affordability and hand membership, typed rejection of out-of-turn/unaffordable/post-end actions without state change, byte-identical snapshot replay of a recorded action log, and a stall fixture proving the turn limit stops the run instead of hanging. Satisfies ENG-FR-09 with ENG-FR-01 and ENG-FR-06 coverage.\",\n  \"decisions\": [\n    \"Each side plans at the start of its own turn with planEnemyTurn(state, catalog, profile, side), the same pure planner the solo controller uses; prepareEnemyTurn was not used because its solo housekeeping timing labels a plan made while the side is already active as turn+2.\",\n    \"The 100-turn guard is checked before any action on a turn above MAX_BATTLE_TURNS, so a non-terminating battle returns a typed 'turn-limit' result with turn 101 and 100 turns actually played; an unbounded loop can never occur.\",\n    \"The sweep rotates seeds 0..199 across four themed matchups (one with the boss counter-element flag) rather than running one deck pair 200 times, and asserts every fixture is represented.\",\n    \"Invariants are checked after setup, after every card and after every end-turn, including the turn-start energy/hand reset, so an out-of-bound value cannot be hidden by a later action.\",\n    \"The 4-of-13 energy utility makes card-granted energy above 3 observable (peak 4 in 14 of 200 battles); the bounds test asserts that coverage while the harness asserts the next turn resets to exactly 3.\",\n    \"The stall fixture uses only Wards and draw utility so no card can reduce health; it exists solely to prove the guard path and is excluded from the 200-battle sweep.\"\n  ],\n  \"interfaces\": [\n    \"No production interfaces were added; the test consumes createBattle, playCard, endTurn, canPlayCard, planEnemyTurn, serializeSnapshot, restoreSnapshot and the frozen constants from src/engine/types.ts.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/engine/self-play.test.ts: exit 0, 7 tests passed, duration 596ms\",\n    \"npm run typecheck: exit 0\",\n    \"npm test -- src/engine: exit 0, 8 files / 368 tests passed, duration 1.45s\",\n    \"grep over src/engine for Math.random and src/content imports: no matches\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-eng-07-001",
+      "inputArtifactIds": [
+        "work-eng-06-001",
+        "work-eng-04-001",
+        "work-eng-05-001"
+      ]
     },
     "CNT-01": {
       "taskId": "CNT-01",
