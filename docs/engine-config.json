@@ -8,7 +8,7 @@
   "vizPort": "",
   "autoCommit": true,
   "logHarnessActivity": true,
-  "subagents": "",
+  "subagents": "0",
   "executionMode": "auto",
   "selectionScope": "single",
   "selectedTaskIds": [
