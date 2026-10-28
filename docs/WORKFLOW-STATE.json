@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-28T21:08:03.752Z",
+  "lastUpdatedAt": "2026-10-28T21:13:35.451Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "CARD-ENEMY-CONTENT-2",
+  "currentPhase": "CARD-ENEMY-CONTENT-3",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -546,10 +546,89 @@
     },
     "CNT-03": {
       "taskId": "CNT-03",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "content-designer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "scripts/generate-placeholder-assets.mjs",
+        "public/assets/assets.manifest.json",
+        "src/assets/asset-manifest.ts",
+        "src/assets/asset-manifest.test.ts",
+        "docs/ASSET-SPEC.md",
+        "public/assets/cards/ember-ash-guard.svg",
+        "public/assets/cards/ember-cinder-jab.svg",
+        "public/assets/cards/ember-ember-lance.svg",
+        "public/assets/cards/ember-inferno.svg",
+        "public/assets/cards/ember-kindled-fury.svg",
+        "public/assets/cards/frost-deep-freeze.svg",
+        "public/assets/cards/frost-frost-shard.svg",
+        "public/assets/cards/frost-ice-needle.svg",
+        "public/assets/cards/frost-rime-ward.svg",
+        "public/assets/cards/frost-shatter.svg",
+        "public/assets/cards/gale-cyclone.svg",
+        "public/assets/cards/gale-gust.svg",
+        "public/assets/cards/gale-tailwind.svg",
+        "public/assets/cards/gale-updraft.svg",
+        "public/assets/cards/gale-wind-needle.svg",
+        "public/assets/cards/neutral-channel.svg",
+        "public/assets/cards/neutral-elemental-blow.svg",
+        "public/assets/cards/neutral-expose.svg",
+        "public/assets/cards/neutral-plain-strike.svg",
+        "public/assets/cards/neutral-probe.svg",
+        "public/assets/cards/neutral-second-wind.svg",
+        "public/assets/cards/neutral-sift.svg",
+        "public/assets/cards/neutral-surge.svg",
+        "public/assets/cards/shift-ember.svg",
+        "public/assets/cards/shift-frost.svg",
+        "public/assets/cards/shift-gale.svg",
+        "public/assets/cards/shift-stone.svg",
+        "public/assets/cards/stone-avalanche.svg",
+        "public/assets/cards/stone-bulwark.svg",
+        "public/assets/cards/stone-resonance.svg",
+        "public/assets/cards/stone-stone-fist.svg",
+        "public/assets/cards/stone-stone-spike.svg",
+        "public/assets/enemies/enemy-cinder-warden.svg",
+        "public/assets/enemies/enemy-hollow-field.svg",
+        "public/assets/enemies/enemy-rime-sentinel.svg",
+        "public/assets/enemies/enemy-storm-herald.svg",
+        "public/assets/fields/field-ember.svg",
+        "public/assets/fields/field-frost.svg",
+        "public/assets/fields/field-gale.svg",
+        "public/assets/fields/field-neutral.svg",
+        "public/assets/fields/field-stone.svg"
+      ],
+      "startedAt": "2026-10-28T21:08:04.131Z",
+      "usage": {
+        "inputTokens": 54730,
+        "outputTokens": 22971,
+        "reasoningTokens": 32159,
+        "cacheReadTokens": 3206400,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.0509067,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/CNT-03.2026-10-28T21-13-35-445Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 54730,
+            "outputTokens": 22971,
+            "reasoningTokens": 32159,
+            "cacheReadTokens": 3206400,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.0509067,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-28T21:13:35.450Z",
+      "agentOutput": "I'll start by reading the execution file and the referenced documentation.\r\nNow I'll write the deterministic generator.\r\nNow the manifest test.\r\nNow the asset specification document.\r\nImplemented CNT-03 fully and verified every required check.\n\n## Files created\n\n| File | Role |\n|------|------|\n| `scripts/generate-placeholder-assets.mjs` | Deterministic generator; writes 41 SVGs + manifest; `--check` verifies byte-identical output |\n| `public/assets/assets.manifest.json` | Versioned 41-entry manifest (32 card, 4 enemy, 5 field) |\n| `public/assets/cards/*.svg` (32 files) | Card placeholders, 300×420 |\n| `public/assets/enemies/*.svg` (4 files) | Enemy portraits, 512×512 |\n| `public/assets/fields/field-*.svg` (5 files) | Field icons, 256×256 |\n| `src/assets/asset-manifest.ts` | Typed manifest exports + pure `resolveAsset(id, baseUrl)` loader |\n| `src/assets/asset-manifest.test.ts` | 24 tests: coverage, files, determinism, loader, audit fixtures |\n| `docs/ASSET-SPEC.md` | Dimensions, safe areas, palettes, naming, loader and swap contract |\n\nNo existing files were modified. `docs/artifacts/` was not touched.\n\n## Validation actually run\n\n- `node scripts/generate-placeholder-assets.mjs` → exit 0, wrote 41 SVGs + manifest\n- `node scripts/generate-placeholder-assets.mjs --check` → exit 0, \"verified 41 SVG placeholders ... byte-identical\"\n- Generator run twice with SHA-256 comparison → all 42 files byte-identical\n- `npm test -- src/assets/asset-manifest.test.ts` → 24/24 passed\n- `npm run typecheck` → exit 0\n- `npm test` → 440/440 passed (whole suite, no regressions)\n- `npm run build` and `npm run check:budget` → passed; manifest and SVGs emitted under `dist/assets/`\n\n```forge-result\n{\n  \"summary\": \"Generated 41 deterministic SVG placeholders plus the versioned 41-entry manifest, added the pure base-URL manifest loader and a 24-test coverage/determinism/loader suite, and documented the dimensions, safe areas, palettes, naming and replacement contract in docs/ASSET-SPEC.md. All required checks pass.\",\n  \"decisions\": [\n    \"Manifest paths are relative to public/assets (cards/<id>.svg, enemies/<enemy-id>.svg, fields/field-<element>.svg); resolveAsset returns normalizedBase + 'assets/' + path so a known card yields base + assets/cards/<id>.svg, matching the task acceptance criterion.\",\n    \"Each manifest entry carries width, height, format, safeArea and name in addition to the class-wide spec block, so the board can reserve layout space and label fallbacks (VIS-NFR-02).\",\n    \"Enemy ids keep the content prefix: enemy:enemy-cinder-warden and enemies/enemy-cinder-warden.svg, per the enemy:<id> namespace rule.\",\n    \"The generator exposes --check, which compares generated bytes with disk without writing; the manifest test runs it twice to prove byte-stability and catch stale manifests.\",\n    \"The loader uses a frozen prototype-less lookup and Object.hasOwn, so ids such as toString, constructor and __proto__ return undefined rather than inherited values.\",\n    \"The manifest JSON import is bundled for synchronous, pure lookups; the same generated file is also copied to dist/assets by Vite, where the budget audit checks it.\"\n  ],\n  \"interfaces\": [\n    \"src/assets/asset-manifest.ts: ASSET_KINDS, type AssetKind; AssetSpec, AssetSpecs, AssetEntry, AssetManifest; ASSET_MANIFEST, ASSETS, ASSET_IDS, byId; assetById(id): AssetEntry | undefined; normalizeBase(baseUrl): string; resolveAsset(id, baseUrl): string | undefined.\",\n    \"resolveAsset returns normalizedBase + 'assets/' + manifest path; unknown ids return undefined and never throw; the loader never reads import.meta.env or window.\",\n    \"scripts/generate-placeholder-assets.mjs: default write mode emits 41 SVGs and public/assets/assets.manifest.json; --check verifies exact bytes and exits non-zero on any missing, extra or changed file.\",\n    \"public/assets/assets.manifest.json: version 1 with generatedBy, spec {card:300x420 safeArea 24, titleBand 72, artBox [240,200], textBand 96; enemy:512x512 safeArea 32; field:256x256 safeArea 16} and id-sorted assets.\"\n  ],\n  \"tests\": [\n    \"node scripts/generate-placeholder-assets.mjs: exit 0\",\n    \"node scripts/generate-placeholder-assets.mjs --check: exit 0, byte-identical\",\n    \"npm test -- src/assets/asset-manifest.test.ts: 24 passed\",\n    \"npm run typecheck: exit 0\",\n    \"npm test: 440 passed\",\n    \"npm run build: exit 0\",\n    \"npm run check:budget: passed\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-cnt-03-001",
+      "inputArtifactIds": [
+        "work-cnt-02-001"
+      ]
     },
     "SHL-01": {
       "taskId": "SHL-01",

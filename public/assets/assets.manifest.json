@@ -1,0 +1,483 @@
+{
+  "version": 1,
+  "generatedBy": "scripts/generate-placeholder-assets.mjs",
+  "spec": {
+    "card": {
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24,
+      "titleBand": 72,
+      "artBox": [
+        240,
+        200
+      ],
+      "textBand": 96
+    },
+    "enemy": {
+      "width": 512,
+      "height": 512,
+      "format": "svg",
+      "safeArea": 32
+    },
+    "field": {
+      "width": 256,
+      "height": 256,
+      "format": "svg",
+      "safeArea": 16
+    }
+  },
+  "assets": [
+    {
+      "id": "card:ember-ash-guard",
+      "kind": "card",
+      "element": "ember",
+      "name": "Ash Guard",
+      "path": "cards/ember-ash-guard.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:ember-cinder-jab",
+      "kind": "card",
+      "element": "ember",
+      "name": "Cinder Jab",
+      "path": "cards/ember-cinder-jab.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:ember-ember-lance",
+      "kind": "card",
+      "element": "ember",
+      "name": "Ember Lance",
+      "path": "cards/ember-ember-lance.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:ember-inferno",
+      "kind": "card",
+      "element": "ember",
+      "name": "Inferno",
+      "path": "cards/ember-inferno.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:ember-kindled-fury",
+      "kind": "card",
+      "element": "ember",
+      "name": "Kindled Fury",
+      "path": "cards/ember-kindled-fury.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:frost-deep-freeze",
+      "kind": "card",
+      "element": "frost",
+      "name": "Deep Freeze",
+      "path": "cards/frost-deep-freeze.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:frost-frost-shard",
+      "kind": "card",
+      "element": "frost",
+      "name": "Frost Shard",
+      "path": "cards/frost-frost-shard.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:frost-ice-needle",
+      "kind": "card",
+      "element": "frost",
+      "name": "Ice Needle",
+      "path": "cards/frost-ice-needle.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:frost-rime-ward",
+      "kind": "card",
+      "element": "frost",
+      "name": "Rime Ward",
+      "path": "cards/frost-rime-ward.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:frost-shatter",
+      "kind": "card",
+      "element": "frost",
+      "name": "Shatter",
+      "path": "cards/frost-shatter.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:gale-cyclone",
+      "kind": "card",
+      "element": "gale",
+      "name": "Cyclone",
+      "path": "cards/gale-cyclone.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:gale-gust",
+      "kind": "card",
+      "element": "gale",
+      "name": "Gust",
+      "path": "cards/gale-gust.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:gale-tailwind",
+      "kind": "card",
+      "element": "gale",
+      "name": "Tailwind",
+      "path": "cards/gale-tailwind.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:gale-updraft",
+      "kind": "card",
+      "element": "gale",
+      "name": "Updraft",
+      "path": "cards/gale-updraft.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:gale-wind-needle",
+      "kind": "card",
+      "element": "gale",
+      "name": "Wind Needle",
+      "path": "cards/gale-wind-needle.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:neutral-channel",
+      "kind": "card",
+      "element": "neutral",
+      "name": "Channel",
+      "path": "cards/neutral-channel.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:neutral-elemental-blow",
+      "kind": "card",
+      "element": "neutral",
+      "name": "Elemental Blow",
+      "path": "cards/neutral-elemental-blow.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:neutral-expose",
+      "kind": "card",
+      "element": "neutral",
+      "name": "Expose",
+      "path": "cards/neutral-expose.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:neutral-plain-strike",
+      "kind": "card",
+      "element": "neutral",
+      "name": "Plain Strike",
+      "path": "cards/neutral-plain-strike.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:neutral-probe",
+      "kind": "card",
+      "element": "neutral",
+      "name": "Probe",
+      "path": "cards/neutral-probe.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:neutral-second-wind",
+      "kind": "card",
+      "element": "neutral",
+      "name": "Second Wind",
+      "path": "cards/neutral-second-wind.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:neutral-sift",
+      "kind": "card",
+      "element": "neutral",
+      "name": "Sift",
+      "path": "cards/neutral-sift.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:neutral-surge",
+      "kind": "card",
+      "element": "neutral",
+      "name": "Surge",
+      "path": "cards/neutral-surge.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:shift-ember",
+      "kind": "card",
+      "element": "neutral",
+      "name": "Ember Shift",
+      "path": "cards/shift-ember.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:shift-frost",
+      "kind": "card",
+      "element": "neutral",
+      "name": "Frost Shift",
+      "path": "cards/shift-frost.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:shift-gale",
+      "kind": "card",
+      "element": "neutral",
+      "name": "Gale Shift",
+      "path": "cards/shift-gale.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:shift-stone",
+      "kind": "card",
+      "element": "neutral",
+      "name": "Stone Shift",
+      "path": "cards/shift-stone.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:stone-avalanche",
+      "kind": "card",
+      "element": "stone",
+      "name": "Avalanche",
+      "path": "cards/stone-avalanche.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:stone-bulwark",
+      "kind": "card",
+      "element": "stone",
+      "name": "Bulwark",
+      "path": "cards/stone-bulwark.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:stone-resonance",
+      "kind": "card",
+      "element": "stone",
+      "name": "Resonance",
+      "path": "cards/stone-resonance.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:stone-stone-fist",
+      "kind": "card",
+      "element": "stone",
+      "name": "Stone Fist",
+      "path": "cards/stone-stone-fist.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "card:stone-stone-spike",
+      "kind": "card",
+      "element": "stone",
+      "name": "Stone Spike",
+      "path": "cards/stone-stone-spike.svg",
+      "width": 300,
+      "height": 420,
+      "format": "svg",
+      "safeArea": 24
+    },
+    {
+      "id": "enemy:enemy-cinder-warden",
+      "kind": "enemy",
+      "element": "ember",
+      "name": "Cinder Warden",
+      "path": "enemies/enemy-cinder-warden.svg",
+      "width": 512,
+      "height": 512,
+      "format": "svg",
+      "safeArea": 32
+    },
+    {
+      "id": "enemy:enemy-hollow-field",
+      "kind": "enemy",
+      "element": "neutral",
+      "name": "The Hollow Field",
+      "path": "enemies/enemy-hollow-field.svg",
+      "width": 512,
+      "height": 512,
+      "format": "svg",
+      "safeArea": 32
+    },
+    {
+      "id": "enemy:enemy-rime-sentinel",
+      "kind": "enemy",
+      "element": "frost",
+      "name": "Rime Sentinel",
+      "path": "enemies/enemy-rime-sentinel.svg",
+      "width": 512,
+      "height": 512,
+      "format": "svg",
+      "safeArea": 32
+    },
+    {
+      "id": "enemy:enemy-storm-herald",
+      "kind": "enemy",
+      "element": "gale",
+      "name": "Storm Herald",
+      "path": "enemies/enemy-storm-herald.svg",
+      "width": 512,
+      "height": 512,
+      "format": "svg",
+      "safeArea": 32
+    },
+    {
+      "id": "field:ember",
+      "kind": "field",
+      "element": "ember",
+      "name": "Ember Field",
+      "path": "fields/field-ember.svg",
+      "width": 256,
+      "height": 256,
+      "format": "svg",
+      "safeArea": 16
+    },
+    {
+      "id": "field:frost",
+      "kind": "field",
+      "element": "frost",
+      "name": "Frost Field",
+      "path": "fields/field-frost.svg",
+      "width": 256,
+      "height": 256,
+      "format": "svg",
+      "safeArea": 16
+    },
+    {
+      "id": "field:gale",
+      "kind": "field",
+      "element": "gale",
+      "name": "Gale Field",
+      "path": "fields/field-gale.svg",
+      "width": 256,
+      "height": 256,
+      "format": "svg",
+      "safeArea": 16
+    },
+    {
+      "id": "field:neutral",
+      "kind": "field",
+      "element": "neutral",
+      "name": "Neutral Field",
+      "path": "fields/field-neutral.svg",
+      "width": 256,
+      "height": 256,
+      "format": "svg",
+      "safeArea": 16
+    },
+    {
+      "id": "field:stone",
+      "kind": "field",
+      "element": "stone",
+      "name": "Stone Field",
+      "path": "fields/field-stone.svg",
+      "width": 256,
+      "height": 256,
+      "format": "svg",
+      "safeArea": 16
+    }
+  ]
+}
