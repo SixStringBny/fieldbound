@@ -1,10 +1,10 @@
 # Project Progress
 
 ## Current State
-**Phase**: RELEASE-VERIFICATION-1
+**Phase**: RELEASE-VERIFICATION-2
 **Status**: In Progress
 **Validation Gaps**: 4 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T11:59:41.723Z
+**Last Updated**: 2026-10-29T12:04:32.910Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -72,6 +72,8 @@
   - Files: tests/e2e/duel.spec.ts
 - [x] Phase RELEASE-VERIFICATION-1, Task REL-04: Verify responsive layout, keyboard play and reduced motion (@qa-automation-engineer)
   - Files: tests/e2e/responsive-a11y.spec.ts
+- [x] Phase RELEASE-VERIFICATION-2, Task REL-05: Audit the subpath static build and commit CI and Pages workflows (@qa-automation-engineer)
+  - Files: scripts/check-build.mjs, .github/workflows/ci.yml, .github/workflows/pages.yml, README.md
 
 ## Current Task
 - None currently running

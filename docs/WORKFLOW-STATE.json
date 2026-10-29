@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T11:59:41.719Z",
+  "lastUpdatedAt": "2026-10-29T12:04:32.907Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "RELEASE-VERIFICATION-1",
+  "currentPhase": "RELEASE-VERIFICATION-2",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -1711,10 +1711,50 @@
     },
     "REL-05": {
       "taskId": "REL-05",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "qa-automation-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "scripts/check-build.mjs",
+        ".github/workflows/ci.yml",
+        ".github/workflows/pages.yml",
+        "README.md"
+      ],
+      "startedAt": "2026-10-29T12:00:01.674Z",
+      "usage": {
+        "inputTokens": 56281,
+        "outputTokens": 17091,
+        "reasoningTokens": 17767,
+        "cacheReadTokens": 2399872,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.03655656599999999,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/REL-05.2026-10-29T12-04-32-896Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 56281,
+            "outputTokens": 17091,
+            "reasoningTokens": 17767,
+            "cacheReadTokens": 2399872,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.03655656599999999,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T12:04:32.903Z",
+      "agentOutput": "I'll start by reading the execution file for REL-05.\r\nNow I'll rewrite the build audit with the subpath, origin and Chromium checks.\r\nAudit passes. Now the CI and Pages workflows.\r\nNow let me verify the source-scan failure path with a temporary probe file (removed immediately after).\r\nBoth audits and the final validation pass. Here is the result.\n\n```forge-result\n{\n  \"summary\": \"Replaced scripts/check-build.mjs with a full subpath/origin audit, added .github/workflows/ci.yml and .github/workflows/pages.yml, and rewrote README.md. `node scripts/check-build.mjs` exits 0: builds with VITE_BASE=/Card-Game-Project/, verifies the CSP, every HTML reference, the manifest and all 41 asset files over the real subpath (200 each, with a 404 missing-asset guard), scans all emitted text for external subresource URLs, launches Chromium to play one card from the hand with zero console errors and zero cross-origin requests, and scans src/ for dangerouslySetInnerHTML, eval( and new Function.\",\n  \"decisions\": [\n    \"The subpath audit keeps the existing CSP/dev-server checks and adds the missing build-and-browser half: the emitted HTML references, the manifest and every manifest file are fetched under /Card-Game-Project/, and a deliberately missing path must return 404 so a catch-all 200 cannot make coverage meaningless.\",\n    \"External URL scanning allows only W3C XML/SVG namespace identifiers and React's error-decoder documentation string, which are identifiers/text and never requested; the Chromium request log independently proves zero cross-origin requests, non-GET requests and failed requests.\",\n    \"The source scan now blanks comments and string/template literals before matching, and self-checks both directions. The scaffold audit failed on src/duel/match.test.ts and src/duel/round.test.ts, which name 'dangerouslySetInnerHTML' only inside a forbidden-token assertion; that was a real false positive in the guard, not a weakened check, and a temporary probe file containing eval( still made the audit exit non-zero before it was removed.\",\n    \"The Chromium step drives the real UI (seeded menu -> solo setup -> Ember deck -> battle), chooses an affordable card whose printed cost is at least 1 so the energy readout must change, plays it through the card detail sheet, and fails if the energy text is unchanged.\",\n    \"ci.yml runs npm ci, typecheck, unit/integration tests, build, Playwright browser install, E2E, then the subpath and budget audits; pages.yml builds with VITE_BASE=/${{ github.event.repository.name }}/ on main, uploads dist with actions/upload-pages-artifact and deploys with actions/deploy-pages. Both use only the repository token.\",\n    \"README.md replaces the scaffold text with dev, test, build, preview, E2E, deploy, audit and asset-swap instructions, plus the manifest schema summary and a pointer to docs/ASSET-SPEC.md.\"\n  ],\n  \"interfaces\": [\n    \"scripts/check-build.mjs: build(), auditHtml() -> references, auditBuiltOutput(), readManifest() -> { entries }, auditSource(), serveDist() -> { origin, close }, auditServedBuild(origin, references, entries), auditBrowser(origin), auditDevServer(); DEFAULT_BASE '/Card-Game-Project/', AUDIT_SEED 424242.\",\n    \".github/workflows/ci.yml: push + pull_request job 'verify' with npm ci, typecheck, test, build, playwright install --with-deps chromium firefox webkit, test:e2e, check-build.mjs, check-budget.mjs, failure-only test-results artifact.\",\n    \".github/workflows/pages.yml: main/workflow_dispatch build job with VITE_BASE=/${{ github.event.repository.name }}/, configure-pages, upload-pages-artifact dist; deploy job in the github-pages environment via deploy-pages.\",\n    \"README.md: documented commands npm run dev/test/typecheck/build/preview/serve:dist/test:e2e/check:build/check:budget, VITE_BASE contract, Pages setup, asset-swap and manifest schema contract, security/privacy statements.\"\n  ],\n  \"tests\": [\n    \"node scripts/check-build.mjs: exit 0 (observed twice; HTML 200, JS/CSS 200, manifest 200, all 41 manifest assets 200, missing-asset probe 404, Chromium played player:5:neutral-plain-strike with energy 3 -> 2, 10 GETs, 0 cross-origin, 0 console/page errors, dev server HTML has no CSP)\",\n    \"Temporary src/__audit_probe__.ts containing eval('1 + 1'): node scripts/check-build.mjs exited non-zero reporting 'src/__audit_probe__.ts:1 uses eval('; the probe was deleted immediately and the following clean run passed\"\n  ],\n  \"warnings\": [\n    \"The two GitHub Actions workflows were authored and reviewed but cannot be executed in this local session; their steps and triggers were verified by inspection against the acceptance criteria. No deployment secrets or vendor runtime code were added.\",\n    \"The emitted Chromium bundle legitimately contains https://react.dev/errors/ (React's minified error documentation) and W3C namespace strings; both are reported by the scan as non-requested references and the browser run confirmed none of them is fetched.\",\n    \"The audit ignores a browser-automatic /favicon.ico 4xx probe if one occurs; no such request occurred in this run, and any other non-2xx response fails the audit.\",\n    \"dist/ is rebuilt with the Pages subpath by the audit, so the workspace dist is left in subpath form after validation; Playwright's webServer rebuilds its own root-path dist.\"\n  ],\n  \"unresolved\": []\n}\n```\n\nFiles created or changed:\n\n- `scripts/check-build.mjs` (rewritten audit: subpath build, CSP, reference resolution, external-URL scan, manifest coverage + served 200s with 404 guard, Chromium one-card origin/console check, source scan with self-check, dev-server CSP)\n- `.github/workflows/ci.yml` (created)\n- `.github/workflows/pages.yml` (created)\n- `README.md` (replaced with run/test/build/preview/E2E/deploy/audit/asset-swap documentation)\n\nNot touched: `docs/artifacts/`, application source, build config, CSS, package manifests. No human-review record was created.\r\n",
+      "artifactId": "work-rel-05-001",
+      "inputArtifactIds": [
+        "work-rel-01-001",
+        "work-rel-02-001",
+        "work-rel-03-001",
+        "work-rel-04-001"
+      ]
     },
     "REL-06": {
       "taskId": "REL-06",
