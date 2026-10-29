@@ -248,8 +248,10 @@ describe('BattleBoard structure', () => {
       'utf8',
     );
 
-    expect(tokens).toMatch(/--fb-target:\s*44px/);
-    expect(tokens).toMatch(/--fb-board-max:\s*1080px/);
+    // The promoted block states both in rem: 2.75rem = 44px and 67.5rem =
+    // 1080px at the 16px root (README §12 item 4, tokens.test.ts).
+    expect(tokens).toMatch(/--fb-target:\s*2\.75rem/);
+    expect(tokens).toMatch(/--fb-board-max:\s*67\.5rem/);
 
     expect(css).toMatch(
       /\.shell\[data-screen='battle'\]\s*\{[^}]*max-width:\s*var\(--fb-board-max\)/,
@@ -283,7 +285,9 @@ describe('BattleBoard structure', () => {
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
     expect(css).toMatch(/\[data-reduced-motion='true'\]/);
     expect(css).toMatch(/\[data-reduced-motion='false'\]/);
-    expect(css).toMatch(/transition-duration:\s*1ms/);
+    expect(css).toMatch(
+      /transition-duration:\s*var\(--fb-dur-instant\)/,
+    );
     expect(css).toMatch(/transform:\s*none/);
   });
 });
