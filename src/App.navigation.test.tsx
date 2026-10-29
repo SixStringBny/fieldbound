@@ -1,14 +1,26 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { App, SCREEN_KINDS, SCREENS } from './App';
+import { MenuScreen } from './ui/screens/MenuScreen';
 import { CUE_NAMES, createUiEventBus, uiEvents } from './ui/events';
 import type { CueName, UiEvent } from './ui/events';
 
+/**
+ * The menu entry's accessible name, not its text content: the whole card is
+ * one button, so the hint and the decorative arrow live inside the object but
+ * the name is frozen to the title (solo-flow section 9.1).
+ */
+function accessibleEntryName(button: HTMLElement): string | null {
+  const labelledBy = button.getAttribute('aria-labelledby');
+  const label = labelledBy === null ? null : document.getElementById(labelledBy);
+  const name = (label?.textContent ?? button.textContent ?? '').trim();
+
+  return name === '' ? null : name;
+}
+
 function menuEntryNames(): Array<string | null> {
   const menu = screen.getByRole('navigation', { name: 'Main menu' });
-  return within(menu)
-    .getAllByRole('button')
-    .map((button) => button.textContent);
+  return within(menu).getAllByRole('button').map(accessibleEntryName);
 }
 
 describe('App navigation', () => {
@@ -90,6 +102,110 @@ describe('App navigation', () => {
 
       unmount();
     }
+  });
+});
+
+describe('MenuScreen table hub', () => {
+  const noop = () => undefined;
+
+  function renderMenu({
+    hasSave = false,
+    resumeHint,
+    deckSummary,
+  }: {
+    readonly hasSave?: boolean;
+    readonly resumeHint?: string;
+    readonly deckSummary?: string;
+  } = {}) {
+    return render(
+      <MenuScreen
+        hasSave={hasSave}
+        {...(resumeHint === undefined ? {} : { resumeHint })}
+        {...(deckSummary === undefined ? {} : { deckSummary })}
+        onPlaySolo={noop}
+        onLocalDuel={noop}
+        onContinueRun={noop}
+        onHowToPlay={noop}
+        onSettings={noop}
+      />,
+    );
+  }
+
+  it('renders the four always-present entries in DOM order with no empty slot', () => {
+    const { container } = renderMenu();
+
+    expect(menuEntryNames()).toEqual([
+      'Play Solo',
+      'Local Duel',
+      'How to Play',
+      'Settings',
+    ]);
+    expect(screen.getByText('No run in progress')).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'Continue Run' }),
+      'a missing save must not leave a Continue placeholder',
+    ).toBeNull();
+    expect(container.querySelector('#menu-continue-run-hint')).toBeNull();
+  });
+
+  it('adds the Continue bookmark between Local Duel and How to Play with its exact hint and deck line', () => {
+    renderMenu({
+      hasSave: true,
+      resumeHint: 'Encounter 2 of 4 · 28 of 40 health',
+      deckSummary: 'Ember deck · 11 cards',
+    });
+
+    expect(menuEntryNames()).toEqual([
+      'Play Solo',
+      'Local Duel',
+      'Continue Run',
+      'How to Play',
+      'Settings',
+    ]);
+    expect(
+      document.getElementById('menu-continue-run-hint')?.textContent,
+    ).toBe('Encounter 2 of 4 · 28 of 40 health');
+    expect(document.getElementById('menu-continue-run-deck')?.textContent).toBe(
+      'Ember deck · 11 cards',
+    );
+    expect(screen.queryByText('No run in progress')).toBeNull();
+  });
+
+  it('omits the deck line when the composition root has no deck view', () => {
+    renderMenu({
+      hasSave: true,
+      resumeHint: 'Encounter 1 of 4 · 40 of 40 health',
+    });
+
+    expect(document.getElementById('menu-continue-run-hint')?.textContent).toBe(
+      'Encounter 1 of 4 · 40 of 40 health',
+    );
+    expect(document.getElementById('menu-continue-run-deck')).toBeNull();
+  });
+
+  it('keeps the mode card itself as the native button and the hero out of the tab order', () => {
+    const { container } = renderMenu();
+    const solo = container.querySelector('.menu__card--solo');
+    const hero = container.querySelector('.menu__hero');
+
+    expect(solo?.tagName).toBe('BUTTON');
+    expect(screen.getByRole('button', { name: 'Play Solo' })).toBe(solo);
+    expect(
+      hero?.querySelectorAll(
+        'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      ),
+    ).toHaveLength(0);
+    expect(container.querySelector('.menu__wordmark')?.textContent).toBe(
+      'Fieldbound',
+    );
+  });
+
+  it('renders no loading state', () => {
+    const { container } = renderMenu();
+
+    expect(container.querySelector('[aria-busy="true"]')).toBeNull();
+    expect(screen.queryByRole('progressbar')).toBeNull();
+    expect(screen.queryByText(/loading/i)).toBeNull();
   });
 });
 

@@ -21,7 +21,14 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { collectConsoleErrors, expectNoConsoleErrors, expectScreen, openApp, startSolo } from './helpers';
+import {
+  collectConsoleErrors,
+  expectNoConsoleErrors,
+  expectNoHorizontalScroll,
+  expectScreen,
+  openApp,
+  startSolo,
+} from './helpers';
 
 interface ViewportCase {
   readonly label: string;
@@ -545,5 +552,438 @@ test.describe('identity', () => {
     }
 
     expectNoConsoleErrors(errors, 'AB-V4 display face');
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Menu-scope extension (ticket #19)                                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The menu owns the checks above for every route and, from ticket #19, the
+ * route-specific half of the bar: its named objects and DOM order (`AB-C1`),
+ * the single action seal (`AB-C2`), the phone thumb envelope (`AB-P1`), text
+ * floors and truncation (`AB-P4`), the hero + hub pair and measured widths
+ * (`AB-T1`/`AB-T2`), route focus (`AB-G6`), one live region (`AB-A4`) and the
+ * rendered identity/art/ban checks (`AB-V2`/`AB-V3`/`AB-V5`).
+ *
+ * The save state is produced through the product: start a solo run, leave the
+ * battle and reload, so the menu is served by the boot-time save validator.
+ */
+
+const MENU_SAVE_SEED = 20261103;
+
+const MENU_ENTRIES_NO_SAVE = ['Play Solo', 'Local Duel', 'How to Play', 'Settings'] as const;
+const MENU_ENTRIES_SAVE = ['Play Solo', 'Local Duel', 'Continue Run', 'How to Play', 'Settings'] as const;
+
+/** The menu button names, resolved the way assistive technology resolves them. */
+async function menuButtonNames(page: Page): Promise<readonly string[]> {
+  return page.locator('.menu__hub button').evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const labelledBy = node.getAttribute('aria-labelledby');
+      const label = labelledBy === null ? null : document.getElementById(labelledBy);
+
+      return (label?.textContent ?? node.textContent ?? '').replace(/\s+/g, ' ').trim();
+    }),
+  );
+}
+
+/** Menu with a validated save: leave a real battle, then reload through boot. */
+async function openMenuWithSave(page: Page): Promise<void> {
+  await openApp(page, MENU_SAVE_SEED);
+  await startSolo(page, 'ember');
+  await page.getByRole('button', { name: 'Leave battle', exact: true }).click();
+  await expectScreen(page, 'menu', 'leaving a solo run');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expectScreen(page, 'menu', 'the reloaded validated save');
+  await page.evaluate(() => document.fonts.ready);
+}
+
+/** Menu with a corrupt run key: the store discards it and renders the no-save state. */
+async function openMenuWithCorruptSave(page: Page): Promise<void> {
+  await openApp(page, SEED);
+  await page.evaluate(() => {
+    localStorage.setItem('fieldbound.run.v1', '{"schemaVersion":1,');
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expectScreen(page, 'menu', 'the corrupt-save reload');
+}
+
+test.describe('menu', () => {
+  test.use({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
+
+  test('AB-C1 named objects render on the menu', async ({ page }) => {
+    await openApp(page, SEED);
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Fieldbound', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Main menu', exact: true })).toBeVisible();
+    expect(await menuButtonNames(page)).toEqual(MENU_ENTRIES_NO_SAVE);
+    await expect(
+      page.getByRole('button', { name: 'Play Solo', exact: true }),
+    ).toHaveAttribute('aria-describedby', 'menu-play-solo-hint');
+    await expect(page.locator('#menu-play-solo-hint')).toHaveText(
+      'Four fights, one 40-health run.',
+    );
+    await expect(page.locator('#menu-local-duel-hint')).toHaveText(
+      'Best of three, pass and play.',
+    );
+    await expect(page.getByText('No run in progress', { exact: true })).toBeVisible();
+
+    // Hero is not focusable; no loading state and no empty Continue slot.
+    expect(
+      await page
+        .locator('.menu__hero')
+        .locator('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')
+        .count(),
+      'the hero must carry no focusable control',
+    ).toBe(0);
+    expect(await page.locator('#main-content [aria-busy="true"]').count()).toBe(0);
+    expect(await page.getByRole('progressbar').count()).toBe(0);
+    await expect(page.getByRole('button', { name: 'Continue Run', exact: true })).toHaveCount(0);
+  });
+
+  test('AB-C1 named objects render on the menu with a validated save', async ({ page }) => {
+    await openMenuWithSave(page);
+
+    expect(await menuButtonNames(page)).toEqual(MENU_ENTRIES_SAVE);
+    await expect(page.locator('#menu-continue-run-hint')).toHaveText(
+      /^Encounter [1-4] of 4 · \d+ of 40 health$/,
+    );
+    await expect(page.locator('#menu-continue-run-deck')).toHaveText(
+      /^Ember deck · \d+ cards$/,
+    );
+    await expect(page.getByText('No run in progress', { exact: true })).toHaveCount(0);
+  });
+
+  test('AB-C1 a corrupt save renders the no-save menu with no error surface', async ({ page }) => {
+    await openMenuWithCorruptSave(page);
+
+    expect(await menuButtonNames(page)).toEqual(MENU_ENTRIES_NO_SAVE);
+    await expect(page.getByText('No run in progress', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue Run', exact: true })).toHaveCount(0);
+    expect(await page.getByRole('alertdialog').count()).toBe(0);
+    expect(await page.getByRole('alert').count()).toBe(0);
+    await expect(page.locator('[role="status"]')).toHaveText('');
+  });
+
+  test('AB-C2 exactly one action seal and it is the Play Solo button', async ({ page }) => {
+    await openApp(page, SEED);
+
+    await expect(page.locator('.menu__seal--ember')).toHaveCount(1);
+
+    const solo = page.getByRole('button', { name: 'Play Solo', exact: true });
+    await expect(solo).toHaveCount(1);
+    expect(await solo.evaluate((node) => node.tagName)).toBe('BUTTON');
+    await expect(solo).toHaveClass(/menu__card--solo/);
+    expect(await page.locator('.menu__card--solo').count()).toBe(1);
+  });
+
+  test('AB-T1 the hero and hub are side by side', async ({ page }) => {
+    await openApp(page, SEED);
+
+    const hero = await page.locator('.menu__hero').boundingBox();
+    const hub = await page.locator('.menu__hub').boundingBox();
+
+    expect(hero).not.toBeNull();
+    expect(hub).not.toBeNull();
+
+    expect(hero!.x + hero!.width).toBeLessThanOrEqual(hub!.x + 1);
+    expect(Math.min(hero!.y + hero!.height, hub!.y + hub!.height)).toBeGreaterThan(
+      Math.max(hero!.y, hub!.y),
+    );
+  });
+
+  test('AB-T2 the hub measures 512 inside a centred 1080 column', async ({ page }) => {
+    await openApp(page, SEED);
+
+    const boxes = await page.evaluate(() => {
+      const read = (selector: string) => {
+        const node = document.querySelector(selector);
+        if (node === null) {
+          return null;
+        }
+        const rect = node.getBoundingClientRect();
+        return { x: rect.x, width: rect.width };
+      };
+
+      return {
+        menu: read('.menu'),
+        hero: read('.menu__hero'),
+        hub: read('.menu__hub'),
+        innerWidth: window.innerWidth,
+      };
+    });
+
+    expect(boxes.menu).not.toBeNull();
+    expect(boxes.hero).not.toBeNull();
+    expect(boxes.hub).not.toBeNull();
+
+    expect(boxes.menu!.width, 'the menu content column is 1080 at 1280').toBeCloseTo(1080, 0);
+    expect(Math.abs(boxes.hub!.width - 512), 'the hub is 512 at 1280').toBeLessThanOrEqual(8);
+    expect(Math.abs(boxes.hero!.width - 520), 'the hero takes the rest of 1080').toBeLessThanOrEqual(8);
+
+    const leftGap = boxes.menu!.x;
+    const rightGap = boxes.innerWidth - (boxes.menu!.x + boxes.menu!.width);
+    expect(Math.abs(leftGap - rightGap), 'the column is centred').toBeLessThanOrEqual(2);
+  });
+
+  test('AB-G6 route focus lands on the h1 with the two-tone ring', async ({ page }) => {
+    await openApp(page, SEED);
+
+    const focus = await page.evaluate(() => {
+      const element = document.activeElement;
+      if (!(element instanceof HTMLElement)) {
+        return null;
+      }
+      const style = getComputedStyle(element);
+      return {
+        tag: element.tagName,
+        text: element.textContent?.trim() ?? '',
+        outlineWidth: style.outlineWidth,
+        outlineStyle: style.outlineStyle,
+        outlineOffset: style.outlineOffset,
+        shadow: style.boxShadow,
+      };
+    });
+
+    expect(focus).not.toBeNull();
+    expect(focus!.tag).toBe('H1');
+    expect(focus!.text).toBe('Fieldbound');
+    expect(focus!.outlineWidth).toBe('2px');
+    expect(focus!.outlineStyle).toBe('solid');
+    expect(focus!.outlineOffset).toBe('2px');
+    expect(focus!.shadow, 'the two-tone ring includes the inner halo').not.toBe('none');
+
+    await page.keyboard.press('Tab');
+    expect(
+      await page.evaluate(() => document.activeElement?.getAttribute('aria-labelledby')),
+      'the first tab stop after the route heading is Play Solo',
+    ).toBe('menu-play-solo-label');
+  });
+
+  test('AB-A4 exactly one polite live region and no menu announcement', async ({ page }) => {
+    await openApp(page, SEED);
+
+    const live = await page.evaluate(() => ({
+      statuses: document.querySelectorAll('[role="status"]').length,
+      liveRegions: document.querySelectorAll('[aria-live]').length,
+      inMain: document.querySelectorAll('#main-content [role="status"], #main-content [aria-live]').length,
+      text: document.querySelector('[role="status"]')?.textContent?.trim() ?? '',
+    }));
+
+    expect(live.statuses, 'one app-wide polite status').toBe(1);
+    expect(live.liveRegions, 'no second live region').toBe(1);
+    expect(live.inMain, 'the menu adds no live region of its own').toBe(0);
+    expect(live.text, 'opening the menu is not a settled transition').toBe('');
+  });
+
+  test('AB-V3 the menu renders no art outside the manifest loader', async ({ page }) => {
+    await openApp(page, SEED);
+
+    const art = await page.evaluate(() => {
+      const artwork = Array.from(document.querySelectorAll<HTMLElement>('#main-content img, #main-content svg'));
+      const remote = Array.from(document.querySelectorAll<HTMLElement>('#main-content [src], #main-content [href]'))
+        .map((node) => node.getAttribute('src') ?? node.getAttribute('href') ?? '')
+        .filter((value) => /^https?:/i.test(value));
+
+      return {
+        artwork: artwork.length,
+        remote,
+        backgroundUrls: Array.from(document.querySelectorAll<HTMLElement>('#main-content *'))
+          .map((node) => getComputedStyle(node).backgroundImage)
+          .filter((value) => /url\(/i.test(value)),
+      };
+    });
+
+    expect(art.artwork, 'the menu has no art').toBe(0);
+    expect(art.remote).toEqual([]);
+    expect(art.backgroundUrls).toEqual([]);
+  });
+
+  test('AB-V5 no banned motif renders on the menu', async ({ page }) => {
+    await openApp(page, SEED);
+
+    const banned = await page.evaluate(() => {
+      const nodes = Array.from(document.querySelectorAll<HTMLElement>('#main-content *'));
+
+      return {
+        tables: document.querySelectorAll('#main-content table, #main-content form').length,
+        filters: nodes.filter((node) => getComputedStyle(node).filter !== 'none').length,
+        backdrops: nodes.filter((node) => getComputedStyle(node).backdropFilter !== 'none').length,
+        trueBlack: nodes.filter((node) => getComputedStyle(node).backgroundColor === 'rgb(0, 0, 0)').length,
+      };
+    });
+
+    expect(banned.tables, 'no table or form furniture').toBe(0);
+    expect(banned.filters, 'no CSS filter motif').toBe(0);
+    expect(banned.backdrops, 'no glassmorphism').toBe(0);
+    expect(banned.trueBlack, 'true black is not a surface').toBe(0);
+  });
+});
+
+/* Phone-only checks: the thumb envelope and the text floors. */
+for (const viewport of [
+  { label: '375x667', width: 375, height: 667 },
+  { label: '390x844', width: 390, height: 844 },
+] as const) {
+  test.describe(`menu phone ${viewport.label}`, () => {
+    test.use({ viewport: { width: viewport.width, height: viewport.height }, reducedMotion: 'reduce' });
+
+    test(`AB-P1 the primary action sits inside the 288px thumb envelope at ${viewport.label}`, async ({
+      page,
+    }) => {
+      await openApp(page, SEED);
+
+      const box = await page.getByRole('button', { name: 'Play Solo', exact: true }).boundingBox();
+      expect(box).not.toBeNull();
+
+      const thumbTop = viewport.height - 288;
+
+      expect(box!.y, 'Play Solo must start inside the thumb envelope').toBeGreaterThanOrEqual(thumbTop);
+      expect(box!.y + box!.height, 'Play Solo must stay inside the viewport').toBeLessThanOrEqual(
+        viewport.height,
+      );
+      expect(box!.x, 'at least 8px from the left edge').toBeGreaterThanOrEqual(8);
+      expect(box!.x + box!.width, 'at least 8px from the right edge').toBeLessThanOrEqual(
+        viewport.width - 8,
+      );
+    });
+
+    test(`AB-P4 no ellipsis and the text floors hold at ${viewport.label}`, async ({ page }) => {
+      await openMenuWithSave(page);
+
+      const text = await page.evaluate(() => {
+        const selectors = [
+          '.menu__eyebrow',
+          '.menu__tagline',
+          '.menu__plaque',
+          '.menu__card-title',
+          '.menu__card-hint',
+          '.menu__bookmark-title',
+          '.menu__bookmark-hint',
+          '.menu__bookmark-deck',
+          '.menu__row',
+        ];
+
+        return selectors.flatMap((selector) =>
+          Array.from(document.querySelectorAll<HTMLElement>(selector)).map((node) => ({
+            selector,
+            text: (node.textContent ?? '').replace(/\s+/g, ' ').trim(),
+            fontSize: Number.parseFloat(getComputedStyle(node).fontSize),
+            textOverflow: getComputedStyle(node).textOverflow,
+            clipped: node.scrollWidth > node.clientWidth + 1,
+          })),
+        );
+      });
+
+      expect(text.length).toBeGreaterThan(0);
+
+      for (const item of text) {
+        expect(item.textOverflow, `${item.selector} must not use ellipsis`).not.toBe('ellipsis');
+        expect(item.clipped, `${item.selector} "${item.text}" is clipped`).toBe(false);
+        expect(item.fontSize, `${item.selector} "${item.text}" is below 12px`).toBeGreaterThanOrEqual(
+          item.selector === '.menu__eyebrow' ? 11 : 12,
+        );
+      }
+    });
+  });
+}
+
+/* The 1024 composition and the saved-state target/overflow checks. */
+test.describe('menu 1024', () => {
+  test.use({ viewport: { width: 1024, height: 768 }, reducedMotion: 'reduce' });
+
+  test('AB-T1 the hero and hub are side by side at 1024', async ({ page }) => {
+    await openApp(page, SEED);
+
+    const hero = await page.locator('.menu__hero').boundingBox();
+    const hub = await page.locator('.menu__hub').boundingBox();
+
+    expect(hero).not.toBeNull();
+    expect(hub).not.toBeNull();
+    expect(hero!.x + hero!.width).toBeLessThanOrEqual(hub!.x + 1);
+  });
+
+  test('AB-T2 the hub measures 440 inside a centred 976 column', async ({ page }) => {
+    await openApp(page, SEED);
+
+    const boxes = await page.evaluate(() => {
+      const read = (selector: string) => {
+        const node = document.querySelector(selector);
+        if (node === null) {
+          return null;
+        }
+        const rect = node.getBoundingClientRect();
+        return { x: rect.x, width: rect.width };
+      };
+
+      return {
+        menu: read('.menu'),
+        hero: read('.menu__hero'),
+        hub: read('.menu__hub'),
+        innerWidth: window.innerWidth,
+      };
+    });
+
+    expect(boxes.menu).not.toBeNull();
+    expect(boxes.hub).not.toBeNull();
+    expect(boxes.hero).not.toBeNull();
+
+    expect(boxes.menu!.width, 'the menu content column is 976 at 1024').toBeCloseTo(976, 0);
+    expect(Math.abs(boxes.hub!.width - 440), 'the hub is 440 at 1024').toBeLessThanOrEqual(8);
+    expect(Math.abs(boxes.hero!.width - 504), 'the hero takes the rest of 976').toBeLessThanOrEqual(8);
+
+    const leftGap = boxes.menu!.x;
+    const rightGap = boxes.innerWidth - (boxes.menu!.x + boxes.menu!.width);
+    expect(Math.abs(leftGap - rightGap), 'the column is centred').toBeLessThanOrEqual(2);
+  });
+});
+
+for (const viewport of [
+  { label: '375x667', width: 375, height: 667 },
+  { label: '1280x800', width: 1280, height: 800 },
+] as const) {
+  test.describe(`menu saved ${viewport.label}`, () => {
+    test.use({ viewport: { width: viewport.width, height: viewport.height }, reducedMotion: 'reduce' });
+
+    test(`AB-G4 no horizontal page scroll on the menu with a save at ${viewport.label}`, async ({
+      page,
+    }) => {
+      await openMenuWithSave(page);
+      await expectNoHorizontalScroll(page);
+    });
+
+    test(`AB-G5 every target is at least 44px on the menu with a save at ${viewport.label}`, async ({
+      page,
+    }) => {
+      await openMenuWithSave(page);
+      const targets = await readTargets(page);
+      expect(targets.length).toBeGreaterThan(0);
+
+      for (const target of targets) {
+        expect(target.width, `${target.label} is ${target.width}px wide`).toBeGreaterThanOrEqual(
+          MIN_TARGET_PX,
+        );
+        expect(target.height, `${target.label} is ${target.height}px tall`).toBeGreaterThanOrEqual(
+          MIN_TARGET_PX,
+        );
+      }
+    });
+  });
+}
+
+test.describe('menu axe saved', () => {
+  test.use({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
+
+  test('AB-A1 axe reports zero WCAG 2.1 A/AA violations on the menu with a save', async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+
+    await openMenuWithSave(page);
+    await page.evaluate(() => document.fonts.ready);
+    await analyse(page, 'menu');
+
+    expectNoConsoleErrors(errors, 'menu with a validated save');
   });
 });
