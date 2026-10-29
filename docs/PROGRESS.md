@@ -1,10 +1,10 @@
 # Project Progress
 
 ## Current State
-**Phase**: LOCAL-DUEL-3
+**Phase**: SOLO-RUN-2
 **Status**: In Progress
 **Validation Gaps**: 1 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T07:31:18.015Z
+**Last Updated**: 2026-10-29T07:37:54.342Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -52,6 +52,8 @@
   - Files: src/run/rewards.ts, src/run/rewards.test.ts
 - [x] Phase SOLO-RUN-1, Task RUN-06: Store and update the best-run record (@solo-mode-engineer)
   - Files: src/persistence/stats.ts, src/persistence/stats.test.ts
+- [x] Phase SOLO-RUN-2, Task RUN-03: Persist and validate the solo run save (@solo-mode-engineer)
+  - Files: src/persistence/run-save.ts, src/persistence/run-save.test.ts
 - [x] Phase LOCAL-DUEL-1, Task DUEL-01: Implement the best-of-three match model (@duel-mode-engineer)
   - Files: src/duel/match.ts, src/duel/match.test.ts
 - [x] Phase LOCAL-DUEL-2, Task DUEL-02: Gate duel turns behind privacy and hide the off-turn hand (@duel-mode-engineer)
@@ -63,7 +65,6 @@
 - None currently running
 
 ## Remaining
-- [ ] Phase SOLO-RUN-2: Phase 2: Persistence
 - [ ] Phase SOLO-RUN-3: Phase 3: Solo Flow
 - [ ] Phase RELEASE-VERIFICATION-1: Phase 1: Browser Harness
 - [ ] Phase RELEASE-VERIFICATION-2: Phase 2: Build, Deploy and Budget

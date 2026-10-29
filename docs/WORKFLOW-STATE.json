@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T07:31:18.013Z",
+  "lastUpdatedAt": "2026-10-29T07:37:54.340Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "LOCAL-DUEL-3",
+  "currentPhase": "SOLO-RUN-2",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -1177,10 +1177,48 @@
     },
     "RUN-03": {
       "taskId": "RUN-03",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "solo-mode-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/persistence/run-save.ts",
+        "src/persistence/run-save.test.ts"
+      ],
+      "startedAt": "2026-10-29T07:31:18.855Z",
+      "usage": {
+        "inputTokens": 77692,
+        "outputTokens": 20370,
+        "reasoningTokens": 42129,
+        "cacheReadTokens": 3365504,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.059249711999999996,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/RUN-03.2026-10-29T07-37-54-332Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 77692,
+            "outputTokens": 20370,
+            "reasoningTokens": 42129,
+            "cacheReadTokens": 3365504,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.059249711999999996,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T07:37:54.337Z",
+      "agentOutput": "I'll start by reading the execution file and relevant documentation.\r\nNow I have enough context. Let me write the run save module.\r\nNow the test suite:\r\nImplemented RUN-03: the versioned solo run save at `fieldbound.run.v1`.\n\n**What it does**\n- Serializes/validates the documented payload: hoisted `seed`, run `rngState`, nested `run`, optional `battle` snapshot, optional `pendingReward`.\n- Validates the battle through the engine's `restoreSnapshot` and the offers through `validateRewardOffers`; deck card ids are checked against the card catalog.\n- Rejects unknown versions, corrupt JSON, invalid runs/snapshots/cards, a missing battle snapshot in the battle phase, and missing/invalid pending offers.\n- Removes only `fieldbound.run.v1` on discard and never touches settings/stats.\n- Exposes injectable `loadRunSave`, `saveRunSave`, `clearRunSave` and `createRunSaveStore`, with `ok | empty | discarded | unavailable` load statuses and in-memory fallback on quota/unavailable storage.\n\n**Files created**\n- `src/persistence/run-save.ts`\n- `src/persistence/run-save.test.ts`\n\n**Validation run**\n- `npm test -- src/persistence/run-save.test.ts` → 71 tests passed\n- `npm run typecheck` → passed\n- `npm test` (full suite) → 930 tests passed\n\n```forge-result\n{\n  \"summary\": \"Implemented the versioned fieldbound.run.v1 solo run save: canonical seed/rngState/run/battle/pendingReward payload, total validation using the engine snapshot and reward validators, narrow key-local discard, injectable storage adapter, in-memory fallback for quota/unavailable storage, and save/load/clear plus a store. 71 targeted tests, the full 930-test suite and typecheck pass.\",\n  \"decisions\": [\n    \"RunSaveV1 carries a full RunState but serializes the nested run without its seed, so the save contract's hoisted seed is the single copy; a hand-built payload whose nested seed disagrees is rejected.\",\n    \"The battle is required exactly in the battle phase and pendingReward exactly in the reward phase; redundant values in other phases are normalized to null so a controller that keeps its last battle state cannot lose Continue Run.\",\n    \"Load returns a discriminated status plus the canonical save, the restored BattleState (from restoreSnapshot, never a parallel parser) and the discard reason; only status 'ok' is durable and resume-worthy.\",\n    \"rngState is canonically the engine's { state } object; the bare-integer form shown in the feature save-contract example is accepted on read and canonicalized.\",\n    \"Deck card ids are checked with Object.hasOwn against the catalog, catching a removed card that the run model deliberately cannot detect; snapshot and reward validation are delegated to their owning modules.\",\n    \"Writes validate before serializing: invalid input returns 'invalid' and writes nothing; a quota or unavailable store returns 'unavailable' and the store retains the validated save in memory for the session.\",\n    \"A failed write followed by a load reports 'unavailable' with the session copy rather than 'ok' or 'empty', so a reload cannot be promised a resume it will not have.\",\n    \"Only fieldbound.run.v1 is read, written or removed; settings and stats are never touched.\"\n  ],\n  \"interfaces\": [\n    \"src/persistence/run-save.ts: RUN_SAVE_STORAGE_KEY='fieldbound.run.v1', RUN_SAVE_SCHEMA_VERSION=1.\",\n    \"Types: RunSaveV1/RunSave, RunSaveStorage, RunSaveErrorCode, RunSaveError, ValidatedRunSave, RunSaveValidationResult, RunSaveLoadStatus, RunSaveLoadResult, RunSaveWriteStatus, RunSaveWriteResult, RunSaveStore.\",\n    \"Functions: validateRunSave(input, catalog?), parseStoredRunSave(raw, catalog?), serializeRunSave(save), loadRunSave(storage, catalog?), saveRunSave(storage, save, catalog?), clearRunSave(storage), createRunSaveStore(storage?, catalog?).\",\n    \"loadRunSave returns {status, save, battle, error}; the store exposes load(), save(), clear() and isPersistent.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/persistence/run-save.test.ts: exit 0 (71 tests)\",\n    \"npm run typecheck: exit 0\",\n    \"npm test: exit 0 (30 files, 930 tests)\"\n  ],\n  \"warnings\": [\n    \"Extra battle snapshots or pending offers outside their required phase are ignored and normalized to null by design rather than rejected; this is documented in the module header.\",\n    \"serializeRunSave expects a validated save; use saveRunSave or the store when the input is untrusted.\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-run-03-001",
+      "inputArtifactIds": [
+        "work-run-01-001",
+        "work-run-02-001",
+        "work-eng-05-001",
+        "work-run-06-001"
+      ]
     },
     "RUN-04": {
       "taskId": "RUN-04",
