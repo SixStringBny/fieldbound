@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T08:18:29.667Z",
+  "lastUpdatedAt": "2026-10-29T08:29:31.314Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -1574,10 +1574,50 @@
     },
     "REL-03": {
       "taskId": "REL-03",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "qa-automation-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "tests/e2e/duel.spec.ts"
+      ],
+      "startedAt": "2026-10-29T08:18:30.044Z",
+      "usage": {
+        "inputTokens": 86352,
+        "outputTokens": 12741,
+        "reasoningTokens": 29398,
+        "cacheReadTokens": 2858368,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.04681130399999999,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/REL-03.2026-10-29T08-29-31-303Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 86352,
+            "outputTokens": 12741,
+            "reasoningTokens": 29398,
+            "cacheReadTokens": 2858368,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.04681130399999999,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T08:29:31.310Z",
+      "agentOutput": "I'll start by reading the execution file and the referenced documentation.\r\nNow I have the full picture. Let me write the duel journey spec.\r\nThe journey itself completed; the failure is a presentation detail — the eyebrow is CSS-uppercased, so `innerText` returns capitals. I'll read the DOM text instead.\r\nPassed. The match seed is app-drawn, so I'll sample several independent series to prove the journey is robust across 2-0 and 2-1 outcomes.\r\n`--project=chromium` isn't reaching Playwright through npm on this shell, but the spec's own `test.skip` gate keeps non-Chromium skipped (2 skipped, 1 passed). Now let me sample six independent series directly.\r\nSix independent random series pass (21–53s each). Let me add one guard that the card-name scan is not vacuous, then re-verify.\r\nThe journey is complete and verified. Final report:\n\n```forge-result\n{\n  \"summary\": \"Added tests/e2e/duel.spec.ts: a Chromium-only best-of-three duel journey that locks Ember/Frost through the two-step setup, then for every turn of every round asserts the full-screen privacy handoff names the expected seat, the duel board/hands/meters/field banner and every known card name are absent from the DOM, Escape cannot dismiss it and it never self-dismisses, dismisses explicitly (Enter on the first handoff, tap afterwards), asserts exactly one hand of five card buttons with every card face inside it and the opponent reduced to a visible 'n cards in hand' count, plays greedy turns, validates each round result (exactly one, correct winner and series score), asserts the match ends at two wins with the recorded score and round count, and exercises Rematch back to a Player 1 handoff with 0-0, Round 1 and both locked decks. Validation passes on Chromium; typecheck exits 0.\",\n  \"decisions\": [\n    \"Seeding goes through ?seed= as the harness requires, but src/duel/match.ts exposes no URL seed contract: App.tsx draws the match seed via freshDuelSeed, so the spec accepts a 2-0 or 2-1 series and validates the scoreboard against the winners it observes instead of assuming a fixed series. No app code was changed to make the series deterministic.\",\n    \"The privacy scan queries the real card names read from src/content/cards.json (test-side data, not an app-module import) across visible text, hidden text and aria-label/title/alt attributes, rather than only asserting that the board container is gone.\",\n    \"assertActiveTurn proves the scan is not vacuous: it requires the active hand's names to be found in the rendered DOM before asserting that no name from outside the active hand appears, and it requires every rendered card face to live inside the single .hand.\",\n    \"The first handoff gets the strict treatment: a 750ms watch for self-dismissal, Escape pressed with the board still absent, then dismissal with Enter to exercise the documented second activation path; later handoffs use the shared dismissPrivacy helper.\",\n    \"Round and match scores are derived from the parsed winners rather than hard-coded, and the match result must account for every settled round (roundResultsSeen + 1 === rounds played, loser score preserved, winner credited exactly one new win).\",\n    \"The journey is Chromium-only via the describe-level test.skip gate, matching the REL-01 harness rule for long journeys; no localStorage is read or written.\"\n  ],\n  \"interfaces\": [\n    \"tests/e2e/duel.spec.ts: test 'seeded best-of-three duel › completes a best-of-three with a privacy handoff before every turn'; local helpers Seat, SeriesWins, assertPrivacyScreen, assertActiveTurn, readRoundResult, checkMatchResult, startDuel, chooseDeck, expectNoCardNames.\",\n    \"Uses existing tests/e2e/helpers.ts exports openApp, dismissPrivacy, playGreedyTurn, currentScreen, expectScreen, collectConsoleErrors, expectNoConsoleErrors; no changes to helpers or product source.\"\n  ],\n  \"tests\": [\n    \"npm run test:e2e -- tests/e2e/duel.spec.ts --project=chromium: 1 passed, 2 skipped by the spec's Chromium gate (25.0s, 20.6s on the two observed runs)\",\n    \"npx playwright test tests/e2e/duel.spec.ts --project=chromium --repeat-each=6 --workers=2: 6 passed (21.6s-52.9s; six independent app-drawn match seeds)\",\n    \"npx playwright test tests/e2e/duel.spec.ts --project=chromium --repeat-each=4 --workers=2 (after the final edits): 4 passed (23.0s-34.6s)\",\n    \"npm run typecheck: exit 0\"\n  ],\n  \"warnings\": [\n    \"On this Windows shell `npm run test:e2e -- ... --project=chromium` does not forward the --project flag to Playwright (the echoed command shows only the spec path), so the run reports 3 tests where Firefox and WebKit are skipped by the spec's own browserName gate and only Chromium executes.\",\n    \"The duel match seed is generated by the built app, so each run plays a different series; correctness is asserted against the observed winners. Ten sampled series (across two repeat runs) all completed within the 300s budget.\"\n  ],\n  \"validationLimitations\": [\n    \"Privacy-leak failure behaviour was not demonstrated by deliberately breaking the product (out of scope); non-vacuity is instead proved by the active-hand scan requiring the real hand names to be found in the rendered DOM on every turn.\"\n  ],\n  \"unresolved\": []\n}\n```\n\n**Files created or changed**\n\n- `tests/e2e/duel.spec.ts` (created)\n\nNo other files were modified. `docs/artifacts/REL-03.md` and `docs/artifacts/` were left untouched; the two pre-existing modified engine files (`docs/EXECUTION-AUDIT.jsonl`, `docs/WORKFLOW-STATE.json`) were already dirty before this task began.\r\n",
+      "validationLimitations": [
+        "Privacy-leak failure behaviour was not demonstrated by deliberately breaking the product (out of scope); non-vacuity is instead proved by the active-hand scan requiring the real hand names to be found in the rendered DOM on every turn."
+      ],
+      "artifactId": "work-rel-03-001",
+      "inputArtifactIds": [
+        "work-rel-01-001",
+        "work-duel-03-001",
+        "work-run-04-001",
+        "work-run-05-001"
+      ]
     },
     "REL-04": {
       "taskId": "REL-04",

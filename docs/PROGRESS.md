@@ -3,8 +3,8 @@
 ## Current State
 **Phase**: RELEASE-VERIFICATION-1
 **Status**: In Progress
-**Validation Gaps**: 3 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T08:18:29.670Z
+**Validation Gaps**: 4 unverified check(s) - see "Validation Gaps"
+**Last Updated**: 2026-10-29T08:29:31.318Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -68,6 +68,8 @@
   - Files: playwright.config.ts, tests/e2e/helpers.ts, tests/e2e/smoke.spec.ts
 - [x] Phase RELEASE-VERIFICATION-1, Task REL-02: Drive a full seeded solo run with reload resume (@qa-automation-engineer)
   - Files: tests/e2e/solo-run.spec.ts
+- [x] Phase RELEASE-VERIFICATION-1, Task REL-03: Drive a best-of-three duel with privacy assertions (@qa-automation-engineer)
+  - Files: tests/e2e/duel.spec.ts
 
 ## Current Task
 - None currently running
@@ -84,6 +86,7 @@
 - Task SHL-04: jsdom does not compute cascade or animation timing, so motion.css is asserted through its stylesheet text and the hook through behaviour; real-browser motion verification remains with REL-04's Playwright suite.
 - Task RUN-04: check:build's source-token heuristic fails on pre-existing duel test string literals; it was not treated as a RUN-04 check and the duel tests were left untouched to avoid out-of-scope changes.
 - Task RUN-05: check:build's source-token heuristic fails on pre-existing duel test string literals; it was not treated as a RUN-05 check and those files were left untouched to avoid out-of-scope changes.
+- Task REL-03: Privacy-leak failure behaviour was not demonstrated by deliberately breaking the product (out of scope); non-vacuity is instead proved by the active-hand scan requiring the real hand names to be found in the rendered DOM on every turn.
 
 ## Notes
 - Workflow engine run 8d8c7086-35b8-4e1f-ab83-08fc940bcf62

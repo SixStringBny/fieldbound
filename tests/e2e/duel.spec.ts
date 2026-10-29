@@ -1,0 +1,863 @@
+/**
+ * Seeded best-of-three duel journey with privacy assertions (REL-03,
+ * REL-FR-02, DUEL-FR-03).
+ *
+ * The spec drives the built application through the real UI only:
+ *
+ *   - menu -> Local Duel -> Player 1 locks Ember -> Player 2 locks Frost ->
+ *     Start Match
+ *   - for every turn of every round: the full-screen handoff must name the seat
+ *     that now owns the device, the battle DOM and every known card name must be
+ *     absent, an explicit action dismisses it, and only then does exactly one
+ *     hand of five card buttons appear with the opponent reduced to a count
+ *   - the greedy policy from `helpers.ts` plays the turn and ends it
+ *   - a settled round must show exactly one round result with the score that the
+ *     recorded winners imply, and the match must end at two wins
+ *   - Rematch must keep both locked decks, reset the score to 0-0 and open the
+ *     Player 1 handoff
+ *
+ * Seeding goes through `?seed=`, which the harness requires and which exercises
+ * the app's own seed parsing. The duel's *match* seed is drawn by the built app
+ * (`freshDuelSeed` in `App.tsx`) because `src/duel/match.ts` has no URL seed
+ * contract, so this journey accepts a 2-0 or a 2-1 series and validates the
+ * scoreboard against the winners it actually observes rather than assuming a
+ * fixed series. It never touches localStorage, never skips a round and never
+ * weakens a privacy assertion.
+ */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { expect, test } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import {
+  collectConsoleErrors,
+  currentScreen,
+  dismissPrivacy,
+  expectNoConsoleErrors,
+  expectScreen,
+  openApp,
+  playGreedyTurn,
+} from './helpers';
+
+/* -------------------------------------------------------------------------- */
+/* Frozen references                                                           */
+/* -------------------------------------------------------------------------- */
+
+type Seat = 'Player 1' | 'Player 2';
+
+interface SeriesWins {
+  player1: number;
+  player2: number;
+}
+
+interface CatalogCard {
+  readonly id: string;
+  readonly name: string;
+}
+
+/** Fixed seed for the harness navigation; the app draws the match seed. */
+const SEED = 20261031;
+
+/** Whole-journey budget for the Chromium run, in milliseconds. */
+const DUEL_BUDGET_MS = 300_000;
+
+/** One iteration per turn; a legal series never gets near this. */
+const MAX_TURNS = 240;
+
+/** Best-of-three: the first seat to this many round wins takes the match. */
+const WINS_REQUIRED = 2;
+
+/** How long the first handoff is left alone to prove it never self-dismisses. */
+const AUTO_DISMISS_WATCH_MS = 750;
+
+/**
+ * The frozen card catalog the app ships. Reading the data file keeps the
+ * "no known card name is queryable" assertion tied to the real names instead of
+ * a hand-maintained copy that can drift. This is test-side data, not an app
+ * module import and not injected state.
+ */
+const CATALOG_PATH = join(process.cwd(), 'src', 'content', 'cards.json');
+const CATALOG = JSON.parse(
+  readFileSync(CATALOG_PATH, 'utf8'),
+) as readonly CatalogCard[];
+
+if (CATALOG.length < 20) {
+  throw new Error(
+    `The card catalog at ${CATALOG_PATH} looks truncated (${String(
+      CATALOG.length,
+    )} entries); the privacy scan needs the full name list.`,
+  );
+}
+
+const CARD_NAMES: readonly string[] = CATALOG.map((card) => card.name);
+const CARD_NAME_BY_ID = new Map(
+  CATALOG.map((card) => [card.id, card.name] as const),
+);
+
+/* -------------------------------------------------------------------------- */
+/* Pure helpers                                                                */
+/* -------------------------------------------------------------------------- */
+
+function otherSeat(seat: Seat): Seat {
+  return seat === 'Player 1' ? 'Player 2' : 'Player 1';
+}
+
+function seatSlug(seat: Seat): 'player1' | 'player2' {
+  return seat === 'Player 1' ? 'player1' : 'player2';
+}
+
+/** Documented order: round 1 Player 1, round 2 Player 2, round 3 Player 1. */
+function firstPlayerOfRound(round: number): Seat {
+  return round === 2 ? 'Player 2' : 'Player 1';
+}
+
+function seriesScore(wins: SeriesWins): string {
+  return `Series ${String(wins.player1)}\u2013${String(wins.player2)}`;
+}
+
+function finalScore(wins: SeriesWins): string {
+  return `Final score ${String(wins.player1)}\u2013${String(wins.player2)}`;
+}
+
+function winsFor(wins: SeriesWins, seat: Seat): number {
+  return seat === 'Player 1' ? wins.player1 : wins.player2;
+}
+
+function addWin(wins: SeriesWins, seat: Seat): void {
+  if (seat === 'Player 1') {
+    wins.player1 += 1;
+    return;
+  }
+
+  wins.player2 += 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Privacy                                                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Fail if any known card name can be found anywhere in the document — visible
+ * text, hidden text, or an accessible name/alt attribute. Querying for real
+ * names matters: a hand re-parented into an overlay still leaks.
+ */
+async function expectNoCardNames(page: Page, context: string): Promise<void> {
+  const found = await page.evaluate((names: readonly string[]) => {
+    const pieces: string[] = [document.body.textContent ?? ''];
+
+    for (const element of Array.from(
+      document.querySelectorAll('[aria-label], [title], [alt]'),
+    )) {
+      pieces.push(
+        element.getAttribute('aria-label') ?? '',
+        element.getAttribute('title') ?? '',
+        element.getAttribute('alt') ?? '',
+      );
+    }
+
+    const haystack = pieces.join('\n');
+
+    return names.filter((name) => haystack.includes(name));
+  }, CARD_NAMES);
+
+  expect(
+    found,
+    found.length === 0
+      ? `${context}: no card name may be queryable here.`
+      : `${context}: card names are queryable while they must be hidden: ${found.join(
+          ', ',
+        )}.`,
+  ).toEqual([]);
+}
+
+/**
+ * Assert the full privacy handoff for `viewer`: the right title, an empty board,
+ * no card names and exactly one explicit dismissal control. Returns the
+ * handoff locator so the caller can watch it for auto-dismissal.
+ */
+async function assertPrivacyScreen(
+  page: Page,
+  viewer: Seat,
+  context: string,
+): Promise<Locator> {
+  await expectScreen(page, 'privacy', context);
+
+  const privacy = page.locator('[data-duel-privacy="true"]');
+  await expect(
+    privacy,
+    `${context}: the full-screen privacy handoff is not visible.`,
+  ).toBeVisible();
+  await expect(
+    privacy,
+    `${context}: exactly one privacy handoff may be mounted.`,
+  ).toHaveCount(1);
+
+  const titles = page.getByRole('heading', { level: 1 });
+  await expect(
+    titles,
+    `${context}: the handoff must carry exactly one title.`,
+  ).toHaveCount(1);
+  await expect(
+    titles,
+    `${context}: the handoff must name ${viewer}, and only ${viewer}.`,
+  ).toHaveText(`Pass to ${viewer}`);
+
+  // The board is unmounted, not covered. Every one of these must be absent.
+  const forbidden = [
+    '.duel-battle',
+    '.battle-board',
+    '.duel-panel',
+    '.hand',
+    'button.card-view',
+    '[data-card-detail-layer="true"]',
+    '.field-banner',
+    '[role="meter"]',
+  ];
+
+  for (const selector of forbidden) {
+    await expect(
+      page.locator(selector),
+      `${context}: ${selector} must be absent while the handoff is shown, not merely covered.`,
+    ).toHaveCount(0);
+  }
+
+  await expectNoCardNames(page, context);
+
+  await expect(
+    page.getByRole('button', { name: "I'm ready", exact: true }),
+    `${context}: the handoff must offer exactly one explicit ready control.`,
+  ).toHaveCount(1);
+
+  return privacy;
+}
+
+/* -------------------------------------------------------------------------- */
+/* The active turn                                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Assert the revealed turn belongs to `viewer` and to nobody else: one hand of
+ * five card buttons, every card face inside that hand, an opponent panel with a
+ * count and no card faces, and no known card name from outside the active hand.
+ */
+async function assertActiveTurn(
+  page: Page,
+  viewer: Seat,
+  round: number,
+  turn: number,
+): Promise<void> {
+  const context = `round ${String(round)} turn ${String(turn)}: ${viewer}'s active turn`;
+
+  await expectScreen(page, 'battle', context);
+
+  const board = page.locator('.duel-battle');
+  await expect(board, `${context}: the duel board is not rendered.`).toHaveCount(
+    1,
+  );
+  await expect(
+    board,
+    `${context}: the board must be showing ${viewer}'s side.`,
+  ).toHaveAttribute('data-viewer', seatSlug(viewer));
+  await expect(
+    page.getByRole('heading', { level: 1, name: `${viewer}'s turn`, exact: true }),
+    `${context}: the board heading must name ${viewer}.`,
+  ).toBeVisible();
+
+  await expect(
+    page.locator('.hand'),
+    `${context}: exactly one hand may be rendered (the opponent has no hand DOM).`,
+  ).toHaveCount(1);
+  await expect(
+    page.locator('.duel-battle .hand'),
+    `${context}: the active hand must be visible.`,
+  ).toBeVisible();
+
+  const handCards = page.locator('.duel-battle .hand button.card-view');
+  await expect(
+    handCards,
+    `${context}: the active hand must hold five card buttons.`,
+  ).toHaveCount(5);
+
+  const allFaces = await page.locator('button.card-view').count();
+  const handFaces = await handCards.count();
+
+  expect(
+    allFaces,
+    `${context}: ${String(
+      allFaces,
+    )} card faces exist in the DOM but only the active hand's five may be rendered.`,
+  ).toBe(5);
+  expect(
+    handFaces,
+    `${context}: every card face must live inside the active hand; ${String(
+      allFaces - handFaces,
+    )} were rendered elsewhere.`,
+  ).toBe(allFaces);
+
+  const opponent = page.locator('.duel-panel--opponent');
+  await expect(
+    opponent,
+    `${context}: the opponent panel is missing.`,
+  ).toHaveCount(1);
+  await expect(
+    opponent.locator('button.card-view'),
+    `${context}: the inactive hand must never render card faces.`,
+  ).toHaveCount(0);
+
+  const handCount = opponent.locator('[data-hand-count]');
+  await expect(
+    handCount,
+    `${context}: the opponent must be shown a hand count.`,
+  ).toHaveCount(1);
+  await expect(
+    handCount,
+    `${context}: the opponent count must be visible.`,
+  ).toBeVisible();
+  await expect(
+    handCount,
+    `${context}: the opponent count must read "<n> card(s) in hand".`,
+  ).toHaveText(/^\d+ cards? in hand$/);
+
+  // Any card name in the page must belong to a card in the active hand.
+  const activeCardIds = await handCards.evaluateAll((nodes) =>
+    nodes.map((node) => node.getAttribute('data-card-id') ?? ''),
+  );
+  const allowed = new Set<string>();
+
+  for (const cardId of activeCardIds) {
+    const name = CARD_NAME_BY_ID.get(cardId);
+
+    if (name === undefined) {
+      throw new Error(
+        `${context}: the hand shows card id "${cardId}", which is not in the frozen catalog.`,
+      );
+    }
+
+    allowed.add(name);
+  }
+
+  const pageText = await page.evaluate(() => document.body.textContent ?? '');
+  const appearing = CARD_NAMES.filter((name) => pageText.includes(name));
+
+  // The active hand's names must be visible to the scan; otherwise the privacy
+  // check that uses the same scan would pass without reading the DOM at all.
+  expect(
+    appearing.length,
+    `${context}: the card-name scan found no hand name in the rendered DOM, so it cannot be trusted.`,
+  ).toBeGreaterThan(0);
+
+  const leaked = appearing.filter((name) => !allowed.has(name));
+
+  expect(
+    leaked,
+    leaked.length === 0
+      ? `${context}: only the active hand's card names may appear.`
+      : `${context}: card names from outside the active hand are in the DOM: ${leaked.join(
+          ', ',
+        )}.`,
+  ).toEqual([]);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Results                                                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Read and validate a round result that does not end the series. Exactly one
+ * result surface may be visible, no hand or card face may survive, and the
+ * heading must name the settled round. Returns the parsed winner so the caller
+ * can score it.
+ */
+async function readRoundResult(
+  page: Page,
+  round: number,
+  context: string,
+): Promise<Seat> {
+  await expectScreen(page, 'round-result', context);
+  await expect(
+    page.locator('[data-duel-result="round"]'),
+    `${context}: a settled round must show exactly one round result.`,
+  ).toHaveCount(1);
+  await expect(
+    page.locator('[data-duel-result="match"]'),
+    `${context}: a round that leaves the series alive must not show the match result.`,
+  ).toHaveCount(0);
+  await expect(
+    page.locator('.hand'),
+    `${context}: the round result must not render a hand.`,
+  ).toHaveCount(0);
+  await expect(
+    page.locator('button.card-view'),
+    `${context}: the round result must not render card faces.`,
+  ).toHaveCount(0);
+  await expectNoCardNames(page, context);
+
+  const headings = page.getByRole('heading', { level: 1 });
+  await expect(
+    headings,
+    `${context}: the round result must carry exactly one heading.`,
+  ).toHaveCount(1);
+
+  const heading = (await headings.innerText()).trim();
+  const parsed = /^(Player [12]) wins round (\d+)$/.exec(heading);
+
+  if (parsed === null) {
+    throw new Error(
+      `${context}: the round result heading "${heading}" does not name a winner and round.`,
+    );
+  }
+
+  const winner = parsed[1] as Seat;
+  const reportedRound = parsed[2];
+
+  expect(
+    reportedRound,
+    `${context}: the result must report round ${String(round)}, not ${String(
+      reportedRound,
+    )}.`,
+  ).toBe(String(round));
+
+  return winner;
+}
+
+/**
+ * Read and validate the match result. The displayed final score must equal the
+ * recorded wins plus the round just settled, end at two for the winner, and the
+ * settled-round count must match the number of round results already seen.
+ */
+function checkMatchResult(
+  heading: string,
+  scoreText: string,
+  recorded: SeriesWins,
+  roundResultsSeen: number,
+  context: string,
+): { readonly winner: Seat; readonly final: SeriesWins } {
+  const headingMatch = /^(Player [12]) wins the match$/.exec(heading);
+
+  if (headingMatch === null) {
+    throw new Error(
+      `${context}: the match result heading "${heading}" does not name the series winner.`,
+    );
+  }
+
+  const winner = headingMatch[1] as Seat;
+  const loser = otherSeat(winner);
+  const scoreMatch = /^Final score (\d+)\u2013(\d+)$/.exec(scoreText);
+
+  if (scoreMatch === null) {
+    throw new Error(
+      `${context}: the match result score "${scoreText}" is not "Final score a-b".`,
+    );
+  }
+
+  const final: SeriesWins = {
+    player1: Number(scoreMatch[1]),
+    player2: Number(scoreMatch[2]),
+  };
+  const recordedWinner = winsFor(recorded, winner);
+  const recordedLoser = winsFor(recorded, loser);
+
+  expect(
+    winsFor(final, winner),
+    `${context}: ${winner} wins the match with two round wins.`,
+  ).toBe(WINS_REQUIRED);
+  expect(
+    winsFor(final, loser),
+    `${context}: the losing seat must finish on 0 or 1 round wins.`,
+  ).toBeLessThan(WINS_REQUIRED);
+  expect(
+    winsFor(final, loser),
+    `${context}: the score must keep ${loser}'s recorded ${String(
+      recordedLoser,
+    )} round win(s).`,
+  ).toBe(recordedLoser);
+  expect(
+    winsFor(final, winner),
+    `${context}: the score must credit ${winner} with the recorded ${String(
+      recordedWinner,
+    )} win(s) plus the round just settled.`,
+  ).toBe(recordedWinner + 1);
+
+  const roundsPlayed = final.player1 + final.player2;
+
+  expect(
+    roundsPlayed,
+    `${context}: a best-of-three ends after two or three rounds.`,
+  ).toBeGreaterThanOrEqual(2);
+  expect(
+    roundsPlayed,
+    `${context}: a best-of-three ends after two or three rounds.`,
+  ).toBeLessThanOrEqual(3);
+  expect(
+    roundsPlayed,
+    `${context}: ${String(
+      roundsPlayed,
+    )} rounds were played but only ${String(
+      roundResultsSeen,
+    )} round results were shown before the match result.`,
+  ).toBe(roundResultsSeen + 1);
+
+  return { winner, final };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Setup                                                                       */
+/* -------------------------------------------------------------------------- */
+
+async function chooseDeck(page: Page, deckName: string): Promise<void> {
+  const deck = page.getByRole('button', {
+    name: `Choose the ${deckName} deck`,
+    exact: true,
+  });
+
+  await expect(
+    deck,
+    `The ${deckName} deck button is missing from the duel setup.`,
+  ).toBeVisible();
+  await deck.click();
+  await expect(
+    deck,
+    `The ${deckName} deck did not report itself as selected.`,
+  ).toHaveAttribute('aria-pressed', 'true');
+}
+
+/**
+ * Menu -> Local Duel -> Player 1 deck -> Player 2 deck -> Start Match. The
+ * second step must not reveal the first pick, and the summary must name both.
+ */
+async function startDuel(
+  page: Page,
+  player1Deck: string,
+  player2Deck: string,
+): Promise<void> {
+  await expectScreen(page, 'menu', 'starting a local duel');
+  await page.getByRole('button', { name: 'Local Duel', exact: true }).click();
+  await expectScreen(page, 'duel-setup', 'the duel setup');
+
+  await expect(
+    page.getByRole('heading', {
+      level: 2,
+      name: 'Player 1, choose your deck',
+      exact: true,
+    }),
+    'The duel setup must open on the Player 1 deck step.',
+  ).toBeVisible();
+  await chooseDeck(page, player1Deck);
+  await page
+    .getByRole('button', { name: 'Confirm Player 1 deck', exact: true })
+    .click();
+
+  await expect(
+    page.getByRole('heading', {
+      level: 2,
+      name: 'Player 2, choose your deck',
+      exact: true,
+    }),
+    'Player 1 confirmation must advance to the Player 2 deck step.',
+  ).toBeVisible();
+  await expect(
+    page.locator('.duel-decks [aria-pressed="true"]'),
+    "Player 2's step must not reveal or pre-select Player 1's deck.",
+  ).toHaveCount(0);
+
+  await chooseDeck(page, player2Deck);
+  await page
+    .getByRole('button', { name: 'Confirm Player 2 deck', exact: true })
+    .click();
+
+  await expect(
+    page.getByRole('heading', {
+      level: 2,
+      name: 'Both decks are locked',
+      exact: true,
+    }),
+    'Both confirmations must reveal the locked summary.',
+  ).toBeVisible();
+
+  const picks = page.locator('.duel-setup__picks');
+  await expect(
+    picks,
+    `The locked summary must name Player 1's ${player1Deck} deck.`,
+  ).toContainText(`Player 1: ${player1Deck}`);
+  await expect(
+    picks,
+    `The locked summary must name Player 2's ${player2Deck} deck.`,
+  ).toContainText(`Player 2: ${player2Deck}`);
+
+  await page.getByRole('button', { name: 'Start Match', exact: true }).click();
+}
+
+/* -------------------------------------------------------------------------- */
+/* The journey                                                                 */
+/* -------------------------------------------------------------------------- */
+
+test.describe('seeded best-of-three duel', () => {
+  // The long journey is Chromium-only by design (release-verification.md 4.1).
+  test.skip(
+    ({ browserName }) => browserName !== 'chromium',
+    'The full best-of-three duel journey runs on Chromium only.',
+  );
+
+  test('completes a best-of-three with a privacy handoff before every turn', async ({
+    page,
+  }) => {
+    test.setTimeout(DUEL_BUDGET_MS);
+
+    const startedAt = Date.now();
+    const errors = collectConsoleErrors(page);
+
+    await openApp(page, SEED);
+
+    // No duel is offered before the match starts; a duel is ephemeral.
+    await expect(
+      page.getByRole('button', { name: 'Continue Run', exact: true }),
+      'A fresh context must not offer a resumable duel or run.',
+    ).toHaveCount(0);
+
+    await startDuel(page, 'Ember', 'Frost');
+    await expectScreen(page, 'privacy', 'Start Match');
+
+    const wins: SeriesWins = { player1: 0, player2: 0 };
+    const journeyLog: string[] = [];
+    let round = 1;
+    let turn = 0;
+    let handoffs = 0;
+    let roundResultsSeen = 0;
+    let expectedViewer: Seat = firstPlayerOfRound(1);
+    let matchFinished = false;
+    let finalWinner: Seat | null = null;
+
+    for (let index = 0; index < MAX_TURNS; index += 1) {
+      turn += 1;
+      const context = `round ${String(round)} turn ${String(
+        turn,
+      )} (${expectedViewer})`;
+
+      // 1. Every turn, without exception, begins behind the privacy handoff.
+      const privacy = await assertPrivacyScreen(page, expectedViewer, context);
+
+      if (handoffs === 0) {
+        // The handoff must never dismiss itself and Escape must be inert.
+        await page.waitForTimeout(AUTO_DISMISS_WATCH_MS);
+        await expect(
+          privacy,
+          `${context}: the handoff dismissed itself without an explicit action.`,
+        ).toBeVisible();
+
+        await page.keyboard.press('Escape');
+        await expect(
+          privacy,
+          `${context}: Escape must not dismiss the privacy handoff.`,
+        ).toBeVisible();
+        await expectScreen(page, 'privacy', `${context} after Escape`);
+        await expect(
+          page.locator('.duel-battle'),
+          `${context}: Escape revealed the board; the handoff must stay opaque.`,
+        ).toHaveCount(0);
+
+        // Enter is the documented second explicit path; the first handoff uses
+        // it so both activation routes are exercised, not just the tap.
+        const ready = page.getByRole('button', {
+          name: "I'm ready",
+          exact: true,
+        });
+        await ready.focus();
+        await page.keyboard.press('Enter');
+        await expect(
+          privacy,
+          `${context}: Enter did not dismiss the handoff.`,
+        ).toHaveCount(0);
+        await expectScreen(page, 'battle', `${context} after Enter`);
+      } else {
+        await dismissPrivacy(page, expectedViewer);
+      }
+
+      handoffs += 1;
+
+      // 2. Only the active viewer's five-card hand may be present.
+      await assertActiveTurn(page, expectedViewer, round, turn);
+
+      // 3. Play the turn for real; a settled or handed-off turn is the only
+      //    legal way out of the board.
+      const played = await playGreedyTurn(page);
+      const after = await currentScreen(page);
+
+      if (after === 'battle') {
+        throw new Error(
+          `${context}: the turn did not end (${String(
+            played.cardsPlayed,
+          )} cards played) and the board is still active.`,
+        );
+      }
+
+      journeyLog.push(
+        `${context}: ${String(played.cardsPlayed)} card(s), ended=${
+          played.endedTurn ? 'yes' : 'battle settled'
+        } -> ${String(after)}`,
+      );
+
+      if (after === 'privacy') {
+        // The turn passed to the other seat; the next loop starts at its gate.
+        expectedViewer = otherSeat(expectedViewer);
+        continue;
+      }
+
+      if (after === 'round-result') {
+        const winner = await readRoundResult(page, round, context);
+        addWin(wins, winner);
+        roundResultsSeen += 1;
+
+        await expect(
+          page.locator('.duel-result__score'),
+          `${context}: the round result must show the series score implied by the recorded winners (${seriesScore(
+            wins,
+          )}).`,
+        ).toHaveText(seriesScore(wins));
+
+        if (winsFor(wins, winner) >= WINS_REQUIRED) {
+          throw new Error(
+            `${context}: ${winner} reached ${String(
+              WINS_REQUIRED,
+            )} wins but a round result was shown instead of the match result.`,
+          );
+        }
+
+        const nextRound = round + 1;
+        await page.getByRole('button', { name: 'Next Round', exact: true }).click();
+        await expectScreen(
+          page,
+          'privacy',
+          `${context}: Next Round must open round ${String(
+            nextRound,
+          )}'s handoff before its first turn`,
+        );
+
+        round = nextRound;
+        expectedViewer = firstPlayerOfRound(round);
+        continue;
+      }
+
+      if (after === 'match-result') {
+        await expect(
+          page.locator('[data-duel-result="match"]'),
+          `${context}: the match result must be rendered exactly once.`,
+        ).toHaveCount(1);
+        await expect(
+          page.locator('[data-duel-result="round"]'),
+          `${context}: the match result must replace the round result.`,
+        ).toHaveCount(0);
+        await expect(
+          page.locator('.hand'),
+          `${context}: the match result must not render a hand.`,
+        ).toHaveCount(0);
+        await expect(
+          page.locator('button.card-view'),
+          `${context}: the match result must not render card faces.`,
+        ).toHaveCount(0);
+        await expectNoCardNames(page, context);
+
+        const headings = page.getByRole('heading', { level: 1 });
+        await expect(
+          headings,
+          `${context}: the match result must carry exactly one heading.`,
+        ).toHaveCount(1);
+        const heading = (await headings.innerText()).trim();
+        const scoreText = (
+          await page.locator('.duel-result__score').innerText()
+        ).trim();
+
+        const decided = checkMatchResult(
+          heading,
+          scoreText,
+          wins,
+          roundResultsSeen,
+          `${context} match result`,
+        );
+        finalWinner = decided.winner;
+        wins.player1 = decided.final.player1;
+        wins.player2 = decided.final.player2;
+        matchFinished = true;
+
+        for (const action of ['Rematch', 'Change decks', 'Menu']) {
+          await expect(
+            page.getByRole('button', { name: action, exact: true }),
+            `${context}: the match result must offer ${action}.`,
+          ).toBeVisible();
+        }
+
+        break;
+      }
+
+      throw new Error(
+        `${context}: the duel left the known surfaces at "${String(
+          after,
+        )}".\nJourney so far:\n${journeyLog.join('\n')}`,
+      );
+    }
+
+    if (!matchFinished || finalWinner === null) {
+      throw new Error(
+        `The duel did not reach a match result within ${String(
+          MAX_TURNS,
+        )} turns (recorded score ${String(wins.player1)}-${String(
+          wins.player2,
+        )}).\nJourney so far:\n${journeyLog.join('\n')}`,
+      );
+    }
+
+    // 4. Rematch keeps both locked decks, resets the score and returns to the
+    //    Player 1 handoff. The privacy screen carries no score, so the reset is
+    //    proved on the board that follows the explicit dismissal.
+    await page.getByRole('button', { name: 'Rematch', exact: true }).click();
+
+    await assertPrivacyScreen(page, 'Player 1', 'the rematch handoff');
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Pass to Player 1', exact: true }),
+      'A rematch must open with the Player 1 privacy handoff (round 1, Player 1 first).',
+    ).toBeVisible();
+
+    await dismissPrivacy(page, 'Player 1');
+    await assertActiveTurn(page, 'Player 1', 1, 1);
+
+    // The eyebrow is CSS-uppercased for presentation, so read the authored DOM
+    // text rather than the painted `innerText`.
+    const rematchHeader = (
+      (await page.locator('.duel-battle .shell__eyebrow').textContent()) ?? ''
+    ).trim();
+
+    expect(
+      rematchHeader,
+      `A rematch must return to Round 1 with a 0-0 series, but the board header read "${rematchHeader}".`,
+    ).toContain('Round 1');
+    expect(
+      rematchHeader,
+      `A rematch must reset the series to 0\u20130, but the board header read "${rematchHeader}".`,
+    ).toContain('Series 0\u20130');
+
+    await expect(
+      page.locator('.duel-battle .duel-battle__turn'),
+      'A rematch must start again on turn 1.',
+    ).toHaveText(/^Turn 1$/i);
+    await expect(
+      page.locator('.duel-panel--self'),
+      "A rematch must keep Player 1's locked Ember deck.",
+    ).toContainText('Ember deck');
+    await expect(
+      page.locator('.duel-panel--opponent'),
+      "A rematch must keep Player 2's locked Frost deck.",
+    ).toContainText('Frost deck');
+
+    expectNoConsoleErrors(
+      errors,
+      `the best-of-three duel (${String(wins.player1)}\u2013${String(
+        wins.player2,
+      )}, ${String(handoffs)} handoffs)`,
+    );
+
+    expect(
+      Date.now() - startedAt,
+      `The Chromium duel journey exceeded its ${String(
+        DUEL_BUDGET_MS,
+      )}ms budget.`,
+    ).toBeLessThan(DUEL_BUDGET_MS);
+  });
+});
