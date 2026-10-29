@@ -1,10 +1,10 @@
 # Project Progress
 
 ## Current State
-**Phase**: RELEASE-VERIFICATION-3
+**Phase**: BATTLE-LOG-DYNAMIC-DIALOGUE-1
 **Status**: In Progress
 **Validation Gaps**: 4 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T17:34:58.409Z
+**Last Updated**: 2026-10-29T17:40:34.119Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -78,6 +78,8 @@
   - Files: scripts/check-budget.mjs
 - [x] Phase RELEASE-VERIFICATION-3, Task REL-HR-1: Human release review of both journeys
   - Files: docs/reviews/v1-release-review.json
+- [x] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-1, Task LOG-01: Define the battle-log domain, derivation and validator (@rules-engineer)
+  - Files: src/battle-log/types.ts, src/battle-log/derive.ts, src/battle-log/validate.ts, src/battle-log/derive.test.ts, src/battle-log/validate.test.ts, docs/EXECUTION-MANIFEST.json, docs/engine-config.json
 
 ## Current Task
 - None currently running

@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T17:34:58.405Z",
+  "lastUpdatedAt": "2026-10-29T17:40:34.113Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "RELEASE-VERIFICATION-3",
+  "currentPhase": "BATTLE-LOG-DYNAMIC-DIALOGUE-1",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -1830,10 +1830,62 @@
     },
     "LOG-01": {
       "taskId": "LOG-01",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "rules-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/battle-log/types.ts",
+        "src/battle-log/derive.ts",
+        "src/battle-log/validate.ts",
+        "src/battle-log/derive.test.ts",
+        "src/battle-log/validate.test.ts",
+        "docs/EXECUTION-MANIFEST.json",
+        "docs/engine-config.json"
+      ],
+      "startedAt": "2026-10-29T17:34:58.786Z",
+      "usage": {
+        "inputTokens": 75727,
+        "outputTokens": 17624,
+        "reasoningTokens": 33603,
+        "cacheReadTokens": 3080448,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.051336594,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/LOG-01.2026-10-29T17-40-34-094Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 75727,
+            "outputTokens": 17624,
+            "reasoningTokens": 33603,
+            "cacheReadTokens": 3080448,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.051336594,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T17:40:34.106Z",
+      "agentOutput": "I'll start by reading the execution file and the referenced documentation.\r\nNow I have the full picture. Let me create the battle-log domain module.\r\nImplemented LOG-01: the pure battle-log domain under `src/battle-log/`.\n\n**What was built**\n\n- `types.ts` — plain-JSON entry/effect model (`battle-start`/`card`/`turn`, `start`/`damage`/`heal`/`defense`/`status`/`field`/`outcome`), actor and target unions, and the frozen `BATTLE_LOG_LIMIT = 80`.\n- `derive.ts` — one entry per settled before/after transition, effects copied only from state deltas in engine application order, with `deriveBattleStartEntry` for setup and `appendBattleLog` (append-then-slice, never renumber).\n- `validate.ts` — total untrusted-log validator: canonical new array or `null`, no throws, no mutation. It enforces id uniqueness, strictly increasing ordinals, card-id rules, battle-start start-fact rules, engine-possible effect values, and the 80-entry cap that preserves surviving ids/ordinals.\n\n**Verification**\n\n- `npm run typecheck` — exit 0.\n- `npm test -- src/battle-log/derive.test.ts src/battle-log/validate.test.ts` — 2 files, 92 tests passed.\n- Full suite `npm test` — 37 files, 1078 tests passed.\n- Grep of `src/battle-log` — no `Math.random`, no engine mutator import, no React/DOM/storage/content import, no `any`/`@ts-ignore`.\n\n```forge-result\n{\n  \"summary\": \"Implemented LOG-01: src/battle-log/types.ts, derive.ts and validate.ts plus table-driven derive and validate suites. Entries are plain JSON, effects come only from before/after BattleState deltas in engine order, battle-start carries the opening opposing maximum health and field, card entries take the played card id from the supplied context, and the validator canonicalizes untrusted logs and caps them at the last 80 entries without renumbering. LOG-FR-01 and LOG-NF-01 are satisfied.\",\n  \"decisions\": [\n    \"The log is its own domain and imports only engine types and frozen constants; otherSide is re-implemented locally so no module touches an engine reducer, and no PRNG function or rngState field is read or written.\",\n    \"Ordinal and cardId are caller-supplied because derivation cannot know the log position or read a hidden hand; ids are formed as t<turn>-e<ordinal>, unique because ordinal is unique.\",\n    \"Effect order follows playCard: field shift, Ward defense, heal, damage, status applications, then outcome. Only status increases are applications, so attack-spent Focus/Weaken and the battle-end clear are not logged, and a zero-delta transition yields an empty effects list.\",\n    \"The actor of a card or turn entry is the side that acted (before.activeSide); a turn entry therefore names the side that ended its turn, and its turn number is the post-transition after.turn.\",\n    \"battle-start is actor system and must carry exactly one start effect holding the opening opposing maximum health and field; the validator rejects a battle-start without it and rejects a start effect on any other entry kind.\",\n    \"The validator checks the whole untrusted array before capping, so a duplicate id, non-increasing ordinal or malformed effect anywhere rejects the log even if that entry would have been truncated; capping then keeps the newest 80 with their original ids and ordinals.\",\n    \"Canonicalization rebuilds only known fields, which strips unknown keys, functions and undefined values so a validated log always survives JSON round-trip; extra keys are ignored rather than rejected.\",\n    \"appendBattleLog always returns a new array and never mutates its input; slicing occurs only after validation or appending, so surviving ordinals are never rewritten.\"\n  ],\n  \"interfaces\": [\n    \"src/battle-log/types.ts: BATTLE_LOG_LIMIT (80), BATTLE_LOG_ENTRY_KINDS, BattleLogEntryKind, BATTLE_LOG_ACTORS, BattleLogActor, BATTLE_LOG_EFFECT_KINDS, BattleLogEffectKind, BattleLogTarget, BattleLogStartEffect, BattleLogDamageEffect, BattleLogHealEffect, BattleLogDefenseEffect, BattleLogStatusEffect, BattleLogFieldEffect, BattleLogOutcomeEffect, BattleLogEffect, BattleLogEntry { id, ordinal, turn, kind, actor, cardId?, effects }, BattleLog.\",\n    \"src/battle-log/derive.ts: BattleLogStartContext, BattleLogCardContext, BattleLogTurnContext, BattleLogContext; deriveBattleLogEntry(before: BattleState, after: BattleState, context: BattleLogContext): BattleLogEntry; deriveBattleStartEntry(state: BattleState, ordinal: number): BattleLogEntry; appendBattleLog(entries: readonly BattleLogEntry[], entry: BattleLogEntry): BattleLogEntry[].\",\n    \"src/battle-log/validate.ts: validateBattleLog(input: unknown): BattleLogEntry[] | null.\",\n    \"Consumers: LOG-03 calls deriveBattleLogEntry with the pre/post state of each successful player card, enemy plan step and handoff, deriveBattleStartEntry at setup, and appendBattleLog for the bounded log; LOG-07 reuses validateBattleLog for the additive save field; LOG-05 uses the same types for the public duel log.\"\n  ],\n  \"tests\": [\n    \"npm run typecheck: exit 0\",\n    \"npm test -- src/battle-log/derive.test.ts src/battle-log/validate.test.ts: exit 0 (2 files, 92 tests)\",\n    \"npm test: exit 0 (37 files, 1078 tests)\",\n    \"grep over src/battle-log for Math.random, engine mutator imports, React/DOM/storage/content imports, any and @ts-ignore: no matches\"\n  ],\n  \"unresolved\": []\n}\n```\n\n**Files created**\n\n- `src/battle-log/types.ts`\n- `src/battle-log/derive.ts`\n- `src/battle-log/validate.ts`\n- `src/battle-log/derive.test.ts`\n- `src/battle-log/validate.test.ts`\r\n",
+      "artifactId": "work-log-01-001",
+      "inputArtifactIds": [
+        "work-eng-01-001",
+        "work-eng-04-001",
+        "work-eng-06-001",
+        "work-eng-07-001",
+        "work-cnt-03-001",
+        "work-shl-04-001",
+        "work-shl-05-001",
+        "work-shl-06-001",
+        "work-shl-07-001",
+        "work-run-04-001",
+        "work-run-05-001",
+        "work-duel-03-001",
+        "work-rel-hr-1-002"
+      ]
     },
     "LOG-02": {
       "taskId": "LOG-02",
