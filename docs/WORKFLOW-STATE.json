@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T18:05:18.532Z",
+  "lastUpdatedAt": "2026-10-29T18:09:11.750Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "BATTLE-LOG-DYNAMIC-DIALOGUE-2",
+  "currentPhase": "BATTLE-LOG-DYNAMIC-DIALOGUE-3",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -2038,10 +2038,49 @@
     },
     "LOG-05": {
       "taskId": "LOG-05",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "duel-mode-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/duel/round.ts",
+        "src/duel/round.test.ts"
+      ],
+      "startedAt": "2026-10-29T18:05:19.030Z",
+      "usage": {
+        "inputTokens": 83352,
+        "outputTokens": 13130,
+        "reasoningTokens": 16136,
+        "cacheReadTokens": 3497344,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.040554432000000015,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/LOG-05.2026-10-29T18-09-11-732Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 83352,
+            "outputTokens": 13130,
+            "reasoningTokens": 16136,
+            "cacheReadTokens": 3497344,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.040554432000000015,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T18:09:11.744Z",
+      "agentOutput": "I'll start by reading the execution file and the key reference documents.\r\nNow I'll implement the log in the duel round controller.\r\nNow add the log bookkeeping helpers:\r\nNow update the view projection:\r\nNow I'll update the tests. First the imports and purity expectations:\r\nImplemented and verified. Final checks:\n\n```forge-result\n{\n  \"summary\": \"Added the privacy-safe public duel battle log: every round starts with one battle-start entry at ordinal 0, each settled play appends one card entry naming only the played card id and its public effects, each handoff appends one turn entry, the log is capped at 80 entries with surviving ordinals intact, and it is exposed only on the active battle view while the privacy and result views carry no log field at all.\",\n  \"decisions\": [\n    \"The log lives on DuelRoundCommon as BattleLog so it survives handoffs and round settlement internally, and duelRoundView redacts it: DuelPrivacyView and DuelRoundResultView have no log field, so CSS or a mis-wired screen cannot leak it.\",\n    \"createDuelRound seeds the log with exactly one deriveBattleStartEntry at ordinal 0, so a new round never inherits a prior round's history.\",\n    \"A card entry takes its cardId from the instance held in the acting hand before playCard runs, never from prose or the opponent's hand; a turn entry carries no cardId.\",\n    \"Entries are appended only after a typed engine success, so a rejected play or handoff leaves both the battle and the log unchanged; ordinals are newest + 1 and appendBattleLog caps at 80 without renumbering survivors.\",\n    \"All effect facts come from deriveBattleLogEntry's before/after deltas, so no hand contents, draws, deck order, energy, intent or enemy plan can enter the log.\"\n  ],\n  \"interfaces\": [\n    \"src/duel/round.ts: DuelRoundCommon.log: BattleLog (present on privacy, battle and complete state); DuelBattleView.log: BattleLog; DuelPrivacyView and DuelRoundResultView intentionally have no log field.\",\n    \"src/duel/round.ts: createDuelRound(match) returns a privacy state whose log is one battle-start entry at ordinal 0; playDuelCard and endDuelTurn append exactly one public entry on success; duelRoundView projects the log onto the battle view only.\",\n    \"Consumers: LOG-06 renders DuelBattleView.log through src/battle-log/text.ts and must not read any log from the privacy or result views.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/duel/round.test.ts: exit 0 (31 tests)\",\n    \"npm run typecheck: exit 0\",\n    \"npm test: exit 0 (40 files, 1162 tests)\"\n  ],\n  \"unresolved\": []\n}\n```\n\n**Files changed**\n- `src/duel/round.ts` — added the bounded public log to round state, battle-start/card/turn appends via `deriveBattleLogEntry`/`appendBattleLog`, and the battle-view-only exposure with privacy/result redaction.\n- `src/duel/round.test.ts` — added public-log coverage (start entry, card and turn appends, rejected-action no-ops, privacy/result redaction, per-round reset, 80-entry cap with preserved ordinals, seeded replay, public-fact shape) and updated the purity import/token expectations.\n\n(`docs/EXECUTION-AUDIT.jsonl` and `docs/WORKFLOW-STATE.json` show as modified by the execution engine; I did not edit them.)\r\n",
+      "artifactId": "work-log-05-001",
+      "inputArtifactIds": [
+        "work-log-01-001",
+        "work-log-02-001",
+        "work-duel-02-001",
+        "work-log-03-001",
+        "work-log-04-001"
+      ]
     },
     "LOG-06": {
       "taskId": "LOG-06",

@@ -1,10 +1,10 @@
 # Project Progress
 
 ## Current State
-**Phase**: BATTLE-LOG-DYNAMIC-DIALOGUE-2
+**Phase**: BATTLE-LOG-DYNAMIC-DIALOGUE-3
 **Status**: In Progress
 **Validation Gaps**: 5 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T18:05:18.538Z
+**Last Updated**: 2026-10-29T18:09:11.756Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -86,6 +86,8 @@
   - Files: src/state/battle-controller.ts, src/state/battle-controller.test.ts, src/state/resume-run.ts
 - [x] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-2, Task LOG-04: Build the accessible battle log strip and drawer (@ux-engineer)
   - Files: src/ui/components/BattleLog.tsx, src/ui/components/BattleLog.test.tsx, src/styles/battle-log.css
+- [x] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-3, Task LOG-05: Add the privacy-safe duel battle log (@duel-mode-engineer)
+  - Files: src/duel/round.ts, src/duel/round.test.ts
 
 ## Current Task
 - None currently running
