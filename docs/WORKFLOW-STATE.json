@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T08:29:31.314Z",
+  "lastUpdatedAt": "2026-10-29T11:59:41.719Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -1621,10 +1621,93 @@
     },
     "REL-04": {
       "taskId": "REL-04",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "qa-automation-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 4,
+      "outputFiles": [
+        "tests/e2e/responsive-a11y.spec.ts"
+      ],
+      "startedAt": "2026-10-29T11:58:04.580Z",
+      "usage": {
+        "inputTokens": 197340,
+        "outputTokens": 26292,
+        "cacheReadTokens": 6259456,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 41529,
+        "costUsd": 0.089071968,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "failed",
+          "reason": "forge-result.unresolved must be a string array; use [] when no blocking requirements remain.",
+          "resultPath": "docs/artifacts/REL-04.2026-10-29T08-40-57-057Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 95893,
+            "outputTokens": 20487,
+            "reasoningTokens": 38355,
+            "cacheReadTokens": 5428480,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.06597459,
+            "source": "harness"
+          }
+        },
+        {
+          "attempt": 2,
+          "outcome": "failed",
+          "reason": "forge-result.unresolved must be a string array; use [] when no blocking requirements remain.",
+          "resultPath": "docs/artifacts/REL-04.2026-10-29T08-41-54-786Z.attempt-2.result.json",
+          "usage": {
+            "inputTokens": 44737,
+            "outputTokens": 1724,
+            "reasoningTokens": 814,
+            "cacheReadTokens": 248576,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.008979077999999998,
+            "source": "harness"
+          }
+        },
+        {
+          "attempt": 3,
+          "outcome": "failed",
+          "reason": "forge-result.unresolved must be a string array; use [] when no blocking requirements remain.",
+          "resultPath": "docs/artifacts/REL-04.2026-10-29T08-42-59-876Z.attempt-3.result.json",
+          "usage": {
+            "inputTokens": 23708,
+            "outputTokens": 1805,
+            "reasoningTokens": 1567,
+            "cacheReadTokens": 196992,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.006170376,
+            "source": "harness"
+          }
+        },
+        {
+          "attempt": 4,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/REL-04.2026-10-29T11-59-41-708Z.attempt-4.result.json",
+          "usage": {
+            "inputTokens": 33002,
+            "outputTokens": 2276,
+            "reasoningTokens": 793,
+            "cacheReadTokens": 385408,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.007947924,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T11:59:41.715Z",
+      "agentOutput": "I'll start by reading the execution file.\r\nValidation is green in this session. Final report.\n\n## Verification run (this attempt)\n\n| Command | Result |\n|---|---|\n| `npm run test:e2e -- tests/e2e/responsive-a11y.spec.ts` | **exit 0 — 18/18 passed (28.6s)** — 3 viewports × 2 scenarios × chromium/firefox/webkit, against the production build served by the `webServer` |\n| `npm run typecheck` | **exit 0** |\n\n`git status` shows only the untracked spec plus engine-managed state files: no application source, build config or CSS was touched.\n\n## What the spec proves (observed in this run)\n\n- **No horizontal scroll** — `document.documentElement.scrollWidth` and `document.body.scrollWidth` measured against `innerWidth` on the menu, the live board, after a keyboard turn, on Settings and on the reloaded board, at 375×667, 768×1024 and 1280×800.\n- **Five reachable cards + End Turn** — one forward Tab pass collects five distinct `.card-view` stops, matches them byte-for-byte against the rendered hand `data-instance-id`s, requires each focused card to have a positive visible intersection plus a ≥1px outline, the fifth card ≥90% on screen, and at 375px requires `.hand__row` to genuinely overflow with `scrollLeft > 0`. Tab then continues to End Turn.\n- **44×44 targets** — every rendered `button`, `a[href]`, `input`, `select`, `textarea`, `[role=button]`, `[role=switch]` and tabbable element is measured on the menu, the board and the open card detail.\n- **Keyboard-only turn** — Enter opens the detail (focus lands on `.card-detail__close`), Escape closes it and focus returns to the invoking card, Enter reopens, Tab reaches `.card-detail__play`, Enter plays the card, `E` ends the turn with the `.battle-board__turn` marker asserted to change.\n- **Reduced motion** — toggled on Settings with the OS preference pinned to `no-preference`, `#app-root[data-reduced-motion=\"true\"]` survives a reload, and computed transition/animation durations are ≤1ms with `animation-name: none` and `transform: none` on the hand card, End Turn, hand row item, field banner and player panel.\n- **Zero console errors** on every scenario (console + pageerror collected from before navigation).\n\n```forge-result\n{\"summary\":\"Verified REL-04 in this session: tests/e2e/responsive-a11y.spec.ts drives the production build on chromium, firefox and webkit at 375x667, 768x1024 and 1280x800, asserting no horizontal scroll (document and body scrollWidth vs innerWidth across menu, board, post-turn, settings and reloaded board), five tab-reachable hand cards plus End Turn with visible focus and the 375px hand-row scroller genuinely overflowing, 44x44 minimum on every rendered interactive target, keyboard-only play (Enter opens detail, Escape closes and restores focus to the invoking card, Enter plays, E ends the turn with the turn marker changed), and a persisted Reduce motion choice that keeps data-reduced-motion=true after reload with computed transition/animation durations at most 1ms and transform/animation-name none; all 18 tests passed with zero console errors and typecheck exited 0. No product source, build config or CSS was changed.\",\"unresolved\":[],\"decisions\":[\"The traversal is a single forward Tab pass rather than replaying presses: Firefox parks focus on the last control instead of wrapping and WebKit skips the skip link on wrap, so acting while the fifth card holds focus keeps keyboard play portable across all three engines.\",\"Reachability is measured as a positive visible intersection in both axes while focused, with an extra 90% visibility and scrollLeft>0 requirement for the fifth card at 375px, so a clipped-but-onscreen card still counts but a hand that never scrolls fails loudly.\",\"Target size is measured on the rendered rects of every interactive selector, including the open card detail and the settings surface, rather than on a curated subset; zero-rect and display:none/visibility:hidden nodes are the only exclusions.\",\"Reduced motion pins the OS preference to no-preference with test.use so the toggle exercise always starts from motion-on and proves the explicit persisted override, then re-reads the choice on Settings after reload before measuring five board surfaces.\",\"Seed bases differ per viewport and per scenario (layout vs motion) so each cell exercises the app's own seeding path independently; nothing writes localStorage and no app module is imported.\",\"Failure messages carry the viewport label, seed, expected value and the recorded focus order, so a broken tab order or overflow is actionable without a re-run.\"],\"interfaces\":[\"tests/e2e/responsive-a11y.spec.ts: VIEWPORTS (375x667, 768x1024, 1280x800), MIN_TARGET_PX=44, BOARD_MAX_WIDTH_PX=1080, REDUCED_MOTION_CAP_MS=1, readFocus, tabToFifthCard, tabToEndTurn, readRenderedTargets, expectMinimumTargets, readMotionSnapshot, durationsInMilliseconds, expectWithinReducedMotionCap, expectStilled; two tests per viewport reusing helpers openApp/startSolo/expectScreen/expectNoHorizontalScroll/collectConsoleErrors/expectNoConsoleErrors from tests/e2e/helpers.ts.\"],\"tests\":[\"npm run test:e2e -- tests/e2e/responsive-a11y.spec.ts: exit 0, 18/18 passed (28.6s) across chromium, firefox and webkit\",\"npm run typecheck: exit 0\"],\"warnings\":[\"git status shows tests/e2e/responsive-a11y.spec.ts still untracked; it is left for engine auto-commit as instructed.\"]}\n```\n\n## Files created or changed\n\n- `tests/e2e/responsive-a11y.spec.ts` (created — the only deliverable; no product source, build config or CSS was modified)\r\n",
+      "artifactId": "work-rel-04-001",
+      "inputArtifactIds": [
+        "work-rel-01-001",
+        "work-shl-07-001",
+        "work-run-04-001",
+        "work-run-05-001",
+        "work-duel-03-001"
+      ]
     },
     "REL-05": {
       "taskId": "REL-05",

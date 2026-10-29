@@ -4,7 +4,7 @@
 **Phase**: RELEASE-VERIFICATION-1
 **Status**: In Progress
 **Validation Gaps**: 4 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T08:29:31.318Z
+**Last Updated**: 2026-10-29T11:59:41.723Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -70,12 +70,13 @@
   - Files: tests/e2e/solo-run.spec.ts
 - [x] Phase RELEASE-VERIFICATION-1, Task REL-03: Drive a best-of-three duel with privacy assertions (@qa-automation-engineer)
   - Files: tests/e2e/duel.spec.ts
+- [x] Phase RELEASE-VERIFICATION-1, Task REL-04: Verify responsive layout, keyboard play and reduced motion (@qa-automation-engineer)
+  - Files: tests/e2e/responsive-a11y.spec.ts
 
 ## Current Task
 - None currently running
 
 ## Remaining
-- [ ] Phase RELEASE-VERIFICATION-1: Phase 1: Browser Harness
 - [ ] Phase RELEASE-VERIFICATION-2: Phase 2: Build, Deploy and Budget
 - [ ] Phase RELEASE-VERIFICATION-3: Phase 3: Human Review
 
