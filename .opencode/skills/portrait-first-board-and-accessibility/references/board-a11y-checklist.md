@@ -29,7 +29,7 @@ Layout order at every width: enemy panel, field banner, player panel, hand, cont
 | Tab / Shift+Tab | Move focus in visual order |
 | Enter / Space | Activate the focused control or play the focused card |
 | E | End turn when focus is outside a text field |
-| Escape | Close card detail, rules overlay or dialog |
+| Escape | Close card detail, rules overlay, dialog or battle-log drawer |
 
 Rules: no positive `tabindex`; skip link targets the main board region; focus ring is 2px and always visible; dialogs set `aria-modal="true"`, trap focus and restore it to the invoker.
 
@@ -46,6 +46,26 @@ One polite live region, mounted once in `App.tsx`.
 | Battle ends | "Victory" or "Defeat" |
 
 Announce from a state transition. Do not announce on every render, and do not duplicate a message already emitted by a screen.
+
+## History region contract
+
+The battle log is history, not an announcement.
+
+| Surface | Markup | Must not have |
+|---------|--------|---------------|
+| History wrapper | `<section aria-label="Battle log">` | `aria-live`, `role="log"` |
+| Entry list | `<ol>` in chronological DOM order | Reverse visual order that disagrees with DOM |
+| Latest strip | One visible line with `aria-label="Latest battle log entry"` | Live-region role |
+| Toggle | `<button type="button" aria-expanded aria-controls>` | Positive `tabindex`, glyph-only name |
+| Drawer | Scrollable history, focus returns to toggle on Escape | `aria-modal` (it is not a dialog) |
+| Desktop 1024px+ | Right-hand column, permanently visible | Toggle requirement, overlay |
+
+Rules:
+
+- The single polite `LiveRegion` in `App.tsx` remains the only announcement for a settled transition.
+- Opening and closing the drawer changes no battle state and adds no log entry.
+- Only the drawer scrolls; the page must not gain a second horizontal scrollbar at 375px.
+- New entries may scroll into view, but must not steal focus.
 
 ## Target and text sizes
 
@@ -65,6 +85,7 @@ Announce from a state transition. Do not announce on every render, and do not du
 | Damage number | 320ms rise + fade | No transform, 1ms opacity |
 | Field repaint | 400ms background fade | 1ms opacity |
 | Hover/focus lift | 120ms transform | No transform |
+| Log entry appear | 160ms opacity | No transform, 1ms opacity |
 
 - Normal durations stay between 120ms and 400ms.
 - `useReducedMotion` returns true when `matchMedia("(prefers-reduced-motion: reduce)")` matches or the override is true.
@@ -79,3 +100,5 @@ Announce from a state transition. Do not announce on every render, and do not du
 3. Toggle Reduce motion, replay a card, and confirm no transform animation runs.
 4. Open a dialog and Tab repeatedly; focus must stay inside and return to the invoker on close.
 5. Trigger a turn change and a field shift; each announcement appears once in the live region.
+6. Play a card with the log drawer closed, then open it with Enter and close it with Escape; focus returns to the toggle and no second announcement occurs.
+7. At 1280px confirm the history column is visible without a toggle, and at 375px confirm the open drawer does not create page-level horizontal scroll.

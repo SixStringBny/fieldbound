@@ -1,20 +1,19 @@
 # Skill Audit Report
 
-**Generated:** 2026-10-28
+**Generated:** 2026-10-29
 **Audited by:** `forge-skill-review`
-**Skills audited:** 5
+**Skills audited:** 4
 
 ---
 
 ## Summary Scores
 
 | Skill | Context economy | Gotchas coverage | Procedural clarity | Progressive disclosure | Calibration | Validation | Overall |
-|-------|---|---|---|---|---|---|---------|
+|-------|---|---|---|---|---|---|---|
 | `C:\dev-work\Card-Game-Project\.opencode\skills\seeded-determinism-and-replay` | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
 | `C:\dev-work\Card-Game-Project\.opencode\skills\versioned-local-persistence` | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
 | `C:\dev-work\Card-Game-Project\.opencode\skills\portrait-first-board-and-accessibility` | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
-| `C:\dev-work\Card-Game-Project\.opencode\skills\placeholder-asset-manifest` | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
-| `C:\dev-work\Card-Game-Project\.opencode\skills\static-build-origin-audit` | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
+| `C:\dev-work\Card-Game-Project\.opencode\skills\battle-log-and-deterministic-dialogue` | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
 
 **Score interpretation:**
 - 2.5–3.0: Strong - follows best practices well
@@ -68,24 +67,9 @@
 
 ---
 
-### `C:\dev-work\Card-Game-Project\.opencode\skills\placeholder-asset-manifest`
+### `C:\dev-work\Card-Game-Project\.opencode\skills\battle-log-and-deterministic-dialogue`
 **Overall score:** 3 🟢 (strong)
-**Path:** `C:\dev-work\Card-Game-Project\.opencode\skills\placeholder-asset-manifest\SKILL.md`
-**Reviewer-style proxy:** 3 (proxy)
-**Strengths:**
-- Strong context economy
-- Strong gotchas coverage
-- Strong procedural clarity
-- Strong progressive disclosure
-- Strong calibration
-- Strong validation
-**Improvement opportunities:** None - all axes scored 3
-
----
-
-### `C:\dev-work\Card-Game-Project\.opencode\skills\static-build-origin-audit`
-**Overall score:** 3 🟢 (strong)
-**Path:** `C:\dev-work\Card-Game-Project\.opencode\skills\static-build-origin-audit\SKILL.md`
+**Path:** `C:\dev-work\Card-Game-Project\.opencode\skills\battle-log-and-deterministic-dialogue\SKILL.md`
 **Reviewer-style proxy:** 3 (proxy)
 **Strengths:**
 - Strong context economy

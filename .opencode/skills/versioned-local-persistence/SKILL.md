@@ -1,6 +1,6 @@
 ---
 name: versioned-local-persistence
-description: "Implement the three versioned Fieldbound localStorage keys with validate-before-use, discard-only-the-affected-key, injectable storage adapters and in-memory fallback when storage is full or unavailable."
+description: "Implement the three versioned Fieldbound localStorage keys with validate-before-use, discard-only-the-affected-key, injectable storage adapters and in-memory fallback, including additive optional fields inside an existing key without a schema-version bump."
 ---
 
 # Skill: Versioned Local Persistence
@@ -67,6 +67,21 @@ Read settings first, then stats, then the run save. Offer Continue Run only when
 
 Corrupt exactly one key in DevTools, reload, and confirm the other two keys survive with their values intact. Repeat with storage blocked in a private window and confirm play continues with the notice. If a browser refuses to block storage this way, inject the throwing adapter in a unit test instead.
 
+### Step 7: Add an optional field without bumping the key version
+
+When a feature adds optional data inside a live key, keep the key name and `schemaVersion` unchanged and make the field additive:
+
+1. Make the field optional and nullable in the TypeScript shape, for example `battleLog?: readonly BattleLogEntry[] | null` on `RunSaveV1`.
+2. Accept a missing field as the default (`undefined` or `null` means "no log", not "corrupt save").
+3. Validate the field in isolation. A malformed `battleLog` drops to `[]` while the rest of the validated payload still loads; it must not return a whole-save error.
+4. Normalize on read: an over-long array keeps the newest 80 entries with their original ordinals; entries outside a battle phase serialize as `null`.
+5. Serialize the field explicitly so property order stays part of the contract, and keep the existing `schemaVersion` constant untouched.
+6. Prove an old payload without the field still validates, and a corrupt field leaves the run resumable.
+
+Decision rule: use a new key or a schema bump only for a breaking shape change. An additive, independently validated field stays inside the current key and is recovered field-by-field. Load `references/persistence-contract.md` for the run-save example and the drop-only-the-field matrix.
+
+**Output:** type, validator, serializer and tests for missing, valid, malformed and over-long values.
+
 ---
 
 ## Gotchas
@@ -79,6 +94,10 @@ Corrupt exactly one key in DevTools, reload, and confirm the other two keys surv
 - **JSON silently drops `undefined`, functions and `Date`.** Serialize plain data only; a `Date` becomes a string and a missing field becomes absent, which the validator must catch.
 - **Offering Continue Run from memory fallback.** The in-memory session survives navigation but not reload, so the menu must not promise a resume it cannot deliver.
 - **jsdom tests sharing one store.** Tests that do not clear or inject a fresh adapter leak saves into each other and pass in isolation only.
+- **A new optional field treated as required.** Returning a whole-save error when `battleLog` is missing invalidates every save written before the feature and costs Continue Run for old players. Missing means default, not corrupt.
+- **Dropping the whole run key for one bad optional field.** A malformed `battleLog` must reduce to `[]`; only a failure of the run, seed, PRNG state or battle snapshot justifies discarding `fieldbound.run.v1`.
+- **Bumping the schema for an additive field.** `RUN_SAVE_SCHEMA_VERSION` stays `1`. A bump makes every existing save foreign data and contradicts the documented backward-compatibility contract.
+- **Serializing only on write.** A resumed save must round-trip the field in the same order, or Continue Run re-renders a different log than the player saw before reload. Normalize on read and write from the validated value.
 
 ---
 
@@ -92,5 +111,8 @@ Run this self-check after any persistence change:
 - [ ] A mid-battle reload restores the exact hand, energy, health, field and enemy plan.
 - [ ] `fieldbound.stats.v1` changes only when a run ends, and repeats of the same run do not double-count.
 - [ ] With storage blocked, play continues, one notice appears and nothing throws.
+- [ ] A v1 save written before the new optional field loads with the field defaulted and Continue Run still offered.
+- [ ] A malformed optional field (unknown effect, duplicate id, non-increasing ordinal) is dropped to its empty default while the run and battle still load.
+- [ ] `RUN_SAVE_SCHEMA_VERSION` is still `1`, the key is still `fieldbound.run.v1`, and an 81-entry list normalizes to the newest 80 without renumbering.
 
 If a check fails, load `references/persistence-contract.md` and compare the payload against the field matrix before adjusting the validator.

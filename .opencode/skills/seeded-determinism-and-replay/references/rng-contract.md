@@ -50,6 +50,47 @@ Ordering rules:
 - Ties are broken by card id before any draw. The draw only resolves identical priority and value.
 - UI code never draws. It receives state that already contains the result.
 
+## Presentation hash (outside the PRNG)
+
+Battle-log dialogue is deterministic but is not a PRNG consumer. Use a pure 32-bit hash of exactly three values:
+
+| Input | Source | Rule |
+|-------|--------|------|
+| `seed` | `battle.seed` | Unsigned 32-bit integer fixed at battle or round creation |
+| `ordinal` | `BattleLogEntry.ordinal` | Assigned when the entry is created; survives truncation |
+| `triggerTag` | Trigger table | Stable ASCII tag such as `"field-shift"` or `"big-hit"` |
+
+Rules:
+
+- The picker returns a line from the trigger's authored set; it returns no state and advances nothing.
+- Never pass `battle.rngState` as an input. Reading it is harmless; mutating or consuming it is not, and a helper that accepts the state invites both.
+- Never add this hash to the consumption table above. Its draw count is zero for every event.
+- The hash must be locally implemented in `src/content/battle-dialogue.ts`; importing `nextUint32` or `createRng` is a review failure even if the returned state is discarded.
+- Hashing the ordinal, not the array index, keeps a truncated log's surviving lines unchanged.
+- If the authored set is empty, return `null` and render no dialogue line rather than a fallback chosen at runtime.
+
+A minimal, frozen shape:
+
+```ts
+export function selectDialogueLine(
+  seed: number,
+  ordinal: number,
+  triggerTag: string,
+): string | null {
+  const lines = DIALOGUE[triggerTag] ?? [];
+  if (lines.length === 0) return null;
+
+  let hash = seed >>> 0;
+  hash = (hash ^ (ordinal >>> 0)) >>> 0;
+  for (let i = 0; i < triggerTag.length; i += 1) {
+    hash = Math.imul(hash ^ triggerTag.charCodeAt(i), 0x0100_0193) >>> 0;
+  }
+  return lines[hash % lines.length] ?? null;
+}
+```
+
+The exact constants are a project choice; the invariants are not. Freeze the picker for v1, because changing it rewrites every recorded log's dialogue without changing a single battle rule.
+
 ## Seed rules
 
 | Input | Result |

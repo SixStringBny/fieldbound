@@ -1,6 +1,6 @@
 ---
 name: portrait-first-board-and-accessibility
-description: "Build and verify the 375px-to-1080px board layout, 44px targets, glyph-plus-label element cues, focus trapping, polite live announcements and the reduced-motion contract shared by the shell and the release checks."
+description: "Build and verify the 375px-to-1080px board layout, 44px targets, glyph-plus-label element cues, focus return, polite live announcements, non-live history regions and the reduced-motion contract shared by the shell, the battle log and the release checks."
 ---
 
 # Skill: Portrait-First Board and Accessibility
@@ -66,6 +66,22 @@ Keep a single polite live region mounted in `App.tsx`. Announce turn changes, da
 
 **Output:** hook, motion CSS and the app-root attribute.
 
+### Step 7: Add a labelled history region without a second live region
+
+The battle log is a reading surface, not an announcement channel. Build it so it cannot duplicate the live region:
+
+- Wrap the history in `<section aria-label="Battle log">` (or an equivalent labelled `region` role) containing an ordered list in chronological DOM order. Never put `aria-live` or `role="log"` on the log, its list, or the latest-entry strip.
+- Keep one visible latest-entry strip; give it a stable accessible name (for example `aria-label="Latest battle log entry"`) so it is programmatically discoverable without being live.
+- Use a real `<button>` for the Log toggle with `aria-expanded`, `aria-controls`, a visible text label and at least a 44x44 CSS-pixel hit box. Opening with Enter or Space must work through native button behavior.
+- When the drawer is open, Escape closes it and returns focus to the toggle. If the user opened it from a control that can disappear, return focus to the toggle, not to a detached card node.
+- At 1024px and wider, render the same history as a right-hand column with no drawer toggle required; below that, the drawer is the only scroll container.
+- Keep the existing single polite announcement in `App.tsx`. The log updates silently; it may scroll the newest entry into view without focusing it or announcing it.
+- In reduced motion, new entries appear instantly (no height, transform or fade animation beyond a 1ms opacity step).
+
+Decision rule: if the log must tell a screen-reader user that something changed, that is the live region's job, not the log's. If the log only records history, it stays non-live.
+
+**Output:** `BattleLog` component plus tests for region semantics, focus return, 44px toggle, 1024px column and absence of `aria-live`.
+
 ---
 
 ## Gotchas
@@ -79,6 +95,12 @@ Keep a single polite live region mounted in `App.tsx`. Announce turn changes, da
 - **Reduced mode that only shortens durations.** `transform: translateY(...)` still animates; the reduced branch must set `transform: none` as well as the 1ms duration.
 - **44px measured on the wrong box.** Padding and margins around a 32px control do not count; the interactive element itself must be at least 44x44.
 - **A focus trap that leaves the page scrollable behind the dialog.** Lock background scrolling while the dialog is open and release it on close.
+- **`aria-live` on the battle log.** The existing summary already announces every settled transition; a live log or `role="log"` region says each event twice. Use a labelled region and ordered list with no live semantics.
+- **A `div` toggle with a 32px label.** Padding does not enlarge the hit area. Measure the button box itself at 44x44 and keep a visible text label, not just a glyph.
+- **Escape that closes the drawer but leaves focus on `<body>`.** Capture the toggle at open time and restore focus in the close path, including the keyboard path.
+- **Rendering both the strip and the drawer as separate lists.** Duplicate `id` values and duplicate entries confuse assistive technology; one list per surface, or hide the inactive copy from the accessibility tree.
+- **A desktop column that is still a drawer.** At 1024px and wider the history is laid out in the grid and visible; it must not require the toggle or overlay the board.
+- **The log pushing End Turn off a short viewport.** Reserve the strip's height and let only the history scroll; keep the sticky control bar reachable at 375x667.
 
 ---
 
@@ -93,5 +115,9 @@ Run this self-check after any layout, motion or accessibility change:
 - [ ] The live region announces each turn, damage total and field shift exactly once.
 - [ ] With reduced motion on from the OS or the toggle, no transform animates and transitions are at most 1ms.
 - [ ] All interactive targets measure at least 44x44 at 375px and layout survives 200% zoom without clipped controls.
+- [ ] The battle log exposes a labelled region and an ordered list, and `grep -nE 'aria-live|role="log"' src/ui/components/BattleLog.tsx` returns nothing.
+- [ ] The Log toggle is 44x44, toggles `aria-expanded`, opens with Enter/Space, closes with Escape and returns focus to itself.
+- [ ] At 375x667 with the drawer open and closed, the page has no horizontal scroll and End Turn remains reachable.
+- [ ] At 1024px and wider the history is a visible right-hand column, not an overlay, and reduced motion makes new entries appear without transform animation.
 
 If a check fails, load `references/board-a11y-checklist.md` and compare the failing item against the viewport matrix and focus rules before changing components.

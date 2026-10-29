@@ -30,11 +30,28 @@ Duels write no key. Nothing is transmitted anywhere.
     "phase": "battle"
   },
   "battle": { "schemaVersion": 1, "...": "BattleSnapshot" },
+  "battleLog": [
+    { "id": "t4-e17", "ordinal": 17, "turn": 4, "kind": "card", "actor": "player", "cardId": "ember-strike", "effects": [] }
+  ],
   "reward": { "options": [{ "kind": "card", "cardId": "ember-strike" }, { "kind": "card", "cardId": "neutral-jab" }, { "kind": "heal", "amount": 12 }] }
 }
 ```
 
 `reward` and `battle` are both optional but never both absent while `phase` requires one of them. `settings` and `stats` are small flat objects with the same `schemaVersion` field.
+
+## Additive optional fields
+
+A feature may add an optional field inside an existing key without renaming the key or changing `schemaVersion`.
+
+| Rule | Required behavior |
+|------|-------------------|
+| Missing field | Default it (`null` or empty) and load the rest of the payload |
+| Field present but malformed | Drop only that field, keep the validated save |
+| Field over its cap | Normalize to the newest N entries without renumbering |
+| Field outside its phase | Normalize to `null` on serialization |
+| Unknown extra fields | Ignore them; never fail the save because of a future addition |
+
+`battleLog` follows this contract: optional, written only in the `battle` phase, capped at 80, and validated by the battle-log validator rather than by a second hand-rolled parser. A malformed log becomes `[]`; it never turns the whole run save into `discarded`.
 
 ## Validation matrix
 
@@ -45,6 +62,8 @@ Duels write no key. Nothing is transmitted anywhere.
 | stats | `schemaVersion !== 1`; furthest encounter outside 0-4; boss clears or fewest turns negative or non-integer |
 
 Validation order: JSON parse, object shape, `schemaVersion`, field checks, cross-field checks. Nothing is returned until the whole chain passes.
+
+An additive optional field is validated after the required fields have passed and is not allowed to fail the whole payload. The run-save validator therefore calls the battle-log validator on `battleLog` and substitutes `[]` on failure; `battleLog` is not part of the run rejection row above.
 
 ## Adapter shape
 
@@ -90,3 +109,7 @@ export type StorageMode = "local" | "memory";
 - [ ] A quota-throwing adapter keeps the session playable and sets the notice.
 - [ ] A throwing-access adapter never throws out of `load`.
 - [ ] Stats update once per run end, including a defeat.
+- [ ] A battle-phase save round-trips `battleLog` in order; a missing field loads as `[]` and does not discard the save.
+- [ ] A malformed `battleLog` drops to `[]` while `run`, `battle` and Continue Run survive.
+- [ ] An 81-entry log reads back as the newest 80 entries with unchanged ordinals.
+- [ ] `RUN_SAVE_SCHEMA_VERSION` remains `1` and no fourth localStorage key is read or written.
