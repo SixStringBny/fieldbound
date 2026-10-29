@@ -123,7 +123,7 @@ function openCard(name: RegExp): HTMLElement {
 /* -------------------------------------------------------------------------- */
 
 describe('App keyboard reachability', () => {
-  it('reaches every hand card and End Turn in visual order with no positive tabindex', () => {
+  it('reaches every hand card, Log and End Turn in visual order with no positive tabindex', () => {
     renderBattle();
 
     const hand = handRegion();
@@ -134,12 +134,20 @@ describe('App keyboard reachability', () => {
     const battleControls = Array.from(
       main.querySelectorAll<HTMLElement>('button'),
     ).filter(
-      (button) => hand.contains(button) || button.textContent === 'End Turn',
+      (button) =>
+        hand.contains(button) ||
+        button.classList.contains('battle-log__toggle') ||
+        button.classList.contains('battle-controls__end'),
     );
 
-    // The five cards keep their dealt order and End Turn follows them.
+    // The five cards keep their dealt order; Log precedes the primary action.
     expect(battleControls.slice(0, 5)).toEqual(cards);
-    expect(battleControls[5]?.textContent).toBe('End Turn');
+    expect(battleControls[5]?.classList.contains('battle-log__toggle')).toBe(
+      true,
+    );
+    expect(
+      battleControls[6]?.classList.contains('battle-controls__end'),
+    ).toBe(true);
 
     for (const control of battleControls) {
       expect(control.tabIndex).toBe(0);

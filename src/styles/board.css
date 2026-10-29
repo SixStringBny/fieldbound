@@ -1,55 +1,69 @@
 ﻿/**
- * Fieldbound battle board layout (SHL-FR-02, SHL-FR-03, SHL-FR-08).
+ * Fieldbound battle board (SHL-FR-02, SHL-FR-03, SHL-FR-08).
  *
- * Portrait-first: one column from 375px up, the hand in a horizontally
- * scrollable snap row, and a sticky control bar. The page itself never scrolls
- * sideways; only the hand row may. At 640px+ the same vertical order sits in a
- * centred container capped at 1080px (the router's `.shell` is widened for the
- * battle screen by the rule below).
+ * One DOM, three compositions:
  *
- * Colour is never the only cue: every element renders a glyph and a word in the
- * markup, and the field matchup is stated in text. Transitions are decorative
- * and collapse to 1ms with no transform when reduced motion is active, whether
- * from the OS preference or the explicit `data-reduced-motion` override.
+ *   - phone: a single column rack ï¿½ enemy, field, hand, latest log line, then a
+ *     footer row with the You summary, Log and End Turn;
+ *   - tablet: a single column table ï¿½ enemy + field, the You band, the hand,
+ *     then the latest log line and the turn controls;
+ *   - game table: arena 1fr + log rail, with the player band and turn controls
+ *     sharing the row beneath the arena and the hand spanning both columns.
+ *
+ * The screen locks to `100svh`; only the hand rack, the intent list, the log
+ * drawer/rail and the detail sheet scroll. The field is the only zone that
+ * absorbs slack, down to its floor. Colour is never the only cue: every element
+ * renders a glyph and a word in the markup, and the field matchup is stated in
+ * text.
+ *
+ * Tokens only: no raw hex, rgb(), shadow, radius or duration literal outside
+ * `tokens.css` (AB-V1). Reduced motion is an absolute branch from both the OS
+ * query and the persisted override.
  */
 
-/* The App shell caps ordinary screens at 42rem; the battle board gets the
-   1080px contract from VIS-NFR-01. Higher specificity beats base.css. */
+/* -------------------------------------------------------------------------- */
+/* Route shell                                                                */
+/* -------------------------------------------------------------------------- */
+
+/* The App shell caps ordinary screens; battle takes the full width and height. */
+.app-root:has(> #main-content[data-screen='battle']) {
+  height: 100svh;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 .shell[data-screen='battle'] {
   max-width: var(--fb-board-max);
+  height: 100svh;
+  min-height: 0;
 }
 
-.battle-board {
-  --fb-element-bg: var(--fb-neutral-bg);
-  --fb-element-accent: var(--fb-neutral-accent);
-  --fb-element-ink: var(--fb-neutral-ink);
-  --fb-element-shade: var(--fb-neutral-shade);
-
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--fb-space-3);
-  width: 100%;
-  max-width: var(--fb-board-max);
-  min-width: 0;
-  margin: 0 auto;
-  padding: 0 0 var(--fb-space-4);
+.battle-screen[data-battle-screen='true'] {
+  display: flex;
+  height: 100svh;
+  min-height: 0;
+  flex-direction: column;
+  gap: 0;
+  padding: 6px var(--fb-gutter) 0;
+  overflow: hidden;
+  background-color: var(--fb-surface-board);
+  background-image: var(--fb-material-slate);
   color: var(--fb-text);
   font-family: var(--fb-font-ui);
-  font-size: var(--fb-text-lg);
-  line-height: var(--fb-leading-body);
+  font-size: var(--fb-text-md);
+  line-height: var(--fb-leading-ui);
 }
 
-.battle-board > *,
-.hand,
-.hand__row,
-.hand__item,
-.enemy-panel,
-.enemy-panel__body,
-.player-panel,
-.field-banner,
-.field-banner__body,
-.battle-controls {
-  min-width: 0;
+.battle-screen__error {
+  flex: 0 0 auto;
+  margin: var(--fb-space-1) 0 0;
+  padding: var(--fb-space-2) var(--fb-space-3);
+  border: var(--fb-rule);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-inset);
+  color: var(--fb-text);
+  font-weight: var(--fb-weight-ui);
 }
 
 .visually-hidden {
@@ -62,6 +76,173 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Header                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.battle-header {
+  display: flex;
+  width: 100%;
+  max-width: var(--fb-board-max);
+  min-height: var(--fb-header-height);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fb-space-2);
+  margin: 0 auto;
+  padding-bottom: 6px;
+  border-bottom: var(--fb-rule);
+}
+
+.battle-header__identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--fb-space-2);
+}
+
+.battle-header__mark {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: var(--fb-rule);
+  border-radius: 50%;
+  color: var(--fb-rule-strong-color);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-sm);
+  font-weight: var(--fb-weight-display);
+  line-height: 1;
+}
+
+.battle-header__wordmark {
+  color: var(--fb-rule-strong-color);
+  font-family: var(--fb-font-ui);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-wide);
+  text-transform: uppercase;
+  white-space: nowrap;
+  display: none;
+}
+
+.battle-header__turn {
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.battle-header__turn[data-outcome='true'] {
+  color: var(--fb-danger);
+  font-weight: 700;
+}
+
+.battle-header__actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--fb-space-1);
+}
+
+.battle-header__action {
+  min-height: var(--fb-target);
+  padding: var(--fb-space-1) var(--fb-space-2);
+  color: var(--fb-text-soft);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Board grid                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.battle-board {
+  --fb-element-bg: var(--fb-neutral-bg);
+  --fb-element-accent: var(--fb-neutral-accent);
+  --fb-element-ink: var(--fb-neutral-ink);
+  --fb-element-shade: var(--fb-neutral-shade);
+
+  --fb-battle-card-w: var(--fb-card-w-phone);
+  --fb-battle-card-h: 8.5rem;
+  --fb-battle-rack-gap: var(--fb-space-2);
+  --fb-battle-fan: 0deg;
+
+  display: grid;
+  width: 100%;
+  max-width: var(--fb-board-max);
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  grid-template-areas:
+    'arena arena arena'
+    'hand hand hand'
+    'latest latest latest'
+    'player log end';
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
+  gap: 6px;
+  margin: 0 auto;
+  padding: var(--fb-space-2) 0 0;
+  color: var(--fb-text);
+  font-family: var(--fb-font-ui);
+  font-size: var(--fb-text-md);
+  line-height: var(--fb-leading-ui);
+}
+
+.battle-board > *,
+.battle-arena,
+.battle-arena > *,
+.hand,
+.hand__row,
+.hand__item,
+.enemy-panel,
+.enemy-panel__body,
+.field-banner,
+.field-banner__body,
+.player-panel,
+.battle-controls {
+  min-width: 0;
+}
+
+/* Battle-board placement only; the duel reuses the same components elsewhere. */
+.battle-board > .battle-arena {
+  grid-area: arena;
+}
+
+.battle-board > .player-panel {
+  grid-area: player;
+}
+
+.battle-board > .hand {
+  grid-area: hand;
+}
+
+/* The duel board shares the card face and hand rack. */
+.duel-battle {
+  --fb-battle-card-w: var(--fb-card-w-phone);
+  --fb-battle-card-h: 9.5rem;
+  --fb-battle-rack-gap: var(--fb-space-2);
+  --fb-battle-fan: 0deg;
+}
+
+@media (min-width: 1024px) {
+  .duel-battle {
+    --fb-battle-card-w: var(--fb-card-w-compact);
+    --fb-battle-card-h: 10.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .duel-battle {
+    --fb-battle-card-w: var(--fb-card-w-table);
+    --fb-battle-card-h: 12.125rem;
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -128,143 +309,259 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/* Board header                                                               */
+/* Arena                                                                      */
 /* -------------------------------------------------------------------------- */
 
-.battle-board__header {
+.battle-arena {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--fb-space-1) var(--fb-space-3);
-}
-
-.battle-board__turn {
-  color: var(--fb-text-soft);
-  font-size: 0.9375rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.battle-board__outcome {
-  color: var(--fb-danger);
-  font-weight: 700;
+  min-height: 0;
+  flex-direction: column;
+  gap: var(--fb-space-2);
 }
 
 /* -------------------------------------------------------------------------- */
-/* Panels                                                                     */
+/* Enemy panel                                                                */
 /* -------------------------------------------------------------------------- */
 
-.enemy-panel,
-.player-panel,
-.field-banner {
+.enemy-panel {
+  position: relative;
+  display: grid;
+  min-height: 165px;
+  max-height: 200px;
+  flex: 0 1 auto;
+  grid-template-areas:
+    'portrait body'
+    'intent intent';
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: var(--fb-space-1) var(--fb-space-2);
+  padding: var(--fb-space-2);
   border: var(--fb-rule);
+  border-left: 3px solid var(--fb-element-accent);
   border-radius: var(--fb-radius-md);
   background-color: var(--fb-surface-panel);
   background-image: var(--fb-material-panel);
   box-shadow: var(--fb-rim), var(--fb-elev-2);
-  padding: var(--fb-space-3);
   color: var(--fb-text);
 }
 
-.enemy-panel {
-  display: grid;
-  grid-template-columns: 5.5rem minmax(0, 1fr);
-  gap: var(--fb-space-3);
-  align-items: start;
-  border-left: 6px solid var(--fb-element-accent);
+.enemy-panel[data-lethal='true'] {
+  border-left-color: var(--fb-danger);
 }
 
 .enemy-panel__portrait {
   display: block;
+  height: 64px;
   overflow: hidden;
+  grid-area: portrait;
   border: var(--fb-rule-width-strong) solid var(--fb-element-accent);
   border-radius: var(--fb-radius-sm);
   background-color: var(--fb-surface-inset);
 }
 
+.enemy-panel__portrait .asset-image {
+  height: 100%;
+}
+
+.enemy-panel__portrait img {
+  object-position: var(--fb-art-enemy-position);
+}
+
 .enemy-panel__body {
   display: grid;
-  gap: var(--fb-space-2);
+  grid-area: body;
+  align-content: start;
+  gap: 2px;
+}
+
+.enemy-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fb-space-1) var(--fb-space-2);
 }
 
 .enemy-panel__title {
+  color: var(--fb-text);
   font-family: var(--fb-font-display);
-  font-size: 1.125rem;
-  line-height: 1.2;
+  font-size: var(--fb-text-2xl);
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-tight);
+  letter-spacing: var(--fb-tracking-display);
   overflow-wrap: anywhere;
 }
 
 .enemy-panel__element {
-  display: flex;
-  flex-wrap: wrap;
+  display: inline-flex;
   align-items: center;
-  gap: var(--fb-space-2);
-  font-size: var(--fb-text-sm);
+  gap: var(--fb-space-1);
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
+}
+
+.enemy-panel__meters {
+  display: grid;
+  gap: 2px;
 }
 
 .enemy-panel__intent {
   display: grid;
-  gap: var(--fb-space-1);
-  padding-top: var(--fb-space-2);
+  grid-area: intent;
+  align-content: start;
+  gap: 2px;
+  padding-top: var(--fb-space-1);
   border-top: var(--fb-rule-width) dashed var(--fb-rule-subtle-color);
 }
 
+.enemy-panel__intent-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fb-space-1) var(--fb-space-2);
+}
+
 .enemy-panel__intent-title {
-  font-size: 0.9375rem;
+  color: var(--fb-rule-strong-color);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  line-height: var(--fb-leading-ui);
+  text-transform: uppercase;
+}
+
+.enemy-panel__lethal-badge {
+  padding: 1px var(--fb-space-2);
+  border: var(--fb-rule-width) solid var(--fb-danger);
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-action-soft);
+  color: var(--fb-danger);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
 }
 
 .enemy-panel__totals {
-  font-size: var(--fb-text-sm);
-  font-weight: 600;
+  color: var(--fb-text);
+  font-size: var(--fb-text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .enemy-panel__lethal {
   color: var(--fb-danger);
-  font-size: var(--fb-text-sm);
+  font-size: var(--fb-text-2xs);
   font-weight: 700;
 }
 
 .enemy-panel__steps {
   display: grid;
-  gap: var(--fb-space-1);
+  max-height: 96px;
+  gap: 2px;
   margin: 0;
   padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   list-style: none;
+  scrollbar-width: thin;
 }
 
 .enemy-panel__step {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.15rem 0.6rem;
-  padding: 0.35rem 0.5rem;
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--fb-space-1) var(--fb-space-2);
+  padding: 2px var(--fb-space-2);
   border-left: var(--fb-rule-width-strong) solid var(--fb-element-accent);
   border-radius: 0 var(--fb-radius-sm) var(--fb-radius-sm) 0;
   background-color: var(--fb-surface-inset);
-  font-size: var(--fb-text-sm);
+  font-size: var(--fb-text-2xs);
+}
+
+.enemy-panel__step-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--fb-rule-strong-color);
 }
 
 .enemy-panel__step-name {
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .enemy-panel__step-detail {
   color: var(--fb-text-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.enemy-panel__step-cost {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border: var(--fb-rule-subtle);
+  border-radius: 50%;
+  color: var(--fb-element-accent);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.enemy-panel__note {
+  color: var(--fb-text-muted);
+  font-size: var(--fb-text-2xs);
+  line-height: var(--fb-leading-ui);
 }
 
 .enemy-panel__empty {
   color: var(--fb-text-soft);
-  font-size: var(--fb-text-sm);
+  font-size: var(--fb-text-xs);
+}
+
+.enemy-panel .status-list--empty {
+  display: none;
+}
+
+.enemy-panel__expand {
+  min-height: var(--fb-target);
+  padding: var(--fb-space-1) var(--fb-space-3);
+  border: var(--fb-rule);
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-surface-raised);
+  color: var(--fb-text-soft);
+  font: inherit;
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.enemy-panel__expand[aria-expanded='true'] {
+  border-color: var(--fb-rule-strong-color);
+  background-color: var(--fb-surface-selected);
+  color: var(--fb-text);
+}
+
+.enemy-panel__expand:focus-visible {
+  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
+  outline-offset: var(--fb-focus-offset);
+  box-shadow: var(--fb-focus-shadow);
 }
 
 /* -------------------------------------------------------------------------- */
-/* Stat meters                                                                */
+/* Stat meters and statuses                                                   */
 /* -------------------------------------------------------------------------- */
 
 .stat-meter {
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 
 .stat-meter__head {
@@ -272,22 +569,27 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--fb-space-2);
-  font-size: 0.875rem;
+  font-size: var(--fb-text-2xs);
+  line-height: 1.2;
 }
 
 .stat-meter__label {
-  font-weight: 600;
+  color: var(--fb-text-soft);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
 }
 
 .stat-meter__value {
-  color: var(--fb-text-soft);
+  color: var(--fb-text);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .stat-meter__track {
   position: relative;
-  height: 0.5625rem;
+  height: 7px;
   overflow: hidden;
   border: var(--fb-rule-subtle);
   border-radius: var(--fb-radius-pill);
@@ -317,25 +619,21 @@
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Statuses                                                                   */
-/* -------------------------------------------------------------------------- */
-
 .status-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem 0.5rem;
+  gap: 2px var(--fb-space-1);
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: var(--fb-text-sm);
+  font-size: var(--fb-text-2xs);
 }
 
 .status-list__item {
   display: inline-flex;
   align-items: baseline;
   gap: 0.25rem;
-  padding: 0.1rem 0.45rem;
+  padding: 0 var(--fb-space-1);
   border: var(--fb-rule-subtle);
   border-radius: var(--fb-radius-pill);
   background-color: var(--fb-surface-raised);
@@ -351,8 +649,8 @@
 }
 
 .status-list--empty {
-  color: var(--fb-text-soft);
-  font-size: var(--fb-text-sm);
+  color: var(--fb-text-muted);
+  font-size: var(--fb-text-2xs);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -360,49 +658,143 @@
 /* -------------------------------------------------------------------------- */
 
 .field-banner {
-  display: grid;
-  grid-template-columns: 3.5rem minmax(0, 1fr);
-  gap: var(--fb-space-3);
+  position: relative;
+  display: flex;
+  min-height: 150px;
+  flex: 1 1 auto;
+  flex-direction: column;
   align-items: center;
-  border-left: 6px solid var(--fb-element-accent);
+  justify-content: center;
+  gap: var(--fb-space-1);
+  padding: var(--fb-space-2);
+  overflow: hidden;
+  border: var(--fb-rule);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-panel);
+  background-image: var(--fb-material-panel);
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
+  color: var(--fb-text);
+  text-align: center;
+}
+
+.field-banner__roundel {
+  position: relative;
+  display: grid;
+  width: 68px;
+  height: 68px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: var(--fb-rule-width-strong) solid var(--fb-element-accent);
+  border-radius: 50%;
+  background-color: var(--fb-surface-inset);
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
+}
+
+.field-banner__roundel-ring {
+  position: absolute;
+  inset: 4px;
+  border: var(--fb-rule-subtle);
+  border-radius: 50%;
+}
+
+.field-banner__roundel-glyph {
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  color: var(--fb-element-accent);
+  font-family: var(--fb-font-glyph);
+  font-size: var(--fb-text-2xs);
 }
 
 .field-banner__art {
   display: block;
+  width: 48px;
+  height: 48px;
   overflow: hidden;
-  border: var(--fb-rule-width-strong) solid var(--fb-element-accent);
-  border-radius: var(--fb-radius-sm);
+  border-radius: 50%;
+}
+
+.field-banner__art .asset-image {
+  height: 100%;
+}
+
+.field-banner__art img {
+  object-position: var(--fb-art-field-position);
+}
+
+.field-banner__roundel-tag {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  padding: 0 4px;
+  border-radius: var(--fb-radius-xs);
+  background-color: var(--fb-surface-inset);
+  color: var(--fb-text);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
 .field-banner__body {
   display: grid;
-  gap: var(--fb-space-1);
+  min-width: 0;
+  justify-items: center;
+  gap: 2px;
+}
+
+.field-banner__eyebrow {
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
 }
 
 .field-banner__title {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: baseline;
+  justify-content: center;
   gap: 0.4rem;
+  color: var(--fb-text);
   font-family: var(--fb-font-display);
-  font-size: 1.0625rem;
-  line-height: 1.2;
+  font-size: var(--fb-text-2xl);
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-tight);
+  letter-spacing: var(--fb-tracking-display);
+  text-transform: uppercase;
+}
+
+.field-banner__title .element-cue {
+  color: var(--fb-element-accent);
 }
 
 .field-banner__matchup {
-  font-size: 0.9375rem;
+  max-width: 48ch;
+  color: var(--fb-text);
+  font-size: var(--fb-text-xs);
   font-weight: 600;
+  line-height: var(--fb-leading-ui);
 }
 
-.field-banner__matchup strong {
-  color: var(--fb-element-accent);
+.field-banner__rule {
+  max-width: 48ch;
+  color: var(--fb-text-muted);
+  font-size: var(--fb-text-2xs);
+  line-height: var(--fb-leading-ui);
 }
 
 .field-banner__cycle {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--fb-space-1);
-  margin: 0;
+  gap: 2px;
+  margin: 2px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -411,7 +803,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.1rem 0.45rem;
+  padding: 0 var(--fb-space-1);
   border: var(--fb-rule-subtle);
   border-radius: var(--fb-radius-pill);
   background-color: var(--fb-surface-raised);
@@ -419,7 +811,7 @@
 }
 
 .field-banner__cycle-step[aria-current='step'] {
-  border-color: var(--fb-element-bg);
+  border-color: var(--fb-element-accent);
   background: var(--fb-element-bg);
 }
 
@@ -428,55 +820,80 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/* Player panel and energy                                                    */
+/* Player band                                                                */
 /* -------------------------------------------------------------------------- */
 
 .player-panel {
   display: grid;
-  gap: var(--fb-space-2);
-  border-left: 6px solid var(--fb-element-accent);
+  min-height: 48px;
+  grid-template-areas: 'head meters energy';
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px var(--fb-space-2);
+  padding: 4px var(--fb-space-3);
+  border: var(--fb-rule);
+  border-left: 3px solid var(--fb-element-accent);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-panel);
+  background-image: var(--fb-material-panel);
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
+  color: var(--fb-text);
 }
 
 .player-panel__head {
   display: flex;
-  flex-wrap: wrap;
+  grid-area: head;
   align-items: baseline;
-  justify-content: space-between;
-  gap: var(--fb-space-1) var(--fb-space-2);
+  gap: var(--fb-space-1);
 }
 
 .player-panel__title {
+  color: var(--fb-text);
   font-family: var(--fb-font-display);
-  font-size: 1.0625rem;
-  line-height: 1.2;
+  font-size: var(--fb-text-lg);
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-tight);
 }
 
 .player-panel__element {
-  display: flex;
-  flex-wrap: wrap;
+  display: none;
   align-items: center;
-  gap: var(--fb-space-2);
-  font-size: var(--fb-text-sm);
+  gap: var(--fb-space-1);
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-2xs);
+}
+
+.player-panel__meters {
+  display: grid;
+  min-width: 0;
+  grid-area: meters;
+  gap: 2px;
+}
+
+.player-panel > .status-list,
+.player-panel > .status-list--empty {
+  display: none;
+  grid-area: status;
 }
 
 .player-panel__energy {
   display: flex;
-  flex-wrap: wrap;
+  grid-area: energy;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--fb-space-2);
-  padding-top: var(--fb-space-1);
-  border-top: var(--fb-rule-width) dashed var(--fb-rule-subtle-color);
+  gap: var(--fb-space-1);
 }
 
 .player-panel__energy-text {
-  font-size: 0.9375rem;
+  color: var(--fb-text);
+  font-size: var(--fb-text-2xs);
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .energy-pips {
-  display: flex;
-  gap: 0.3rem;
+  display: none;
+  gap: 3px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -484,13 +901,13 @@
 
 .energy-pip {
   display: grid;
-  width: 0.9rem;
-  height: 0.9rem;
+  width: 12px;
+  height: 12px;
   place-items: center;
   border: var(--fb-rule-width) solid var(--fb-element-accent);
   border-radius: 50%;
   color: transparent;
-  font-size: 0.5rem;
+  font-size: 6px;
   line-height: 1;
 }
 
@@ -504,25 +921,63 @@
 /* -------------------------------------------------------------------------- */
 
 .hand {
-  display: grid;
-  gap: var(--fb-space-1);
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .hand__head {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  justify-content: space-between;
-  gap: var(--fb-space-1) var(--fb-space-2);
+  gap: 0 var(--fb-space-2);
 }
 
 .hand__title {
-  font-family: var(--fb-font-display);
-  font-size: 1rem;
-  line-height: 1.2;
+  color: var(--fb-text-soft);
+  font-family: var(--fb-font-ui);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  line-height: var(--fb-leading-ui);
+  text-transform: uppercase;
+}
+
+.hand__count {
+  color: var(--fb-text);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
 }
 
 .hand__hint {
+  color: var(--fb-text-muted);
+  font-size: var(--fb-text-2xs);
+}
+
+.hand__piles {
+  display: none;
+  margin-left: auto;
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: 600;
+}
+
+.hand__rack {
+  display: flex;
+  min-height: calc(var(--fb-battle-card-h) + var(--fb-space-3));
+  align-items: center;
+}
+
+.hand__rack--empty {
+  padding: var(--fb-space-2) var(--fb-space-3);
+  border: var(--fb-rule-subtle);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-inset);
+}
+
+.hand__empty {
+  padding: var(--fb-space-2);
   color: var(--fb-text-soft);
   font-size: var(--fb-text-sm);
 }
@@ -532,11 +987,12 @@
    the sum of its children. */
 .hand__row {
   display: flex;
-  gap: var(--fb-space-2);
   width: 100%;
   max-width: 100%;
+  align-items: flex-end;
+  gap: var(--fb-battle-rack-gap, var(--fb-space-2));
   margin: 0;
-  padding: var(--fb-space-1) var(--fb-space-1) var(--fb-space-3);
+  padding: var(--fb-space-1) var(--fb-space-1) 4px;
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
@@ -547,29 +1003,36 @@
 }
 
 .hand__item {
+  position: relative;
+  width: var(--fb-battle-card-w, var(--fb-card-w-phone));
+  height: var(--fb-battle-card-h, 9.5rem);
   flex: 0 0 auto;
   scroll-snap-align: start;
 }
 
-.hand__empty {
-  padding: var(--fb-space-2);
-  color: var(--fb-text-soft);
-  font-size: 0.9375rem;
-}
-
+/* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 /* Card face                                                                  */
 /* -------------------------------------------------------------------------- */
 
+/*
+ * The button is the card. Its visible text is the suffix of the frozen
+ * accessible name (name, element, type, value, badges, Unaffordable), so WCAG
+ * 2.5.3 passes without changing `cardAccessibleName`. The cost number is a
+ * hidden text node inside the button plus a visible seal sibling; the table
+ * summary is generated content because the detail sheet owns the full text.
+ */
 .card-view {
   position: relative;
-  display: grid;
-  grid-template-rows: auto auto auto auto auto;
-  gap: 0.2rem;
-  width: var(--fb-card-w-phone);
+  display: flex;
+  width: var(--fb-battle-card-w, var(--fb-card-w-phone));
+  height: var(--fb-battle-card-h, 9.5rem);
   min-width: var(--fb-target);
   min-height: var(--fb-target);
-  padding: 0.45rem 0.45rem 0.55rem;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 6px 6px;
+  overflow: hidden;
   border: var(--fb-rule-width-strong) solid var(--fb-element-accent);
   border-radius: var(--fb-radius-sm);
   background-color: var(--fb-surface-document);
@@ -579,22 +1042,22 @@
   text-align: left;
   touch-action: manipulation;
   cursor: pointer;
+  transform: translateY(var(--fb-battle-lift, 0))
+    rotate(var(--fb-battle-fan, 0deg));
   transition:
     transform var(--fb-dur-lift) var(--fb-ease),
-    border-color var(--fb-dur-lift) var(--fb-ease),
-    box-shadow var(--fb-dur-lift) var(--fb-ease);
+    border-color var(--fb-dur-lift) var(--fb-ease);
   -webkit-tap-highlight-color: transparent;
 }
 
-.card-view:active {
-  transform: translateY(1px);
+.card-view:focus-visible {
+  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
+  outline-offset: var(--fb-focus-offset);
+  box-shadow: var(--fb-focus-shadow);
 }
 
-@media (hover: hover) {
-  .card-view:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--fb-elev-3);
-  }
+.card-view[data-affordable='true']:hover {
+  --fb-battle-lift: -2px;
 }
 
 .card-view[data-affordable='false'] {
@@ -605,63 +1068,119 @@
   cursor: not-allowed;
 }
 
-.card-view:focus-visible {
-  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
-  outline-offset: var(--fb-focus-offset);
-  box-shadow: var(--fb-focus-shadow);
-}
-
 .card-view__cost {
   position: absolute;
-  top: 0.3rem;
-  left: 0.3rem;
-  z-index: 1;
+  top: 4px;
+  left: 4px;
+  z-index: 2;
   display: grid;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 21px;
+  height: 21px;
   place-items: center;
   border: var(--fb-rule-width) solid var(--fb-element-accent);
   border-radius: 50%;
   background-color: var(--fb-element-bg);
   color: var(--fb-element-ink);
-  font-size: 0.9375rem;
+  font-size: var(--fb-text-xs);
   font-weight: 700;
   line-height: 1;
 }
 
+.card-view__state {
+  position: absolute;
+  right: var(--fb-space-1);
+  bottom: var(--fb-space-1);
+  left: var(--fb-space-1);
+  z-index: 3;
+  display: flex;
+  min-height: 18px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-xs);
+  background-color: var(--fb-surface-document-raised);
+  color: var(--fb-text-on-paper-danger);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
 .card-view__art {
   display: block;
+  height: 48px;
+  flex: 0 0 48px;
   overflow: hidden;
+  border: var(--fb-rule);
   border-radius: var(--fb-radius-sm);
+  background-color: var(--fb-surface-inset);
+}
+
+.card-view__art .asset-image {
+  height: 100%;
+}
+
+.card-view__art img {
+  object-position: var(--fb-art-card-position);
 }
 
 .card-view__name {
   display: -webkit-box;
-  min-height: 2.3em;
+  min-height: 2.1em;
   overflow: hidden;
+  color: var(--fb-text-on-paper);
   font-family: var(--fb-font-display);
-  font-size: 0.9375rem;
+  font-size: var(--fb-text-2xs);
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.05;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
-.card-view .element-cue {
+.card-view__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 0.3rem;
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.card-view__meta .element-cue {
   color: var(--fb-element-shade);
   font-size: var(--fb-text-2xs);
+  letter-spacing: 0;
+}
+
+.card-view__type {
+  color: var(--fb-text-on-paper-soft);
+}
+
+.card-view__summary {
+  display: none;
+  height: 2.3em;
+  overflow: hidden;
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-2xs);
+  line-height: 1.15;
 }
 
 .card-view__primary {
   display: flex;
   align-items: baseline;
-  gap: 0.25rem;
+  gap: 0.2rem;
+  margin-top: auto;
+  color: var(--fb-text-on-paper);
   font-weight: 700;
 }
 
 .card-view__primary-value {
-  font-size: 1.25rem;
+  font-size: var(--fb-text-lg);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -673,45 +1192,37 @@
 
 .card-view__badges {
   display: flex;
+  min-height: 12px;
   flex-wrap: wrap;
-  gap: 0.15rem;
+  gap: 2px;
+  overflow: hidden;
+  max-height: 2.4em;
 }
 
 .card-view__badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.05rem 0.3rem;
+  padding: 0 3px;
   border-radius: var(--fb-radius-xs);
   background-color: var(--fb-element-accent);
   color: var(--fb-element-shade);
   font-size: var(--fb-text-2xs);
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 
-.card-view__state {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  color: var(--fb-text-on-paper-danger);
-  font-size: var(--fb-text-2xs);
-  font-weight: 700;
-  line-height: 1.3;
+.card-view[data-affordable='false'] .card-view__badge {
+  background-color: var(--fb-rule-on-paper-color);
+  color: var(--fb-surface-document-raised);
 }
 
-.card-view[data-affordable='false'] .card-view__state {
-  color: var(--fb-text-on-paper-danger);
-}
-
-/* -------------------------------------------------------------------------- */
-/* Manifest-backed images                                                     */
-/* -------------------------------------------------------------------------- */
+/* Manifest-backed images -------------------------------------------------- */
 
 .asset-image {
   position: relative;
   display: block;
   width: 100%;
+  height: 100%;
   overflow: hidden;
   border-radius: inherit;
   background-color: var(--fb-surface-inset);
@@ -722,6 +1233,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  filter: var(--fb-art-filter);
 }
 
 .asset-image__fallback {
@@ -760,6 +1272,83 @@
 }
 
 /* -------------------------------------------------------------------------- */
+/* Turn controls                                                              */
+/* -------------------------------------------------------------------------- */
+
+.battle-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.battle-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--fb-space-2);
+}
+
+.battle-controls__energy {
+  display: none;
+  color: var(--fb-text);
+  font-size: var(--fb-text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.battle-controls__end {
+  min-width: 7rem;
+  min-height: var(--fb-target);
+  height: 46px;
+  align-self: center;
+  justify-self: end;
+  padding: var(--fb-space-1) var(--fb-space-4);
+  border: var(--fb-rule-width) solid var(--fb-action);
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-action);
+  background-image: var(--fb-material-wax);
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
+  color: var(--fb-action-ink);
+  font: inherit;
+  font-size: var(--fb-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.battle-controls__end:focus-visible {
+  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
+  outline-offset: var(--fb-focus-offset);
+  box-shadow: var(--fb-focus-shadow);
+}
+
+.battle-controls__end:disabled {
+  border-color: var(--fb-state-disabled-surface);
+  background-color: var(--fb-state-disabled-surface);
+  background-image: none;
+  color: var(--fb-state-disabled-ink);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Below the table the footer and controls dissolve into the board grid. */
+@media (max-width: 1023px) {
+  .battle-board > .battle-footer {
+    display: contents;
+  }
+
+  .battle-board .battle-controls {
+    display: contents;
+  }
+
+  .battle-board .battle-controls__end {
+    grid-area: end;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* Card detail dialog                                                         */
 /* -------------------------------------------------------------------------- */
 
@@ -770,13 +1359,17 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background-color: var(--fb-surface-page);
+  background-color: color-mix(
+    in srgb,
+    var(--fb-surface-page) 78%,
+    transparent
+  );
 }
 
 .card-detail {
   position: relative;
-  width: min(100%, 34rem);
-  max-height: min(90dvh, 48rem);
+  width: min(100%, 28.75rem);
+  max-height: 88svh;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: var(--fb-space-5) var(--fb-space-4)
@@ -816,17 +1409,19 @@
 .card-detail__kicker {
   padding-right: 3rem;
   color: var(--fb-text-on-paper-soft);
-  font-size: var(--fb-text-sm);
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
   text-transform: uppercase;
 }
 
 .card-detail__title {
   padding-right: 3rem;
+  color: var(--fb-text-on-paper);
   font-family: var(--fb-font-display);
-  font-size: clamp(1.5rem, 6vw, 2rem);
-  line-height: 1.1;
+  font-size: var(--fb-text-3xl);
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-tight);
   overflow-wrap: anywhere;
 }
 
@@ -839,6 +1434,7 @@
 }
 
 .card-detail__primary-value {
+  color: var(--fb-text-on-paper);
   font-size: 2rem;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -851,13 +1447,26 @@
 }
 
 .card-detail__art {
-  width: 6.5rem;
+  width: 96px;
+  height: 134px;
   margin-top: var(--fb-space-3);
+}
+
+.card-detail__art .asset-image {
+  height: 100%;
+}
+
+.card-detail__art img {
+  object-position: var(--fb-art-card-position);
 }
 
 .card-detail__section-title {
   margin-top: var(--fb-space-4);
-  font-size: 1rem;
+  color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-sm);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
 }
 
 .card-detail__effects {
@@ -865,14 +1474,18 @@
   gap: 0.25rem;
   margin: var(--fb-space-1) 0 0;
   padding-left: 1.15rem;
+  color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-md);
+  line-height: var(--fb-leading-reading);
 }
 
 .card-detail__matchup {
-  margin-top: var(--fb-space-4);
+  margin-top: var(--fb-space-3);
   padding: var(--fb-space-2) var(--fb-space-3);
   border-left: var(--fb-rule-width-strong) solid var(--fb-element-accent);
   background-color: var(--fb-surface-document-raised);
   color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-sm);
   font-weight: var(--fb-weight-ui);
 }
 
@@ -886,6 +1499,7 @@
 .card-detail__play {
   width: 100%;
   min-height: var(--fb-target);
+  height: 48px;
   margin-top: var(--fb-space-4);
   padding: var(--fb-space-2) var(--fb-space-4);
   border: var(--fb-rule-width) solid var(--fb-action);
@@ -913,102 +1527,561 @@
   font-size: var(--fb-text-sm);
 }
 
-/* -------------------------------------------------------------------------- */
-/* Sticky controls                                                            */
-/* -------------------------------------------------------------------------- */
-
-.battle-controls {
-  position: sticky;
-  bottom: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--fb-space-2);
-  padding: var(--fb-space-2) var(--fb-space-3);
-  padding-bottom: max(var(--fb-space-2), env(safe-area-inset-bottom));
-  border: var(--fb-rule);
-  border-radius: var(--fb-radius-md);
-  background-color: var(--fb-surface-raised);
-  background-image: var(--fb-material-panel);
-  box-shadow: var(--fb-elev-3);
-  color: var(--fb-text);
+/* Taller phones get the 152px card; the 136px rack is for 667px-class screens. */
+@media (min-width: 376px) and (max-width: 767px) and (min-height: 701px) {
+  .battle-board {
+    --fb-battle-card-h: 9.5rem;
+  }
 }
 
-.battle-controls__energy {
-  font-size: 0.9375rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.battle-controls__end {
-  min-width: 8rem;
-  min-height: var(--fb-target);
-  padding: var(--fb-space-2) var(--fb-space-4);
-  border: var(--fb-rule-width) solid var(--fb-action);
-  border-radius: var(--fb-radius-pill);
-  background-color: var(--fb-action);
-  background-image: var(--fb-material-wax);
-  color: var(--fb-action-ink);
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: var(--fb-rim), var(--fb-elev-2);
-}
-
-.battle-controls__end:focus-visible {
-  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
-  outline-offset: var(--fb-focus-offset);
-  box-shadow: var(--fb-focus-shadow);
-}
-
-.battle-controls__end:disabled {
-  border-color: var(--fb-state-disabled-surface);
-  background-color: var(--fb-state-disabled-surface);
-  background-image: none;
-  color: var(--fb-state-disabled-ink);
-  box-shadow: none;
-  cursor: not-allowed;
-}
-
-/* -------------------------------------------------------------------------- */
-/* Breakpoints                                                                */
-/* -------------------------------------------------------------------------- */
-
-@media (min-width: 640px) {
+@media (min-width: 376px) and (max-width: 767px) {
   .enemy-panel {
-    grid-template-columns: 8rem minmax(0, 1fr);
+    min-height: 180px;
+  }
+}
+
+/* Phone: one-line enemy summary, then steps on demand; compact You labels. */
+@media (max-width: 767px) {
+  .enemy-panel__title {
+    font-size: var(--fb-text-xl);
+  }
+
+  .enemy-panel__intent {
+    min-height: 0;
+    max-height: 88px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .enemy-panel__intent[data-expanded='false'] .enemy-panel__steps,
+  .enemy-panel__intent[data-expanded='false'] .enemy-panel__note {
+    display: none;
+  }
+
+  .enemy-panel__steps {
+    max-height: 64px;
+  }
+
+  .field-banner__cycle {
+    display: none;
+  }
+
+  .stat-meter__label {
+    font-size: 0;
+    letter-spacing: 0;
+  }
+
+  .stat-meter--health .stat-meter__label::before,
+  .stat-meter--defense .stat-meter__label::before {
+    font-size: var(--fb-text-2xs);
+    letter-spacing: var(--fb-tracking-label);
+  }
+
+  .stat-meter--health .stat-meter__label::before {
+    content: 'HP';
+  }
+
+  .stat-meter--defense .stat-meter__label::before {
+    content: 'DEF';
+  }
+
+  .stat-meter__value,
+  .player-panel__energy-text {
+    font-size: 0.625rem;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Tablet: player band above the hand, log strip and controls in one footer    */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 768px) {
+  .battle-screen[data-battle-screen='true'] {
+    padding-top: 12px;
+  }
+
+  .battle-header {
+    padding-bottom: 10px;
+  }
+
+  .battle-header__wordmark {
+    display: inline;
+  }
+
+  .battle-header__action {
+    padding: var(--fb-space-1) var(--fb-space-3);
+    font-size: var(--fb-text-2xs);
+    letter-spacing: 0.08em;
+  }
+
+  .battle-board {
+    --fb-battle-card-w: var(--fb-card-w-phone);
+    --fb-battle-card-h: 9.5rem;
+
+    grid-template-areas:
+      'arena arena arena'
+      'player player player'
+      'hand hand hand'
+      'latest latest latest'
+      '. log end';
+    grid-template-rows: minmax(0, 1fr) auto auto auto auto;
+    gap: var(--fb-space-2);
+    padding-top: var(--fb-space-3);
+  }
+
+  .battle-arena {
+    gap: var(--fb-space-2);
+  }
+
+  .enemy-panel {
+    min-height: 190px;
+    max-height: 200px;
+    grid-template-areas:
+      'portrait body'
+      'intent intent';
+    grid-template-columns: 84px minmax(0, 1fr);
+    padding: var(--fb-space-3);
+  }
+
+  .enemy-panel__portrait {
+    height: 84px;
+  }
+
+  .enemy-panel__title {
+    font-size: var(--fb-text-3xl);
+  }
+
+  .enemy-panel__steps {
+    max-height: 120px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .enemy-panel__step {
+    grid-template-columns: 8px minmax(0, 1fr) auto auto;
+  }
+
+  .enemy-panel__expand {
+    display: none;
+  }
+
+  .enemy-panel__intent[data-expanded='false'] .enemy-panel__note {
+    display: none;
+  }
+
+  .battle-board > .hand {
+    min-height: 204px;
+  }
+
+  .field-banner {
+    min-height: 180px;
     gap: var(--fb-space-4);
     padding: var(--fb-space-4);
   }
 
-  .field-banner {
-    grid-template-columns: 4.5rem minmax(0, 1fr);
-    padding: var(--fb-space-4);
+  .field-banner__roundel {
+    width: 92px;
+    height: 92px;
+  }
+
+  .field-banner__art {
+    width: 66px;
+    height: 66px;
+  }
+
+  .field-banner__title {
+    font-size: var(--fb-text-3xl);
+  }
+
+  .field-banner__matchup {
+    font-size: var(--fb-text-sm);
   }
 
   .player-panel {
-    padding: var(--fb-space-4);
+    min-height: 80px;
+    grid-template-areas:
+      'head meters energy'
+      'status status status';
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--fb-space-1) var(--fb-space-4);
+    padding: var(--fb-space-2) var(--fb-space-4);
+  }
+
+  .player-panel__meters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--fb-space-4);
+  }
+
+  .player-panel__title {
+    font-size: var(--fb-text-xl);
+  }
+
+  .player-panel__element {
+    display: inline-flex;
+  }
+
+  .player-panel > .status-list,
+  .player-panel > .status-list--empty {
+    display: flex;
+    grid-area: status;
+  }
+
+  .energy-pips {
+    display: flex;
+  }
+
+  .stat-meter__track {
+    height: 9px;
+  }
+
+  .hand__piles {
+    display: block;
+  }
+
+  .hand__hint {
+    display: none;
+  }
+
+  .hand__row {
+    gap: var(--fb-space-2);
+    padding-bottom: var(--fb-space-3);
+  }
+
+  .battle-controls__end {
+    min-width: 9rem;
+    min-height: 48px;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Game table: arena + rail, hand spans both                                  */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 1024px) {
+  .battle-board {
+    --fb-battle-card-w: var(--fb-card-w-compact);
+    --fb-battle-card-h: 10.5rem;
+    --fb-battle-fan: 0deg;
+
+    grid-template-areas:
+      'arena arena log'
+      'player footer log'
+      'hand hand hand';
+    grid-template-columns: minmax(0, 1fr) auto var(--fb-rail-width-compact);
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    gap: var(--fb-space-3);
+    padding-top: var(--fb-space-3);
+  }
+
+  .battle-arena {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: var(--fb-space-3);
+  }
+
+  .enemy-panel {
+    min-height: 160px;
+    max-height: 160px;
+    grid-template-areas: 'portrait body intent';
+    grid-template-columns: 100px minmax(0, 1fr) minmax(290px, 350px);
+    align-items: center;
+    gap: var(--fb-space-4);
+    padding: var(--fb-space-3);
+  }
+
+  .enemy-panel__portrait {
+    width: 100px;
+    height: 108px;
+  }
+
+  .enemy-panel__title {
+    font-size: 1.375rem;
+  }
+
+  .enemy-panel__intent {
+    align-self: center;
+    padding-top: 0;
+    padding-left: var(--fb-space-3);
+    border-top: 0;
+    border-left: var(--fb-rule-width) dashed var(--fb-rule-subtle-color);
+  }
+
+  .enemy-panel__steps {
+    max-height: 96px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .enemy-panel__expand {
+    display: none;
+  }
+
+  .field-banner {
+    min-height: 190px;
+  }
+
+  .field-banner__roundel {
+    width: 108px;
+    height: 108px;
+  }
+
+  .field-banner__title {
+    font-size: var(--fb-text-xl);
+  }
+
+  .field-banner__art {
+    width: 78px;
+    height: 78px;
+  }
+
+  .player-panel {
+    min-height: 70px;
+    grid-template-areas: 'head meters energy';
+    grid-template-columns: auto minmax(0, 1.6fr) auto;
+    padding: var(--fb-space-1) var(--fb-space-4);
+  }
+
+  .player-panel__meters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--fb-space-4);
+  }
+
+  .player-panel > .status-list,
+  .player-panel > .status-list--empty {
+    display: none;
+  }
+
+  .battle-footer {
+    display: flex;
+    grid-area: footer;
+    align-self: center;
+    justify-self: end;
+  }
+
+  .battle-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--fb-space-2);
+  }
+
+  .battle-controls__energy {
+    display: none;
+  }
+
+  .battle-controls__end {
+    min-width: 8rem;
+    min-height: 48px;
+  }
+
+  .battle-board > .hand {
+    min-height: 204px;
+  }
+
+  .hand__row {
+    gap: var(--fb-space-3);
+    justify-content: center;
+  }
+
+  /* The table fan: rotation is visual, the overlay hit boxes stay square. */
+  .hand__item:nth-child(1) .card-view {
+    --fb-battle-fan: -4deg;
+  }
+
+  .hand__item:nth-child(2) .card-view {
+    --fb-battle-fan: -2deg;
+  }
+
+  .hand__item:nth-child(4) .card-view {
+    --fb-battle-fan: 2deg;
+  }
+
+  .hand__item:nth-child(5) .card-view {
+    --fb-battle-fan: 4deg;
+  }
+
+  .card-view__art {
+    height: 66px;
+    flex-basis: 66px;
+  }
+
+  .card-view__name {
+    font-size: var(--fb-text-sm);
+    line-height: 1.05;
+  }
+
+  .card-view__meta {
+    font-size: var(--fb-text-2xs);
+  }
+
+  .card-view__summary {
+    display: block;
+  }
+
+  .card-view__primary-value {
+    font-size: var(--fb-text-xl);
+  }
+
+  .card-view__cost {
+    width: 27px;
+    height: 27px;
+    font-size: var(--fb-text-sm);
+  }
+
+  .card-view__badges {
+    max-height: 1.3em;
+    flex-wrap: nowrap;
   }
 
   .card-detail {
+    max-height: 94svh;
+    padding: var(--fb-space-5);
     border-radius: var(--fb-radius-lg);
-    max-width: 28.75rem;
   }
 
   .card-detail-layer {
     align-items: center;
     padding: var(--fb-space-5);
   }
+
+  .card-detail__art {
+    width: 126px;
+    height: 176px;
+  }
+
+  .card-detail__title {
+    font-size: var(--fb-text-3xl);
+  }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .battle-board {
-    gap: var(--fb-space-4);
+    --fb-battle-card-w: var(--fb-card-w-table);
+    --fb-battle-card-h: 12.125rem;
+    grid-template-columns: minmax(0, 1fr) auto var(--fb-rail-width);
+  }
+
+  .battle-board > .hand {
+    min-height: 228px;
   }
 
   .hand__row {
-    gap: var(--fb-space-3);
+    gap: 10px;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Degradation: only below 600px height may the page scroll                   */
+/* -------------------------------------------------------------------------- */
+
+@media (max-height: 599px) {
+  .app-root:has(> #main-content[data-screen='battle']) {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+  }
+
+  .shell[data-screen='battle'] {
+    height: auto;
+  }
+
+  .battle-screen[data-battle-screen='true'] {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+  }
+
+  .battle-board {
+    min-height: 0;
+    flex: 0 0 auto;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Battle log placement                                                       */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Below 1024px the log element is the phone/tablet footer block: `display:
+ * contents` lets its latest strip and Log toggle join the battle board's grid,
+ * so the strip sits above the control row and the toggle sits beside End Turn.
+ * The history becomes a fixed drawer above that row. At 1024px and wider the
+ * element is the right-hand rail, spanning the content rows and stopping at the
+ * hand line.
+ */
+@media (max-width: 1023px) {
+  .battle-board .battle-log {
+    display: contents;
+  }
+
+  .battle-board .battle-log__head {
+    display: contents;
+  }
+
+  .battle-board .battle-log__title {
+    display: none;
+  }
+
+  .battle-board .battle-log__latest {
+    min-height: 20px;
+    grid-area: latest;
+    padding: 0 var(--fb-space-2);
+  }
+
+  .battle-board .battle-log__latest-text {
+    font-size: var(--fb-text-xs);
+    line-height: 20px;
+  }
+
+  .battle-board .battle-log__toggle {
+    min-width: 64px;
+    min-height: var(--fb-target);
+    grid-area: log;
+    align-self: center;
+    justify-self: end;
+    padding: var(--fb-space-1) var(--fb-space-2);
+    font-size: var(--fb-text-2xs);
+    letter-spacing: var(--fb-tracking-label);
+    text-transform: uppercase;
+  }
+
+  .battle-board .battle-log__history[data-open='true'] {
+    position: fixed;
+    right: var(--fb-gutter);
+    bottom: calc(56px + env(safe-area-inset-bottom));
+    left: var(--fb-gutter);
+    z-index: 55;
+    max-height: 82svh;
+    padding: var(--fb-space-3);
+    border: var(--fb-rule);
+    border-radius: var(--fb-radius-md);
+    background-color: var(--fb-surface-panel);
+    background-image: var(--fb-material-panel);
+    box-shadow: var(--fb-elev-4);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+@media (min-width: 1024px) {
+  .battle-board .battle-log {
+    display: grid;
+    height: 100%;
+    min-height: 0;
+    grid-area: log;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    align-self: stretch;
+    overflow: hidden;
+  }
+
+  .battle-board .battle-log__history,
+  .battle-board .battle-log__history[data-open='false'] {
+    display: block;
+    min-height: 0;
+    padding-top: var(--fb-space-2);
+    border-top: var(--fb-rule-width) dashed var(--fb-rule-subtle-color);
+    overflow-y: auto;
+  }
+
+  .battle-board .battle-log__latest {
+    min-height: 32px;
   }
 }
 
@@ -1021,13 +2094,13 @@
   .card-detail,
   .card-detail__close,
   .card-detail__play,
-  .battle-controls__end {
+  .battle-controls__end,
+  .enemy-panel__expand {
     transition-duration: var(--fb-dur-instant);
   }
 
-  .card-view,
-  .card-view:active,
-  .card-view:hover {
+  .card-view {
+    --fb-battle-lift: 0px;
     transform: none;
   }
 }
@@ -1036,13 +2109,13 @@
 [data-reduced-motion='true'] .card-detail,
 [data-reduced-motion='true'] .card-detail__close,
 [data-reduced-motion='true'] .card-detail__play,
-[data-reduced-motion='true'] .battle-controls__end {
+[data-reduced-motion='true'] .battle-controls__end,
+[data-reduced-motion='true'] .enemy-panel__expand {
   transition-duration: var(--fb-dur-instant);
 }
 
-[data-reduced-motion='true'] .card-view,
-[data-reduced-motion='true'] .card-view:active,
-[data-reduced-motion='true'] .card-view:hover {
+[data-reduced-motion='true'] .card-view {
+  --fb-battle-lift: 0px;
   transform: none;
 }
 
@@ -1051,12 +2124,13 @@
   transition-duration: var(--fb-dur-lift);
 }
 
-[data-reduced-motion='false'] .card-view:active {
-  transform: translateY(1px);
+[data-reduced-motion='false'] .card-view[data-affordable='true']:hover {
+  --fb-battle-lift: -2px;
 }
 
 @media (hover: hover) {
-  [data-reduced-motion='false'] .card-view:hover {
-    transform: translateY(-2px);
+  [data-reduced-motion='false'] .card-view[data-affordable='true']:hover {
+    transform: translateY(var(--fb-battle-lift, 0))
+      rotate(var(--fb-battle-fan, 0deg));
   }
 }

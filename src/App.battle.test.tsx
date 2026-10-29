@@ -266,7 +266,8 @@ describe('App battle outcome', () => {
     playFromHand(/Cinder Jab/);
 
     const board = screen.getByRole('region', { name: 'Battle' });
-    expect(board.textContent).toContain('Victory');
+    expect(board).toBeTruthy();
+    expect(screen.getByText('Victory')).toBeTruthy();
     expect(screen.queryByRole('dialog')).toBeNull();
 
     const end = screen.getByRole('button', {

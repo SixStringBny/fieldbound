@@ -49,7 +49,9 @@ interface ViewportCase {
 
 const VIEWPORTS: readonly ViewportCase[] = [
   { label: '375x667', width: 375, height: 667 },
+  { label: '390x844', width: 390, height: 844 },
   { label: '768x1024', width: 768, height: 1024 },
+  { label: '1024x768', width: 1024, height: 768 },
   { label: '1280x800', width: 1280, height: 800 },
 ];
 
@@ -292,6 +294,28 @@ async function readRenderedTargets(page: Page): Promise<readonly RenderedTarget[
   });
 }
 
+/** Battle locks to 100svh: neither axis may scroll the document. */
+async function expectNoPageScroll(
+  page: Page,
+  context: string,
+): Promise<void> {
+  const metrics = await page.evaluate(() => ({
+    innerHeight: window.innerHeight,
+    innerWidth: window.innerWidth,
+    scrollHeight: document.documentElement.scrollHeight,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+
+  expect(
+    metrics.scrollHeight,
+    `${context}: the battle document scrolls vertically (${metrics.scrollHeight}px content in a ${metrics.innerHeight}px viewport).`,
+  ).toBeLessThanOrEqual(metrics.innerHeight + 1);
+  expect(
+    metrics.scrollWidth,
+    `${context}: the battle document scrolls horizontally (${metrics.scrollWidth}px content in a ${metrics.innerWidth}px viewport).`,
+  ).toBeLessThanOrEqual(metrics.innerWidth + 1);
+}
+
 /** Assert the 44x44 minimum on every rendered interactive element. */
 async function expectMinimumTargets(
   page: Page,
@@ -440,6 +464,7 @@ for (const [index, viewport] of VIEWPORTS.entries()) {
 
       await startSolo(page, 'ember');
       await expectScreen(page, 'battle', layoutContext);
+      await expectNoPageScroll(page, `${layoutContext} battle`);
 
       const hand = page.locator('.hand .card-view');
       await expect(
@@ -556,17 +581,16 @@ for (const [index, viewport] of VIEWPORTS.entries()) {
 
       await expectMinimumTargets(page, `${layoutContext} battle`);
 
-      if (viewport.width >= 1080) {
+      if (viewport.width >= 1024) {
         // AB-T2: the interactive board content is capped at 1080px and centred
-        // as a whole. The log rail makes the arena deliberately asymmetric
-        // inside that cap, so measure the arena-plus-rail content box rather
-        // than centring the arena in the viewport (battle-screen §1.2). The
-        // rail's exact 240/288px width is AB-T3 and lands with the battle
-        // screen; here it must exist as the right-hand column.
+        // as a whole. The board *contains* the log rail in the new composition,
+        // so the rail is inside the board's right edge and the board box itself
+        // must be centred (battle-screen section 1.2).
         const board = await page.locator('.battle-board').boundingBox();
         const rail = await page
           .locator('[data-battle-log="true"]')
           .boundingBox();
+        const hand = await page.locator('.battle-hand, .hand').boundingBox();
 
         if (board === null || rail === null) {
           throw new Error(
@@ -579,37 +603,40 @@ for (const [index, viewport] of VIEWPORTS.entries()) {
           `${layoutContext}: the battle board is ${board.width}px wide, above the ${BOARD_MAX_WIDTH_PX}px contract.`,
         ).toBeLessThanOrEqual(BOARD_MAX_WIDTH_PX + 1);
 
-        const contentLeft = Math.min(board.x, rail.x);
-        const contentRight = Math.max(board.x + board.width, rail.x + rail.width);
-        const contentWidth = contentRight - contentLeft;
-
-        expect(
-          contentWidth,
-          `${layoutContext}: the board content is ${contentWidth}px wide, above the ${BOARD_MAX_WIDTH_PX}px contract.`,
-        ).toBeLessThanOrEqual(BOARD_MAX_WIDTH_PX + 1);
-
-        const leftGap = contentLeft;
-        const rightGap = viewport.width - contentRight;
+        const leftGap = board.x;
+        const rightGap = viewport.width - (board.x + board.width);
 
         expect(
           Math.abs(leftGap - rightGap),
-          `${layoutContext}: the board content is not centred (left gap ${leftGap}px, right gap ${rightGap}px).`,
+          `${layoutContext}: the battle board is not centred (left gap ${leftGap}px, right gap ${rightGap}px).`,
         ).toBeLessThanOrEqual(2);
 
-        const gapBetween = rail.x - (board.x + board.width);
+        const expectedRail = viewport.width >= 1280 ? 288 : 240;
+
+        expect(
+          rail.width,
+          `${layoutContext}: the log rail is ${rail.width}px wide; the spec fixes ${expectedRail}px at this width.`,
+        ).toBeGreaterThanOrEqual(expectedRail - 1);
+        expect(
+          rail.width,
+          `${layoutContext}: the log rail is ${rail.width}px wide; the spec fixes ${expectedRail}px at this width.`,
+        ).toBeLessThanOrEqual(expectedRail + 1);
 
         expect(
           rail.x,
-          `${layoutContext}: the log rail is not the board's right-hand column (board ends at ${board.x + board.width}px, rail starts at ${rail.x}px).`,
-        ).toBeGreaterThanOrEqual(board.x + board.width - 1);
+          `${layoutContext}: the log rail must sit inside the board's right column (rail x=${rail.x}, board right=${board.x + board.width}).`,
+        ).toBeGreaterThan(board.x + board.width / 2);
         expect(
-          gapBetween,
-          `${layoutContext}: the empty gutter between the board and its rail is ${gapBetween}px, above the 240px limit.`,
-        ).toBeLessThanOrEqual(240);
-        expect(
-          rail.width,
-          `${layoutContext}: the log rail (${rail.width}px) must be the narrow column beside the board (${board.width}px).`,
-        ).toBeLessThan(board.width);
+          rail.x + rail.width,
+          `${layoutContext}: the log rail must stop at the board's right edge (rail right=${rail.x + rail.width}, board right=${board.x + board.width}).`,
+        ).toBeLessThanOrEqual(board.x + board.width + 1);
+
+        if (hand !== null) {
+          expect(
+            rail.y + rail.height,
+            `${layoutContext}: the log rail runs ${rail.y + rail.height - hand.y}px past the hand line (hand top ${hand.y}).`,
+          ).toBeLessThanOrEqual(hand.y + 1);
+        }
       }
 
       // Keyboard-only card play. The fifth card currently owns focus from the

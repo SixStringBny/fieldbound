@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+﻿import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -15,6 +15,7 @@ import type {
 import { byId as cardCatalog } from '../../content/cards';
 import { enemyById } from '../../content/enemies';
 import { BattleBoard } from './BattleBoard';
+import type { BattleLogLineView } from './BattleLog';
 import type { FieldMatchup } from './FieldBanner';
 import { ELEMENT_DISPLAY } from './ElementCue';
 
@@ -111,6 +112,7 @@ interface StateOptions {
   readonly activeSide?: Side;
   readonly phase?: BattleState['phase'];
   readonly outcome?: BattleState['outcome'];
+  readonly plan?: EnemyPlan | null;
 }
 
 function makeState(options: StateOptions = {}): BattleState {
@@ -139,13 +141,14 @@ function makeState(options: StateOptions = {}): BattleState {
         statuses: { focus: 0, weaken: 2, regen: 0 },
       }),
     },
-    enemyPlan: PLAN,
+    enemyPlan: options.plan === undefined ? PLAN : options.plan,
   };
 }
 
 function renderBoard(
   state: BattleState = makeState(),
   fieldMatchup: FieldMatchup | null = EMBER_MATCHUP,
+  logLines: BattleLogLineView[] = [],
 ) {
   const onPlayCard = vi.fn();
   const onEndTurn = vi.fn();
@@ -159,6 +162,8 @@ function renderBoard(
       baseUrl="/app/"
       onPlayCard={onPlayCard}
       onEndTurn={onEndTurn}
+      logLines={logLines}
+      logToggleLabel="Log"
     />,
   );
 
@@ -192,12 +197,14 @@ describe('BattleBoard structure', () => {
       (section) => section.getAttribute('aria-labelledby'),
     );
 
-    expect(sections).toEqual([
+    expect(sections.slice(0, 4)).toEqual([
       'enemy-panel-title',
       'field-banner-title',
       'player-panel-title',
       'hand-title',
     ]);
+    expect(sections).toHaveLength(5);
+    expect(sections[4]).toMatch(/-title$/);
   });
 
   it('keeps all five hand cards as reachable native buttons at 375px', () => {
@@ -249,7 +256,7 @@ describe('BattleBoard structure', () => {
     );
 
     // The promoted block states both in rem: 2.75rem = 44px and 67.5rem =
-    // 1080px at the 16px root (README §12 item 4, tokens.test.ts).
+    // 1080px at the 16px root (README Â§12 item 4, tokens.test.ts).
     expect(tokens).toMatch(/--fb-target:\s*2\.75rem/);
     expect(tokens).toMatch(/--fb-board-max:\s*67\.5rem/);
 
@@ -411,9 +418,68 @@ describe('BattleBoard stats and cues', () => {
     }) as HTMLButtonElement;
 
     expect(end.disabled).toBe(true);
-    expect(screen.getByRole('region', { name: 'Battle' }).textContent).toContain(
-      'Victory',
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* State matrix                                                               */
+/* -------------------------------------------------------------------------- */
+
+describe('BattleBoard state matrix', () => {
+  it('keeps the rack height and says the hand is empty, with End Turn enabled', () => {
+    renderBoard(makeState({ hand: [] }));
+
+    const hand = screen.getByRole('region', { name: 'Your hand' });
+    expect(
+      within(hand).getAllByText('Your hand is empty.').length,
+    ).toBeGreaterThan(0);
+    expect(within(hand).queryAllByRole('button')).toHaveLength(0);
+    expect(
+      screen.getByRole('button', { name: 'End Turn' }).hasAttribute('disabled'),
+    ).toBe(false);
+  });
+
+  it('shows the empty log note without a latest sentence', () => {
+    renderBoard(makeState(), EMBER_MATCHUP, []);
+
+    expect(screen.getByRole('note', { name: 'Battle log empty' })).toBeTruthy();
+    expect(
+      screen.getByRole('group', { name: 'Latest battle log entry' }).textContent,
+    ).toBe('');
+  });
+
+  it('states that no plan exists yet', () => {
+    renderBoard(makeState({ plan: null }));
+
+    const enemy = screen.getByRole('region', { name: 'Cinder Warden' });
+    expect(within(enemy).getByText('No plan yet.')).toBeTruthy();
+    expect(within(enemy).queryByRole('list', { name: 'Enemy plan' })).toBeNull();
+  });
+
+  it('marks a lethal plan with words and a danger rule', () => {
+    renderBoard(
+      makeState({
+        plan: { ...PLAN, lethal: true },
+      }),
     );
+
+    const enemy = screen.getByRole('region', { name: 'Cinder Warden' });
+    expect(enemy.getAttribute('data-lethal')).toBe('true');
+    expect(within(enemy).getByText('Lethal')).toBeTruthy();
+  });
+
+  it('keeps ended-battle cards inspectable while Play is disabled', () => {
+    renderBoard(makeState({ phase: 'ended', outcome: 'player-victory' }));
+
+    fireEvent.click(cinderJabButton());
+
+    const dialog = screen.getByRole('dialog', { name: 'Cinder Jab' });
+    const play = within(dialog).getByRole('button', {
+      name: 'Play card',
+    }) as HTMLButtonElement;
+
+    expect(play.disabled).toBe(true);
+    expect(dialog.textContent).toContain('You cannot play a card right now.');
   });
 });
 

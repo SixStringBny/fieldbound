@@ -202,23 +202,23 @@ export function BattleLog({ lines, toggleLabel }: BattleLogProps) {
         )}
       </div>
 
-      {lines.length === 0 ? (
-        <div
-          className="battle-log__empty"
-          role="note"
-          aria-label="Battle log empty"
-          data-battle-log-empty="true"
-        >
-          <p className="battle-log__empty-text">{EMPTY_TEXT}</p>
-        </div>
-      ) : null}
-
       <div
         className="battle-log__history"
         id={historyId}
         ref={historyRef}
         data-open={open ? 'true' : 'false'}
       >
+        {lines.length === 0 ? (
+          <div
+            className="battle-log__empty"
+            role="note"
+            aria-label="Battle log empty"
+            data-battle-log-empty="true"
+          >
+            <p className="battle-log__empty-text">{EMPTY_TEXT}</p>
+          </div>
+        ) : null}
+
         {lines.length === 0 ? null : (
           <ol className="battle-log__list" aria-label={HISTORY_LABEL}>
             {lines.map((line) => (

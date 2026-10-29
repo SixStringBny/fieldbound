@@ -33,21 +33,23 @@ export function PlayerPanel({ side }: PlayerPanelProps) {
         </p>
       </div>
 
-      <StatMeter
-        label="Your health"
-        visibleLabel="Health"
-        value={side.health}
-        max={side.maxHealth}
-        tone="health"
-      />
+      <div className="player-panel__meters">
+        <StatMeter
+          label="Your health"
+          visibleLabel="Health"
+          value={side.health}
+          max={side.maxHealth}
+          tone="health"
+        />
 
-      <StatMeter
-        label="Your defense"
-        visibleLabel="Defense"
-        value={side.defense}
-        max={DEFENSE_CAP}
-        tone="defense"
-      />
+        <StatMeter
+          label="Your defense"
+          visibleLabel="Defense"
+          value={side.defense}
+          max={DEFENSE_CAP}
+          tone="defense"
+        />
+      </div>
 
       <StatusList statuses={side.statuses} ownerLabel="You" />
 

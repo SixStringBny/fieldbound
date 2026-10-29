@@ -993,7 +993,7 @@ test.describe('battle log at 1280x800', () => {
       `${context}: the latest-entry strip must remain visible at 1280px.`,
     ).toBeVisible();
 
-    // The column sits to the right of the board, not stacked under it.
+    // The rail is the board's right-hand column, inside the board cap.
     const boardBox = await page.locator('.battle-board').boundingBox();
     const regionBox = await region.boundingBox();
 
@@ -1005,10 +1005,20 @@ test.describe('battle log at 1280x800', () => {
 
     expect(
       regionBox.x,
-      `${context}: the log starts at x=${regionBox.x}, left of the board's right edge ${
-        boardBox.x + boardBox.width
-      }; it must be the right-hand column.`,
-    ).toBeGreaterThanOrEqual(boardBox.x + boardBox.width - 1);
+      `${context}: the log starts at x=${regionBox.x}; it must sit in the board's right-hand column (board ${boardBox.x}..${boardBox.x + boardBox.width}).`,
+    ).toBeGreaterThan(boardBox.x + boardBox.width / 2);
+    expect(
+      regionBox.x + regionBox.width,
+      `${context}: the log rail overruns the board's right edge.`,
+    ).toBeLessThanOrEqual(boardBox.x + boardBox.width + 1);
+    expect(
+      regionBox.width,
+      `${context}: the rail is ${regionBox.width}px; the 1280 spec fixes 288px.`,
+    ).toBeGreaterThanOrEqual(287);
+    expect(
+      regionBox.width,
+      `${context}: the rail is ${regionBox.width}px; the 1280 spec fixes 288px.`,
+    ).toBeLessThanOrEqual(289);
 
     await expectNoHorizontalScroll(page);
 

@@ -74,14 +74,19 @@ type RouteKind = 'play' | 'reading';
  *
  * AB-A1 therefore runs on every route and excludes exactly this rule on the
  * three card surfaces below, so contrast, roles, names and structure are still
- * proven. The deferral is reported on ticket #18 with its owning tickets; once
- * ticket 3 and ticket 5 land, delete the entries and the rule is enforced here
- * with nothing excluded.
+ * proven. The battle entry stays: ticket #20 keeps the frozen card accessible
+ * name and the visible face inside the same button (the unchanged
+ * `CardView.test.tsx` contract, outside the ticket's test allowlist), and on
+ * shift/draw cards the visible "to Frost" / "1 draw" words are not a contiguous
+ * token run of "shifts the field to Frost" / "draws 1". The measured 375 and
+ * 1280 axe runs report only this rule on the battle route. Once ticket 5 lands,
+ * delete the solo/duel entries and the rule is enforced there with nothing
+ * excluded.
  */
 const DEFERRED_AXE_RULES: Readonly<Record<string, { readonly rule: string; readonly owner: string }>> = {
   'solo-setup': { rule: 'label-content-name-mismatch', owner: '#20 (solo flow)' },
   'duel-setup': { rule: 'label-content-name-mismatch', owner: '#22 (duel flow)' },
-  battle: { rule: 'label-content-name-mismatch', owner: '#19 (battle screen)' },
+  battle: { rule: 'label-content-name-mismatch', owner: '#20 (battle screen)' },
 };
 
 interface RouteCase {
@@ -552,6 +557,106 @@ test.describe('identity', () => {
     }
 
     expectNoConsoleErrors(errors, 'AB-V4 display face');
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Battle-scope extension (ticket #20)                                        */
+/* -------------------------------------------------------------------------- */
+
+const BATTLE_SEED = 20261102;
+
+test.describe('battle bar', () => {
+  test.use({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+
+  test('AB-C1 battle named objects render', async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+    await openApp(page, BATTLE_SEED);
+    await startSolo(page, 'ember');
+
+    const main = page.locator('#main-content');
+    await expect(main.getByRole('heading', { level: 1, name: 'Battle' })).toBeAttached();
+    await expect(
+      main.getByRole('region', { name: 'Battle', exact: true }),
+    ).toBeVisible();
+    await expect(main.getByRole('region', { name: 'Cinder Warden' })).toBeVisible();
+    await expect(
+      main.getByRole('region', { name: /field/i }).first(),
+    ).toBeVisible();
+    await expect(
+      main.getByRole('region', { name: 'You', exact: true }),
+    ).toBeVisible();
+    await expect(
+      main.getByRole('region', { name: 'Your hand', exact: true }),
+    ).toBeVisible();
+    await expect(main.getByRole('group', { name: 'Turn controls' })).toBeAttached();
+    await expect(main.getByRole('region', { name: 'Battle log' })).toBeAttached();
+    await expect(
+      main.getByRole('group', { name: 'Latest battle log entry' }),
+    ).toBeVisible();
+    await expect(
+      main.getByRole('button', { name: 'Run overview', exact: true }),
+    ).toBeVisible();
+    await expect(
+      main.getByRole('button', { name: 'Leave battle', exact: true }),
+    ).toBeVisible();
+
+    expectNoConsoleErrors(errors, 'battle AB-C1');
+  });
+
+  test('AB-A4 one polite live region and one announcement per settle', async ({
+    page,
+  }) => {
+    await openApp(page, BATTLE_SEED);
+    await startSolo(page, 'ember');
+
+    const status = page.getByRole('status');
+    await expect(page.getByRole('status')).toHaveCount(1);
+    const opening = (await status.textContent()) ?? '';
+
+    const log = page.getByRole('region', { name: 'Battle log' });
+    await expect(log).not.toHaveAttribute('aria-live');
+    await expect(log.locator('[aria-live]')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'End Turn', exact: true }).click();
+
+    await expect
+      .poll(async () => (await status.textContent()) ?? '', {
+        message: 'ending the turn did not announce the settled transition.',
+        timeout: 5_000,
+      })
+      .toContain('Turn 3');
+
+    const first = (await status.textContent()) ?? '';
+    expect(first).not.toBe(opening);
+    expect(first).toContain('Your turn');
+    expect(first.match(/Your turn/g)).toHaveLength(1);
+    await expect(page.getByRole('status')).toHaveCount(1);
+  });
+
+  test('AB-V3 battle art resolves only through the local manifest loader', async ({
+    page,
+  }) => {
+    await openApp(page, BATTLE_SEED);
+    await startSolo(page, 'ember');
+
+    const art = await page.evaluate(() => {
+      const sources = Array.from(document.querySelectorAll<HTMLImageElement>('#main-content img')).map(
+        (image) => image.getAttribute('src') ?? '',
+      );
+      const remote = sources.filter((src) => /^https?:/i.test(src));
+      const local = sources.filter((src) => /\/assets\/(?:cards|enemies|fields)\//.test(src));
+      const inlineSvg = document.querySelectorAll('#main-content svg').length;
+
+      return { sources, remote, local, inlineSvg };
+    });
+
+    expect(art.sources.length, 'the battle renders manifest art').toBeGreaterThan(0);
+    expect(art.remote, 'battle art must be same-origin').toEqual([]);
+    expect(art.local, 'battle art must resolve under assets/').toHaveLength(
+      art.sources.length,
+    );
+    expect(art.inlineSvg, 'battle art is never an inline SVG').toBe(0);
   });
 });
 
