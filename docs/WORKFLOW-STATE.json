@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T17:53:58.651Z",
+  "lastUpdatedAt": "2026-10-29T17:57:21.056Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "BATTLE-LOG-DYNAMIC-DIALOGUE-1",
+  "currentPhase": "BATTLE-LOG-DYNAMIC-DIALOGUE-2",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -1945,10 +1945,48 @@
     },
     "LOG-03": {
       "taskId": "LOG-03",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "frontend-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/state/battle-controller.ts",
+        "src/state/battle-controller.test.ts",
+        "src/state/resume-run.ts"
+      ],
+      "startedAt": "2026-10-29T17:53:59.135Z",
+      "usage": {
+        "inputTokens": 66566,
+        "outputTokens": 10605,
+        "reasoningTokens": 16112,
+        "cacheReadTokens": 1920256,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.031775868,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/LOG-03.2026-10-29T17-57-21-039Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 66566,
+            "outputTokens": 10605,
+            "reasoningTokens": 16112,
+            "cacheReadTokens": 1920256,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.031775868,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T17:57:21.049Z",
+      "agentOutput": "I'll start by reading the execution file and orienting in the project.\r\nNow I'll implement the controller changes.\r\nNow the state construction helpers and setup entry:\r\nNow the enemy turn runner and reducers:\r\nNow extend the controller test suite:\r\nImplemented LOG-03. The battle controller now carries a bounded battle log through every settled transition, with rejection paths untouched and resumed logs adopted verbatim.\n\n**What changed**\n\n- `BattleControllerState.log` added (bounded `BattleLog` of plain facts).\n- `BattleControllerConfig.initialLog` added; a supplied log is adopted in order with no re-derivation or renumbering, an empty supplied log stays empty, and an oversized adopted log keeps only the newest 80 entries.\n- New battles begin with exactly one `battle-start` entry at ordinal 0 holding the opening field and opposing max health.\n- Each settled player card, each executed enemy plan step, and each handoff between sides appends exactly one entry derived from the engine's before/after states; ordinals continue from the newest entry.\n- Rejected intents still take the existing rejection path (sequence +1, typed report, empty cues) and append nothing.\n- No prose, JSX, storage or PRNG access in the controller; the report/cue contract is unchanged.\n- `src/state/resume-run.ts` gained `log: []` so the restored controller state satisfies the now-required field (LOG-07 will hydrate it from the save).\n\n**Validation actually run**\n\n- `npm test -- src/state/battle-controller.test.ts` → 25 passed\n- `npm run typecheck` → exit 0\n- `npm test` (full suite) → 1134 passed, 39 files\n- `npm run build` → exit 0\n\n**Files changed**\n\n- `src/state/battle-controller.ts`\n- `src/state/battle-controller.test.ts`\n- `src/state/resume-run.ts`\n\n```forge-result\n{\"summary\":\"LOG-03 complete: BattleControllerState.log records one bounded entry for battle setup, every settled player/enemy card, and each handoff; rejected intents append nothing; initialLog is adopted unchanged with continued ordinals and the 80-entry cap drops only the oldest. Controller tests (25), full suite (1134), typecheck and build pass.\",\"decisions\":[\"Each handoff between sides is its own turn entry per LOG-FR-01, so End Turn appends one turn entry for the player-to-opponent pass, one card entry per executed plan step, and one turn entry for the pass back to the player.\",\"Ordinals are assigned as newest ordinal + 1 (0 for a fresh log), so a restored log continues without renaming or renumbering.\",\"initialLog is adopted in saved order via element-preserving copy; a supplied empty array means a resumed battle with a missing log and does not synthesize a battle-start entry; an oversized adopted log is trimmed to the newest 80 without renumbering.\",\"A player card entry takes cardId from the instance in the before-state hand, while enemy steps use the telegraphed step's cardId; both are engine-side facts, never prose or guesses.\",\"Entries are derived only after a typed engine success, so the existing rejection path (sequence increment, typed report, empty cues) can never append a log entry.\",\"No PRNG is read or written and no storage is touched; the log stores structured facts only and the text renderer stays in src/battle-log/text.ts.\",\"src/state/resume-run.ts receives log: [] as the minimal compatibility change required by the required state field; LOG-07 will replace it with validated saved entries.\"],\"interfaces\":[\"src/state/battle-controller.ts: BattleControllerConfig.initialLog?: readonly BattleLogEntry[]; BattleControllerState.log: BattleLog; createBattleControllerState(config) unchanged result shape with log populated; battleReducer appends entries for play-card and end-turn; BattleReport and cues unchanged.\",\"Consumers: LOG-06 renders state.log through src/battle-log/text.ts; LOG-07 passes the validated saved log as config.initialLog instead of resume-run's current empty log.\"],\"tests\":[\"npm test -- src/state/battle-controller.test.ts: exit 0, 25 tests passed\",\"npm run typecheck: exit 0\",\"npm test: exit 0, 39 files / 1134 tests passed\",\"npm run build: exit 0\"],\"unresolved\":[]}\n```\r\n",
+      "artifactId": "work-log-03-001",
+      "inputArtifactIds": [
+        "work-log-01-001",
+        "work-log-02-001",
+        "work-shl-03-001"
+      ]
     },
     "LOG-04": {
       "taskId": "LOG-04",

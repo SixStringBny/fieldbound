@@ -13,6 +13,16 @@
  *   - it does not render, read storage or know about the solo/duel modes. Both
  *     modes supply the same setup and consume the same state.
  *
+ * Battle log
+ * ----------
+ * The state carries a bounded log of settled facts (LOG-FR-01, LOG-NF-02). The
+ * controller only stores entries: it derives each one from the before/after
+ * states the engine returned, assigns the next ordinal, and never composes a
+ * sentence (the renderer in `src/battle-log/text.ts` does that). Recorded
+ * transitions are battle setup, each player card, each telegraphed enemy plan
+ * step and each handoff between sides. A rejected intent appends nothing, and a
+ * resumed log supplied by Continue Run is adopted as-is (LOG-07 owns storage).
+ *
  * Turn handling
  * -------------
  * A fresh battle begins on the player's action phase with no telegraph. The
@@ -36,6 +46,13 @@ import type {
 } from '../engine/battle';
 import { FIELD_BEATS } from '../engine/damage';
 import { previewEnemyPlan } from '../engine/intent';
+import {
+  appendBattleLog,
+  deriveBattleLogEntry,
+  deriveBattleStartEntry,
+} from '../battle-log/derive';
+import { BATTLE_LOG_LIMIT } from '../battle-log/types';
+import type { BattleLog, BattleLogEntry } from '../battle-log/types';
 import type {
   BattleState,
   Element,
@@ -64,6 +81,12 @@ export interface BattleControllerConfig {
   readonly enemy: EnemyDefinition;
   /** Opening turn owner; defaults to the player. */
   readonly startingSide?: Side;
+  /**
+   * Entries restored by Continue Run. A supplied log is adopted in the order it
+   * was saved and is never re-derived; an empty array is a resumed battle whose
+   * log is missing, not a new battle. Omitted for a battle that starts now.
+   */
+  readonly initialLog?: readonly BattleLogEntry[];
 }
 
 /** One rejected intent. The code is the engine's, never a UI-invented one. */
@@ -95,6 +118,11 @@ export interface BattleControllerState {
   readonly cards: CardCatalog;
   /** Field facts derived from the engine's frozen cycle; null on Neutral. */
   readonly fieldMatchup: FieldMatchup | null;
+  /**
+   * Bounded, chronological facts for every settled transition (LOG-FR-01).
+   * Entries carry engine-reported values only; no prose or rendered strings.
+   */
+  readonly log: BattleLog;
   /**
    * Increments on every dispatched intent, including a rejection. The screen
    * emits `report.cues` once per sequence, so a repeated rejection cannot
@@ -145,6 +173,61 @@ export function fieldMatchupFor(field: Element): FieldMatchup | null {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Log bookkeeping                                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Adopts a restored log without re-deriving or re-ordering it. An oversized log
+ * is cut to its newest `BATTLE_LOG_LIMIT` entries, exactly like an append: only
+ * the oldest entries are dropped and the survivors keep their ordinals, so a
+ * dialogue pick keyed on an ordinal cannot change. A missing log stays empty.
+ */
+function adoptInitialLog(entries: readonly BattleLogEntry[]): BattleLog {
+  return entries.length <= BATTLE_LOG_LIMIT
+    ? [...entries]
+    : entries.slice(entries.length - BATTLE_LOG_LIMIT);
+}
+
+/** The ordinal for the next entry: one past the newest, or 0 for a fresh log. */
+function nextOrdinal(log: BattleLog): number {
+  const last = log[log.length - 1];
+
+  return last === undefined ? 0 : last.ordinal + 1;
+}
+
+/** Appends the one entry for a settled card play by either side. */
+function logCardPlay(
+  log: BattleLog,
+  before: BattleState,
+  after: BattleState,
+  cardId: string,
+): BattleLog {
+  return appendBattleLog(
+    log,
+    deriveBattleLogEntry(before, after, {
+      kind: 'card',
+      ordinal: nextOrdinal(log),
+      cardId,
+    }),
+  );
+}
+
+/** Appends the one entry for a handoff between sides. */
+function logHandoff(
+  log: BattleLog,
+  before: BattleState,
+  after: BattleState,
+): BattleLog {
+  return appendBattleLog(
+    log,
+    deriveBattleLogEntry(before, after, {
+      kind: 'turn',
+      ordinal: nextOrdinal(log),
+    }),
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* State construction                                                          */
 /* -------------------------------------------------------------------------- */
 
@@ -152,6 +235,7 @@ function stateFromBattle(
   battle: BattleState,
   enemy: EnemyDefinition,
   cards: CardCatalog,
+  log: BattleLog,
   sequence: number,
   report: BattleReport | null,
 ): BattleControllerState {
@@ -160,6 +244,7 @@ function stateFromBattle(
     enemy,
     cards,
     fieldMatchup: fieldMatchupFor(battle.field),
+    log,
     sequence,
     report,
   };
@@ -200,7 +285,16 @@ export function createBattleControllerState(
 
   return {
     ok: true,
-    value: stateFromBattle(planned, config.enemy, config.cards, 0, null),
+    value: stateFromBattle(
+      planned,
+      config.enemy,
+      config.cards,
+      config.initialLog === undefined
+        ? [deriveBattleStartEntry(created.value, 0)]
+        : adoptInitialLog(config.initialLog),
+      0,
+      null,
+    ),
   };
 }
 
@@ -279,7 +373,8 @@ function refreshPlan(state: BattleState, cards: CardCatalog): BattleState {
  *
  * If a planned step is unexpectedly refused the loop stops; the turn still
  * ends so the player can always act again. A plan that settles the battle
- * leaves the outcome in place and skips all housekeeping.
+ * leaves the outcome in place and skips all housekeeping. Each executed step and
+ * the closing handoff append exactly one log entry.
  */
 function runEnemyTurn(
   battle: BattleState,
@@ -287,8 +382,10 @@ function runEnemyTurn(
   enemy: EnemyDefinition,
   cards: CardCatalog,
   cues: CueName[],
-): BattleState {
+  log: BattleLog,
+): { readonly battle: BattleState; readonly log: BattleLog } {
   let current = battle;
+  let entries = log;
 
   if (plan !== null) {
     for (const step of plan.steps) {
@@ -307,21 +404,25 @@ function runEnemyTurn(
       }
 
       cues.push(...cuesForCardPlay(current, played.value));
+      entries = logCardPlay(entries, current, played.value, step.cardId);
       current = played.value;
     }
   }
 
   if (current.phase === 'ended' || current.outcome !== 'ongoing') {
-    return current;
+    return { battle: current, log: entries };
   }
 
   const ended = endTurn(current, { type: 'end-turn', side: 'opponent' });
 
   if (!ended.ok) {
-    return current;
+    return { battle: current, log: entries };
   }
 
-  return prepareEnemyTurn(ended.value, cards, enemy, 'opponent');
+  return {
+    battle: prepareEnemyTurn(ended.value, cards, enemy, 'opponent'),
+    log: logHandoff(entries, current, ended.value),
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -350,6 +451,13 @@ function reducePlayCard(
   state: BattleControllerState,
   instanceId: string,
 ): BattleControllerState {
+  // The id of the played card is a fact about the instance in hand, not a
+  // guess from prose. The engine also needs the instance, so it is looked up in
+  // the before state, where it is still held.
+  const held = state.battle.sides.player.hand.find(
+    (instance) => instance.instanceId === instanceId,
+  );
+
   const played = playCard(
     state.battle,
     { type: 'play-card', side: 'player', instanceId },
@@ -367,13 +475,26 @@ function reducePlayCard(
 
   const cues = cuesForCardPlay(state.battle, played.value);
   const battle = refreshPlan(played.value, state.cards);
+  // A successful play always came from the hand, so `held` exists. The guard
+  // keeps a hand-built state from inventing a nameless card entry.
+  const log =
+    held === undefined
+      ? state.log
+      : logCardPlay(state.log, state.battle, played.value, held.cardId);
 
-  return stateFromBattle(battle, state.enemy, state.cards, state.sequence + 1, {
-    intent: 'play-card',
-    ok: true,
-    error: null,
-    cues,
-  });
+  return stateFromBattle(
+    battle,
+    state.enemy,
+    state.cards,
+    log,
+    state.sequence + 1,
+    {
+      intent: 'play-card',
+      ok: true,
+      error: null,
+      cues,
+    },
+  );
 }
 
 function reduceEndTurn(state: BattleControllerState): BattleControllerState {
@@ -387,14 +508,31 @@ function reduceEndTurn(state: BattleControllerState): BattleControllerState {
   }
 
   const cues: CueName[] = [];
-  const battle = runEnemyTurn(ended.value, plan, state.enemy, state.cards, cues);
-
-  return stateFromBattle(battle, state.enemy, state.cards, state.sequence + 1, {
-    intent: 'end-turn',
-    ok: true,
-    error: null,
+  // The player's handoff is its own settled transition: control passes to the
+  // opponent before the telegraphed plan resolves.
+  const handoff = logHandoff(state.log, state.battle, ended.value);
+  const resolved = runEnemyTurn(
+    ended.value,
+    plan,
+    state.enemy,
+    state.cards,
     cues,
-  });
+    handoff,
+  );
+
+  return stateFromBattle(
+    resolved.battle,
+    state.enemy,
+    state.cards,
+    resolved.log,
+    state.sequence + 1,
+    {
+      intent: 'end-turn',
+      ok: true,
+      error: null,
+      cues,
+    },
+  );
 }
 
 /**

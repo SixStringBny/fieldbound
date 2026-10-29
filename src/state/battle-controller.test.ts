@@ -3,6 +3,8 @@ import { byId as cardCatalog } from '../content/cards';
 import { enemyById } from '../content/enemies';
 import type { BattleSideSetup } from '../engine/battle';
 import type { EnemyDefinition } from '../engine/types';
+import { BATTLE_LOG_LIMIT } from '../battle-log/types';
+import type { BattleLogEntry } from '../battle-log/types';
 import type { BattleControllerConfig, BattleControllerState } from './battle-controller';
 import {
   battleReducer,
@@ -58,6 +60,7 @@ function makeConfig(
     readonly player?: BattleSideSetup;
     readonly opponent?: BattleSideSetup;
     readonly seed?: number;
+    readonly initialLog?: readonly BattleLogEntry[];
   } = {},
 ): BattleControllerConfig {
   return {
@@ -70,6 +73,9 @@ function makeConfig(
     },
     cards: cardCatalog,
     enemy: CINDER_WARDEN,
+    ...(overrides.initialLog === undefined
+      ? {}
+      : { initialLog: overrides.initialLog }),
   };
 }
 
@@ -401,5 +407,376 @@ describe('fieldMatchupFor', () => {
       countered: 'ember',
       beatenBy: 'gale',
     });
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Battle log                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/** A deck whose first useful cards exercise a status application and a heal. */
+const STATUS_CARDS = [
+  'neutral-expose',
+  'ember-cinder-jab',
+  'ember-ash-guard',
+  'shift-ember',
+  'neutral-second-wind',
+] as const;
+
+function statusConfig(): BattleControllerConfig {
+  return makeConfig({
+    player: { element: 'ember', cards: STATUS_CARDS },
+  });
+}
+
+function restoredStart(ordinal: number): BattleLogEntry {
+  return {
+    id: `t1-e${String(ordinal)}`,
+    ordinal,
+    turn: 1,
+    kind: 'battle-start',
+    actor: 'system',
+    effects: [{ kind: 'start', opposingMaxHealth: 30, field: 'neutral' }],
+  };
+}
+
+function restoredCard(ordinal: number, cardId: string): BattleLogEntry {
+  return {
+    id: `t1-e${String(ordinal)}`,
+    ordinal,
+    turn: 1,
+    kind: 'card',
+    actor: 'player',
+    cardId,
+    effects: [],
+  };
+}
+
+function restoredTurn(ordinal: number, turn: number): BattleLogEntry {
+  return {
+    id: `t${String(turn)}-e${String(ordinal)}`,
+    ordinal,
+    turn,
+    kind: 'turn',
+    actor: 'player',
+    effects: [],
+  };
+}
+
+function expectStrictlyIncreasing(log: readonly BattleLogEntry[]): void {
+  expect(new Set(log.map((entry) => entry.id)).size).toBe(log.length);
+
+  for (let index = 1; index < log.length; index += 1) {
+    const previous = log[index - 1];
+    const current = log[index];
+
+    if (previous === undefined || current === undefined) {
+      throw new Error('Log fixture is unexpectedly sparse');
+    }
+
+    expect(current.ordinal).toBe(previous.ordinal + 1);
+  }
+}
+
+describe('battle controller log', () => {
+  it('starts a new battle with exactly one battle-start entry', () => {
+    const state = start();
+
+    expect(state.log).toHaveLength(1);
+    expect(state.log[0]).toMatchObject({
+      id: 't1-e0',
+      ordinal: 0,
+      turn: 1,
+      kind: 'battle-start',
+      actor: 'system',
+      effects: [
+        { kind: 'start', opposingMaxHealth: 30, field: 'neutral' },
+      ],
+    });
+  });
+
+  it('appends one card entry naming the played card and its damage', () => {
+    const state = start();
+    const instanceId = instanceOf(state, 'ember-cinder-jab');
+    const next = battleReducer(state, { type: 'play-card', instanceId });
+
+    expect(next.log).toHaveLength(2);
+    expect(next.log[0]).toBe(state.log[0]);
+    expect(next.log[1]).toMatchObject({
+      id: 't1-e1',
+      ordinal: 1,
+      turn: 1,
+      kind: 'card',
+      actor: 'player',
+      cardId: 'ember-cinder-jab',
+      effects: [
+        { kind: 'damage', target: 'opponent', amount: 3, remaining: 27, max: 30 },
+      ],
+    });
+  });
+
+  it('records Ward defense in the card entry', () => {
+    const state = start();
+    const next = battleReducer(state, {
+      type: 'play-card',
+      instanceId: instanceOf(state, 'ember-ash-guard'),
+    });
+
+    expect(next.log).toHaveLength(2);
+    expect(next.log[1]?.effects).toEqual([
+      { kind: 'defense', target: 'player', amount: 2, total: 2 },
+    ]);
+  });
+
+  it('records a field shift in the card entry', () => {
+    const state = start();
+    const next = battleReducer(state, {
+      type: 'play-card',
+      instanceId: instanceOf(state, 'shift-ember'),
+    });
+
+    expect(next.log).toHaveLength(2);
+    expect(next.log[1]?.effects).toEqual([
+      { kind: 'field', previous: 'neutral', next: 'ember' },
+    ]);
+  });
+
+  it('records a status application with its resulting stacks', () => {
+    const state = start(statusConfig());
+    const next = battleReducer(state, {
+      type: 'play-card',
+      instanceId: instanceOf(state, 'neutral-expose'),
+    });
+
+    expect(next.log).toHaveLength(2);
+    expect(next.log[1]).toMatchObject({
+      kind: 'card',
+      actor: 'player',
+      cardId: 'neutral-expose',
+      effects: [
+        { kind: 'status', target: 'opponent', status: 'weaken', stacks: 1 },
+      ],
+    });
+  });
+
+  it('appends one enemy card entry per plan step and one turn entry per handoff', () => {
+    const state = start();
+    const plan = state.battle.enemyPlan;
+
+    if (plan === null) {
+      throw new Error('Opening telegraph is missing');
+    }
+
+    const next = battleReducer(state, { type: 'end-turn' });
+    const appended = next.log.slice(1);
+
+    expect(appended).toHaveLength(plan.steps.length + 2);
+    expect(appended.map((entry) => entry.kind)).toEqual([
+      'turn',
+      'card',
+      'card',
+      'card',
+      'turn',
+    ]);
+    expect(
+      appended
+        .filter((entry) => entry.kind === 'card')
+        .map((entry) => entry.cardId),
+    ).toEqual(plan.steps.map((step) => step.cardId));
+
+    // The handoff to the opponent is a settled transition of its own.
+    expect(appended[0]).toMatchObject({
+      ordinal: 1,
+      turn: 2,
+      kind: 'turn',
+      actor: 'player',
+      effects: [],
+    });
+
+    // The enemy steps carry the engine-reported facts of that turn.
+    expect(appended[1]).toMatchObject({
+      ordinal: 2,
+      turn: 2,
+      kind: 'card',
+      actor: 'opponent',
+      cardId: 'ember-cinder-jab',
+      effects: [
+        { kind: 'damage', target: 'player', amount: 3, remaining: 37, max: 40 },
+      ],
+    });
+    expect(appended[2]).toMatchObject({
+      ordinal: 3,
+      kind: 'card',
+      actor: 'opponent',
+      cardId: 'neutral-plain-strike',
+      effects: [
+        { kind: 'damage', target: 'player', amount: 3, remaining: 34, max: 40 },
+      ],
+    });
+    expect(appended[3]).toMatchObject({
+      ordinal: 4,
+      kind: 'card',
+      actor: 'opponent',
+      cardId: 'ember-ash-guard',
+      effects: [{ kind: 'defense', target: 'opponent', amount: 2, total: 2 }],
+    });
+
+    // Control returns to the player on the next turn.
+    expect(appended[4]).toMatchObject({
+      ordinal: 5,
+      turn: 3,
+      kind: 'turn',
+      actor: 'opponent',
+      effects: [],
+    });
+
+    expectStrictlyIncreasing(next.log);
+  });
+
+  it('appends nothing for an unaffordable play and keeps report and cues', () => {
+    const state = start();
+    const lanced = battleReducer(state, {
+      type: 'play-card',
+      instanceId: instanceOf(state, 'ember-ember-lance'),
+    });
+    const inferno = battleReducer(lanced, {
+      type: 'play-card',
+      instanceId: instanceOf(lanced, 'ember-inferno'),
+    });
+
+    expect(inferno.report?.ok).toBe(false);
+    expect(inferno.report?.error?.code).toBe('unaffordable-card');
+    expect(inferno.report?.cues).toEqual([]);
+    expect(inferno.sequence).toBe(lanced.sequence + 1);
+    expect(inferno.log).toBe(lanced.log);
+  });
+
+  it('appends nothing after the battle has settled', () => {
+    const state = start(
+      makeConfig({
+        opponent: {
+          element: 'ember',
+          cards: ENEMY_CARDS,
+          maxHealth: 30,
+          health: 3,
+        },
+      }),
+    );
+    const won = battleReducer(state, {
+      type: 'play-card',
+      instanceId: instanceOf(state, 'ember-cinder-jab'),
+    });
+
+    expect(won.battle.outcome).toBe('player-victory');
+    expect(won.log).toHaveLength(2);
+    expect(won.log[1]?.effects).toContainEqual({
+      kind: 'outcome',
+      outcome: 'player-victory',
+    });
+
+    const again = battleReducer(won, { type: 'end-turn' });
+
+    expect(again.report?.error?.code).toBe('battle-ended');
+    expect(again.report?.cues).toEqual([]);
+    expect(again.log).toBe(won.log);
+  });
+
+  it('adopts a restored log unchanged and appends after its last ordinal', () => {
+    const restored: readonly BattleLogEntry[] = [
+      restoredStart(0),
+      restoredCard(1, 'ember-cinder-jab'),
+      restoredTurn(2, 3),
+    ];
+    const state = start(makeConfig({ initialLog: restored }));
+
+    expect(state.log).toHaveLength(3);
+    expect(state.log).toEqual(restored);
+    expect(state.log[0]).toBe(restored[0]);
+    expect(state.log[2]).toBe(restored[2]);
+
+    const next = battleReducer(state, {
+      type: 'play-card',
+      instanceId: instanceOf(state, 'ember-cinder-jab'),
+    });
+
+    expect(next.log).toHaveLength(4);
+    expect(next.log[0]).toBe(restored[0]);
+    expect(next.log[1]).toBe(restored[1]);
+    expect(next.log[2]).toBe(restored[2]);
+    expect(next.log[3]).toMatchObject({
+      ordinal: 3,
+      kind: 'card',
+      cardId: 'ember-cinder-jab',
+    });
+  });
+
+  it('adopts an empty restored log without inventing a battle start', () => {
+    const state = start(makeConfig({ initialLog: [] }));
+
+    expect(state.log).toEqual([]);
+
+    const next = battleReducer(state, {
+      type: 'play-card',
+      instanceId: instanceOf(state, 'ember-cinder-jab'),
+    });
+
+    expect(next.log).toHaveLength(1);
+    expect(next.log[0]).toMatchObject({
+      ordinal: 0,
+      kind: 'card',
+      cardId: 'ember-cinder-jab',
+    });
+  });
+
+  it('keeps the newest 80 entries and their ordinals when the log overflows', () => {
+    const restored = Array.from({ length: BATTLE_LOG_LIMIT }, (_, ordinal) =>
+      restoredTurn(ordinal, 1),
+    );
+    const state = start(makeConfig({ initialLog: restored }));
+
+    expect(state.log).toHaveLength(BATTLE_LOG_LIMIT);
+
+    const next = battleReducer(state, {
+      type: 'play-card',
+      instanceId: instanceOf(state, 'ember-cinder-jab'),
+    });
+
+    expect(next.log).toHaveLength(BATTLE_LOG_LIMIT);
+    expect(next.log.map((entry) => entry.ordinal)).toEqual(
+      Array.from({ length: BATTLE_LOG_LIMIT }, (_, index) => index + 1),
+    );
+    expect(next.log[0]).toBe(restored[1]);
+    expect(next.log[BATTLE_LOG_LIMIT - 1]).toMatchObject({
+      ordinal: BATTLE_LOG_LIMIT,
+      kind: 'card',
+      cardId: 'ember-cinder-jab',
+    });
+  });
+
+  it('replays the same seed and actions to identical log facts', () => {
+    const left = start();
+    const right = start();
+
+    const leftPlayed = battleReducer(left, {
+      type: 'play-card',
+      instanceId: instanceOf(left, 'ember-cinder-jab'),
+    });
+    const rightPlayed = battleReducer(right, {
+      type: 'play-card',
+      instanceId: instanceOf(right, 'ember-cinder-jab'),
+    });
+
+    expect(leftPlayed.log).toEqual(rightPlayed.log);
+    expect(leftPlayed.battle.rngState).toEqual(rightPlayed.battle.rngState);
+
+    const leftEnded = battleReducer(leftPlayed, { type: 'end-turn' });
+    const rightEnded = battleReducer(rightPlayed, { type: 'end-turn' });
+
+    expect(leftEnded.log).toEqual(rightEnded.log);
+    expect(leftEnded.battle.rngState).toEqual(rightEnded.battle.rngState);
+    expect(leftEnded.battle.outcome).toBe(rightEnded.battle.outcome);
+
+    // The controller stores facts, never rendered strings: the log is plain JSON.
+    expect(JSON.parse(JSON.stringify(leftEnded.log))).toEqual(leftEnded.log);
   });
 });

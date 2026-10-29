@@ -90,6 +90,10 @@ function controllerStateFrom(
     enemy,
     cards,
     fieldMatchup: fieldMatchupFor(battle.field),
+    // The bounded log is part of the controller state. A restored battle whose
+    // save carries no log (or a save written before the log existed) starts with
+    // an empty log rather than a re-derived battle-start entry.
+    log: [],
     // A restored board has no un-played reduction: sequence 0 and a null report
     // stop the screen from replaying a cue or an announcement on mount.
     sequence: 0,

@@ -1,10 +1,10 @@
 # Project Progress
 
 ## Current State
-**Phase**: BATTLE-LOG-DYNAMIC-DIALOGUE-1
+**Phase**: BATTLE-LOG-DYNAMIC-DIALOGUE-2
 **Status**: In Progress
 **Validation Gaps**: 4 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T17:53:58.655Z
+**Last Updated**: 2026-10-29T17:57:21.062Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -82,6 +82,8 @@
   - Files: src/battle-log/types.ts, src/battle-log/derive.ts, src/battle-log/validate.ts, src/battle-log/derive.test.ts, src/battle-log/validate.test.ts, docs/EXECUTION-MANIFEST.json, docs/engine-config.json
 - [x] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-1, Task LOG-02: Author battle prose and deterministic dialogue (@content-designer)
   - Files: src/content/battle-dialogue.ts, src/content/battle-dialogue.test.ts, src/battle-log/text.ts, src/battle-log/text.test.ts
+- [x] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-2, Task LOG-03: Carry a bounded battle log through the battle controller (@frontend-engineer)
+  - Files: src/state/battle-controller.ts, src/state/battle-controller.test.ts, src/state/resume-run.ts
 
 ## Current Task
 - None currently running
