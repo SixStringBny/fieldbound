@@ -284,3 +284,5 @@
 {"timestamp":"2026-10-29T16:55:26.885Z","action":"run.started","runId":"8d8c7086-35b8-4e1f-ab83-08fc940bcf62","note":"harness=opencode"}
 {"timestamp":"2026-10-29T16:55:26.994Z","action":"phase.started","runId":"8d8c7086-35b8-4e1f-ab83-08fc940bcf62","phaseId":"RELEASE-VERIFICATION-3"}
 {"timestamp":"2026-10-29T16:55:27.016Z","action":"task.complete","runId":"8d8c7086-35b8-4e1f-ab83-08fc940bcf62","taskId":"REL-HR-1","note":"Human attestation: docs/reviews/v1-release-review.json"}
+{"timestamp":"2026-10-29T16:55:27.432Z","action":"task.committed","runId":"8d8c7086-35b8-4e1f-ab83-08fc940bcf62","taskId":"REL-HR-1","commitSha":"b264a13af4e2a08ca97267a0929ab5a6f539bc07"}
+{"timestamp":"2026-10-29T16:55:27.433Z","action":"run.complete","runId":"8d8c7086-35b8-4e1f-ab83-08fc940bcf62"}

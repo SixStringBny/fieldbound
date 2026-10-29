@@ -7,73 +7,58 @@
       "outputs": [
         "docs/PRD.md",
         "docs/features/battle-engine.md",
+        "docs/features/battle-log.md",
         "docs/features/card-content.md",
         "docs/features/game-shell.md",
         "docs/features/local-duel.md",
         "docs/features/release-verification.md",
         "docs/features/solo-run.md"
       ],
-      "outputFingerprint": "4718463c30d7a6bb2fd8e1b9f8be9ec0dcebd80924fb7aaff92656fb2e2195ed",
-      "completedAt": "2026-10-28T18:55:36.274Z"
+      "outputFingerprint": "f0f3caf63966c9a39610c2e858777bed6ad4387cd5d866a5ce9c712150c3c239",
+      "completedAt": "2026-10-29T17:11:16.683Z"
     },
     "team": {
       "status": "complete",
-      "inputFingerprint": "28bbd2e45cef5d5026be90643888f49d929c596aa89b3ce623cb590780e55a3d",
+      "inputFingerprint": "befdcb812cdaf817d4b4a10f29e91c3ef45ad2529f742378a148ba9e66994fae",
       "outputs": [
         ".opencode\\agents",
         "docs/SKILL-CANDIDATES.json"
       ],
-      "startedAt": "2026-10-28T18:55:36.526Z",
+      "startedAt": "2026-10-29T17:11:16.916Z",
       "invocation": {
         "runner": "opencode",
         "requestedModel": "opencode/deepseek-v4.1-flash-free",
         "source": "project",
         "effectiveModel": "opencode/deepseek-v4.1-flash-free",
-        "inventoryVerifiedAt": "2026-10-28T18:12:20.343Z",
+        "inventoryVerifiedAt": "2026-10-28T19:26:14.830Z",
         "runnerSource": "project",
         "argv": [
           "run",
           "--auto",
           "--model",
           "opencode/deepseek-v4.1-flash-free",
-          "/forge-build-agent-team Use docs/PRD.md + docs/features/*.md to build the agent team. Write agent files under .opencode/agents/. Write docs/SKILL-CANDIDATES.json as {version:1,candidates:[]}, with each candidate containing name, description, consumers (agent-name strings), action (reuse, extend, create, or omit), and reason. Every agent description must be a single-line, double-quoted YAML value; never use description: >, description: |, or a multiline description. Analyze the PRD for reusable, repeated, or fragile project-specific processes. Add a candidate with action create when a needed process has no suitable package, extend when an existing package needs additive guidance, reuse when an existing package satisfies it, or omit when the responsibility is not justified. Keep candidates empty only when no project skills are required. Plan references under .opencode/skills/ but do not create or modify skill packages; forge-build-project-skills owns them. Do not write a manifest, compiled responsibility matrix, engine state, or progress file, and do not start the build. Auto-proceed with default assumptions and no questions."
+          "/forge-build-agent-team Use docs/PRD.md + docs/features/*.md to build the agent team. Write agent files under .opencode/agents/. Write docs/SKILL-CANDIDATES.json as {version:1,candidates:[]}, with each candidate containing name, description, consumers (agent-name strings), action (reuse, extend, create, or omit), and reason. Every agent description must be a single-line, double-quoted YAML value; never use description: >, description: |, or a multiline description. Analyze the PRD for reusable, repeated, or fragile project-specific processes. Add a candidate with action create when a needed process has no suitable package, extend when an existing package needs additive guidance, reuse when an existing package satisfies it, or omit when the responsibility is not justified. Keep candidates empty only when no project skills are required. Plan references under .opencode/skills/ but do not create or modify skill packages; forge-build-project-skills owns them. Do not write a manifest, compiled responsibility matrix, engine state, or progress file, and do not start the build. This is Feature Increment Mode. Preserve every untouched existing agent and skill; update or add only agents affected by the new feature. Review the existing codebase and team before making changes."
         ],
         "skill": "forge-build-agent-team"
       },
-      "outputFingerprint": "b3320cc75db7b007172af6f4e28d794e674e2d46e385072db6ab69597c1f9c6c",
-      "completedAt": "2026-10-28T19:03:03.145Z"
+      "outputFingerprint": "5f9923060076186b10313e3eced5ea7d7ace8baac0c3b1779f125016f4f89e5b",
+      "completedAt": "2026-10-29T17:18:35.692Z"
     },
     "skills": {
-      "status": "complete",
-      "inputFingerprint": "28158bd2155c2c6e4944d82d403c2af3723f54660ba04826f416555a27e1dd1d",
-      "outputs": [
-        ".opencode\\skills\\seeded-determinism-and-replay\\SKILL.md",
-        ".opencode\\skills\\versioned-local-persistence\\SKILL.md",
-        ".opencode\\skills\\portrait-first-board-and-accessibility\\SKILL.md",
-        ".opencode\\skills\\placeholder-asset-manifest\\SKILL.md",
-        ".opencode\\skills\\static-build-origin-audit\\SKILL.md"
-      ],
-      "startedAt": "2026-10-28T19:03:16.348Z",
-      "invocation": {
-        "runner": "opencode",
-        "requestedModel": "opencode/deepseek-v4.1-flash-free",
-        "source": "project",
-        "effectiveModel": "opencode/deepseek-v4.1-flash-free",
-        "inventoryVerifiedAt": "2026-10-28T18:12:20.343Z",
-        "runnerSource": "project",
-        "argv": [
-          "run",
-          "--auto",
-          "--model",
-          "opencode/deepseek-v4.1-flash-free",
-          "/forge-build-project-skills Consume docs/SKILL-CANDIDATES.json. Use .opencode/skills/ and .opencode/agents/. Create or extend only planned skills, reuse unchanged packages, honor omit decisions, and run structural and per-axis review gates. Do not regenerate the team, modify its ownership or handoff, compile a manifest, or start the build. Headless: proceed with authorized defaults."
-        ],
-        "skill": "forge-build-project-skills"
-      },
-      "outputFingerprint": "8dd5f93e38a15e659509fcefa63721ac57116b2988f0e129b4e290df92e042be",
-      "completedAt": "2026-10-28T19:09:09.699Z",
-      "reusedSkills": [],
-      "noSkillsRequired": false
+      "status": "pending",
+      "inputFingerprint": "dfa6dc82423d7e2b27b568596e17a84b2e4193b5ae799f186f113e8e149248eb",
+      "outputs": []
     }
+  },
+  "featureIncrementHandoff": {
+    "featureFingerprints": {
+      "battle-engine.md": "806dcf462ab28b4dcb3762fa7f0c3b9d69d230363f37ba529c7a4f08e4b8a154",
+      "card-content.md": "c3e4de983ebf295b407058bd3e75cae4f41c75e80e9cc4f27278c452d2aca9eb",
+      "game-shell.md": "a251fef4a8990bb049861450e5030d014cef7f585a130d95a4e5b8b5992cde87",
+      "local-duel.md": "7c59fc81bd96d5d6ee47c6a44eb9944f65dce793e884c5f81b4ff633491d2b5c",
+      "release-verification.md": "353318c9b1d5e41c4e500d5332b683d80b0e6dfa0eb834da168f798881dd12eb",
+      "solo-run.md": "e1f67153e138688fb22f712880ea0e98a4d58567a7a0d9ed5e9a7fa946de4f60"
+    },
+    "createdAt": "2026-10-29T16:57:45.387Z"
   }
 }

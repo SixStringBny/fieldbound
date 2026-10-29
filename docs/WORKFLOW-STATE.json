@@ -5,7 +5,7 @@
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
-  "status": "running",
+  "status": "complete",
   "currentPhase": "RELEASE-VERIFICATION-3",
   "tasks": {
     "ENG-00": {

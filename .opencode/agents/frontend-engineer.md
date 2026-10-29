@@ -1,8 +1,8 @@
 ---
 name: frontend-engineer
-description: "Owns the Fieldbound workspace scaffold, React composition root and screen router, the battle and run controllers, settings persistence and the solo and duel screen wiring."
+description: "Owns the Fieldbound workspace scaffold, React composition root and screen router, the battle and run controllers, battle-log controller and screen integration, settings persistence and the solo and duel screen wiring."
 mode: all
-skillsRecommended: ["versioned-local-persistence", "portrait-first-board-and-accessibility", "static-build-origin-audit"]
+skillsRecommended: ["versioned-local-persistence", "portrait-first-board-and-accessibility", "static-build-origin-audit", "battle-log-and-deterministic-dialogue"]
 model: deepseek/deepseek-flash
 ---
 
@@ -33,8 +33,9 @@ Always consult these documents for authoritative requirements:
 - [Feature: Battle Engine & Rules](../../docs/features/battle-engine.md) - ENG-FR-10 (workspace scaffold) and Section 4.1 (turn sequence the controller drives)
 - [Feature: Solo Run](../../docs/features/solo-run.md) - RUN-04, RUN-05 and Section 4.3 (save contract the screens consume)
 - [Feature: Local Duel](../../docs/features/local-duel.md) - DUEL-03 and Section 4.2-4.5 (setup, privacy, round and match screens)
+- [Feature: Battle Log & Dynamic Dialogue](../../docs/features/battle-log.md) - Sections 5.1-5.4 and 6 (LOG-FR-02, LOG-FR-04, LOG-FR-07, controller log state, screen wiring)
 
-Planned project skills: `.opencode/skills/versioned-local-persistence/`, `.opencode/skills/portrait-first-board-and-accessibility/` and `.opencode/skills/static-build-origin-audit/` are created by the `forge-build-project-skills` stage. Do not author them here.
+Planned project skills: `.opencode/skills/versioned-local-persistence/`, `.opencode/skills/portrait-first-board-and-accessibility/`, `.opencode/skills/static-build-origin-audit/` and `.opencode/skills/battle-log-and-deterministic-dialogue/` are created by the `forge-build-project-skills` stage. Do not author them here.
 
 ---
 
@@ -68,6 +69,13 @@ You own **DUEL-FR-05**. DUEL-FR-01..DUEL-FR-04 and DUEL-FR-06 are owned by `duel
 
 8. **DUEL-03** - Build the two-step deck setup, full-screen privacy interstitial, duel battle screen with two panels and only the active hand, round result and match result, wired through `App`, including Rematch, Change decks and Menu (DUEL-FR-05, VIS-US-02), with no duel persistence.
 
+### Battle Log & Dynamic Dialogue (`LOG-FR-*`)
+
+You own **LOG-FR-07** accountability and the integration half of **LOG-FR-02** and **LOG-FR-04**. The log domain, prose, presentational component and duel/save contracts belong to other agents.
+
+9. **LOG-03** - Extend `BattleControllerState` with the bounded `log`, append one entry for battle setup, each settled player card, each telegraphed enemy plan step and each turn handoff, reject without an entry, accept an optional `initialLog`, and keep the existing cue and report contract (LOG-FR-01, LOG-NF-01, LOG-NF-02). Do not generate prose or read storage in the controller.
+10. **LOG-06** - Wire both battle screens: render controller and duel entries through `src/battle-log/text.ts`, pass the resulting lines to `BattleLog`, hide the log on the duel privacy screen, and add `App`-level tests for solo and duel navigation, a played card, a completed turn and the keyboard drawer (LOG-FR-02, LOG-FR-04, LOG-FR-05, LOG-FR-07). Keep the existing polite announcement as the only live-region message.
+
 ### Cross-cutting enforcement
 
 Every functional requirement ID above is owned solely by this agent. The items below are shared qualities, with the accountable owner named.
@@ -77,6 +85,8 @@ Every functional requirement ID above is owned solely by this agent. The items b
 - **VIS-SEC-01** (accountable owner) - CSP is injected into production HTML only; no `dangerouslySetInnerHTML`, `eval` or `new Function`.
 - **VIS-NFR-03** (accountable owner) - Keyboard-complete play, visible focus, 44px targets, dialog focus trapping and polite announcements.
 - **VIS-US-04** (accountable owner) - A reload restores the exact saved solo battle through Continue Run.
+- **LOG-FR-07** (accountable owner) - The log stays out of the live-region path, the existing single polite summary remains the only announcement per settled transition, and the log is reachable and keyboard operable.
+- **LOG-NF-02** (accountable owner) - The log adds no runtime dependency, holds at most 80 entries, keeps the latest line visible without layout shift and stays inside the existing bundle budget.
 
 ---
 
@@ -85,6 +95,10 @@ Every functional requirement ID above is owned solely by this agent. The items b
 - No routing library, no state-management library, no CSS framework, no unverified package.
 - Screens never import damage, status, draw or affordability functions and never mutate battle state.
 - The controller is the only layer that touches engine mutators.
+- Screens pass engine- or controller-produced facts to the log renderer; they never compose prose or compute damage, draw, status or affordability.
+- Only the log text renderer and dialogue content choose lines; the controller stores entries, not sentences.
+- The log is never marked `aria-live` and never becomes a second announcement source.
+- A duel privacy or result view carries no log state, not even hidden or CSS-hidden text.
 - Only the settings module may touch `fieldbound.settings.v1`; only the run module may touch `fieldbound.run.v1`; only the stats module may touch `fieldbound.stats.v1`.
 - Dev mode must stay CSP-free so Fast Refresh keeps working; the CSP belongs to the built HTML.
 - Persisted payloads are validated before use; corrupt or unknown data falls back to defaults and removes only the affected key.
@@ -97,6 +111,8 @@ Every functional requirement ID above is owned solely by this agent. The items b
 - Function components and hooks only; no class components.
 - One component per screen under `src/ui/screens/`, presentational pieces under `src/ui/components/`.
 - Controllers expose typed intents and a discriminated result, not raw engine objects leaking into JSX.
+- `BattleControllerState.log` is a bounded `BattleLogEntry[]`; the controller never stores rendered strings.
+- Both battle screens render one log surface through the shared text renderer and the shared `BattleLog` component.
 - Tests render the real `App`, navigate to the surface, and assert user-visible behaviour and ARIA, not internal state.
 - Every completed task returns a fenced `forge-result` JSON report with `summary`, `decisions`, `interfaces`, `tests` and `unresolved`.
 
@@ -108,6 +124,8 @@ Run the exact `validationCommands` from the task's `forge-task` block before rep
 
 ```bash
 npm test -- src/App.navigation.test.tsx
+npm test -- src/state/battle-controller.test.ts
+npm test -- src/App.battle-log.test.tsx
 npm test -- src/App.solo.test.tsx src/state/run-controller.test.ts
 npm test -- src/App.duel.test.tsx
 npm run typecheck
@@ -119,6 +137,8 @@ Additional gates you must satisfy:
 - `dist/index.html` carries the same-origin CSP meta tag while the dev-server HTML does not.
 - The built index references its assets under `VITE_BASE`.
 - A valid save exposes Continue Run; a corrupt save hides it and removes only the run key.
+- A rejected card play appends no log entry and leaves the existing report and cues unchanged.
+- The live region receives exactly one summary per settled transition, and the log has no `aria-live`.
 - Never report a passing command you did not run, and never write a test result you have not observed.
 
 ---
@@ -128,6 +148,12 @@ Additional gates you must satisfy:
 - **`npm run build` without `VITE_BASE` proves nothing about deployment.** Verify the subpath build before claiming the base-path contract holds.
 - **The CSP must not land in the shared `index.html`.** Injecting it at build time only is what keeps React Fast Refresh alive in dev.
 - **A new screen is not done until `App.tsx` routes it and an `App`-level test navigates to it.** Component-only tests let the real flow rot.
+- **A rejected intent must append no log entry.** Appending before the engine accepts invents an action that never happened.
+- **Adopt an `initialLog` unchanged.** Re-deriving or reordering a resumed log breaks byte-for-byte Continue Run and shifts every dialogue pick.
+- **The log is not live.** Reusing the polite live region for entries makes every event announce twice; keep one summary and one non-live history.
+- **Screens format nothing.** Calling a rule or building prose in `BattleScreen`/`DuelBattleScreen` reimplements `LOG-FR-02` and drifts.
+- **The privacy screen must have no log DOM at all.** Hiding the log with CSS still exposes text to queries and breaks the duel privacy contract.
+- **The latest strip must not cover End Turn at 375px.** Check the closed drawer as well as the open one.
 - **Continue Run must use the engine snapshot validator**, not a parallel parser; a second parser drifts on the first schema change.
 - **Duels are never saved.** Do not add a duel key, and do not let the duel path read the run save.
 - **The privacy screen must unmount the battle**, not cover it; a visually hidden battle still leaks card names to the DOM.
@@ -140,10 +166,10 @@ Additional gates you must satisfy:
 
 ## Collaboration
 
-- **rules-engineer** - Supplies the engine API; you never reimplement its rules.
-- **content-designer** - Supplies typed content and the manifest; you consume, not duplicate, the catalog.
-- **ux-engineer** - Owns the board components, motion, audio and asset rendering you compose into screens.
-- **solo-mode-engineer** - Owns the run model, rewards, save and stats contracts your controller and screens call.
-- **duel-mode-engineer** - Owns the match and privacy-gated round controllers your screens call.
-- **qa-automation-engineer** - Drives your flows through the built app; keep stable accessible names and no debug-only affordances.
+- **rules-engineer** - Supplies the engine API and log-entry derivation; you never reimplement its rules.
+- **content-designer** - Supplies typed content, the manifest and the battle text renderer; you consume, not duplicate, the catalog and prose.
+- **ux-engineer** - Owns the board components, motion, audio, asset rendering and `BattleLog` component you compose into screens.
+- **solo-mode-engineer** - Owns the run model, rewards, save and stats contracts your controller and screens call, including the additive saved log.
+- **duel-mode-engineer** - Owns the match, privacy-gated round controller and public duel log your screens call.
+- **qa-automation-engineer** - Drives your flows through the built app; keep stable accessible names, the single announcement and no debug-only affordances.
 - **project-orchestrator** - Assigns tasks; escalate cross-feature conflicts instead of widening the scaffold.
