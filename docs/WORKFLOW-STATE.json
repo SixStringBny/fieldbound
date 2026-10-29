@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T08:00:29.141Z",
+  "lastUpdatedAt": "2026-10-29T08:08:36.824Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "SOLO-RUN-3",
+  "currentPhase": "RELEASE-VERIFICATION-1",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -1469,10 +1469,64 @@
     },
     "REL-01": {
       "taskId": "REL-01",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "qa-automation-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 2,
+      "outputFiles": [
+        "playwright.config.ts",
+        "tests/e2e/helpers.ts",
+        "tests/e2e/smoke.spec.ts"
+      ],
+      "startedAt": "2026-10-29T08:06:46.182Z",
+      "usage": {
+        "inputTokens": 145724,
+        "outputTokens": 16002,
+        "cacheReadTokens": 4781440,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 21935,
+        "costUsd": 0.05896512000000001,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "failed",
+          "reason": "forge-result.unresolved must be a string array; use [] when no blocking requirements remain.",
+          "resultPath": "docs/artifacts/REL-01.2026-10-29T08-06-41-174Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 114196,
+            "outputTokens": 11673,
+            "reasoningTokens": 19776,
+            "cacheReadTokens": 4053248,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.048158544000000005,
+            "source": "harness"
+          }
+        },
+        {
+          "attempt": 2,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/REL-01.2026-10-29T08-08-36-816Z.attempt-2.result.json",
+          "usage": {
+            "inputTokens": 31528,
+            "outputTokens": 4329,
+            "reasoningTokens": 2159,
+            "cacheReadTokens": 728192,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.010806576000000002,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T08:08:36.821Z",
+      "agentOutput": "I'll start by reading the execution file and understanding the task scope.\r\nPrior attempt exists. Let me inspect the current state of the harness files and the prior result.\r\nPrior work exists and only the report shape failed. Let me review the existing implementation before re-validating.\r\nThe PowerShell glob missed nested files. Let me verify the DOM contract the helpers depend on.\r\nDesign matches the reference. Now I'll rerun the mandated validation against the production build.\r\nSmoke passes on all three engines. Now typecheck, and I'll re-exercise the journey helpers against the real build so they aren't hollow.\r\nHelpers are real. Now I'll verify the occupied-port acceptance criterion empirically.\r\nREL-01 is complete and re-validated in this session.\n\n## What I built\n\n**`playwright.config.ts`** (modified from the scaffold stub)\n- `webServer` runs `npm run build && npm run serve:dist` — the real production build served on `127.0.0.1:4173` with `--strictPort`, so a dev server can never be tested.\n- `reuseExistingServer: false` makes a foreign process on 4173 a hard failure. Verified empirically: with a dummy HTTP server listening on 4173, Playwright exited 1 with `http://127.0.0.1:4173 is already used…`; the listener was killed and the port confirmed free.\n- Chromium, Firefox and WebKit projects; root-path build forced via `VITE_BASE='/'` so E2E never tests a stale subpath build; traces/screenshots only on failure.\n\n**`tests/e2e/helpers.ts`** (created)\n- `openApp(page, seed)` rejects seeds outside the unsigned 32-bit range, navigates to `/?seed=<n>`, asserts the exact numeric parameter survives and the menu surface is mounted.\n- `startSolo`, `playGreedyTurn`, `dismissPrivacy`, `expectNoHorizontalScroll`, `collectConsoleErrors` / `expectNoConsoleErrors`, plus `expectScreen`, `currentScreen` and `handSection`.\n- Greedy play reads affordability, element, field and card type from the rendered DOM/accessible names, plays through the real card-detail sheet, and throws if a play does not change the hand or energy. No conditional skips; missing elements fail with seed/action context.\n\n**`tests/e2e/smoke.spec.ts`** (created)\n- Seeded menu load on all three engines: menu entries, skip link, no horizontal overflow, zero console/page errors.\n- Rules-reference navigation round-trip with the same error gate. Long solo/duel journeys deliberately left to REL-02/03.\n\n## Verification observed this session\n\n| Check | Result |\n|---|---|\n| `npm run test:e2e -- tests/e2e/smoke.spec.ts` | **6 passed** (2 tests × Chromium, Firefox, WebKit), exit 0 |\n| `npm run typecheck` | exit 0 |\n| Occupied-port run | Playwright exit **1**, `127.0.0.1:4173 is already used`; port free afterwards |\n| Temporary helper exercise (deleted after run) | Chromium: solo setup → greedy turn, and duel setup → privacy dismissal → exactly one hand → greedy turn, both passed |\n\n`docs/EXECUTION-AUDIT.jsonl` and `docs/WORKFLOW-STATE.json` are engine-managed modifications, not authored here. No application source, build config or CSS was changed, and no human-review record was created.\n\n## Files created or changed\n\n- `playwright.config.ts` (modified)\n- `tests/e2e/helpers.ts` (created)\n- `tests/e2e/smoke.spec.ts` (created)\n\n```forge-result\n{\"summary\":\"Built the REL-01 Playwright harness against the production build: a webServer that builds and serves dist on 127.0.0.1:4173 and fails when the port is occupied, chromium/firefox/webkit projects, shared seeded navigation/greedy-turn/privacy/scroll/console helpers that fail loudly, and a smoke spec that passes on all three engines with no console errors; typecheck exits 0.\",\"decisions\":[\"The webServer builds and serves dist itself and forces VITE_BASE=/ so E2E never tests a dev server or a subpath build; reuseExistingServer=false plus --strictPort turn a port collision into a hard failure.\",\"openApp validates an unsigned 32-bit seed, navigates to /?seed=<n> and asserts the exact numeric parameter and the menu surface, so seeding always uses the app's own path rather than storage.\",\"Greedy play derives affordability, element, field and card type from the rendered DOM and accessible names, plays through the card detail sheet, and throws if a play does not change the hand or energy.\",\"Helpers have no conditional skips: every expected control and surface is an assertion or a thrown error naming the seed or action.\",\"Smoke covers the seeded menu and a rules-reference round-trip on all three engines only; long solo and duel journeys remain for REL-02 and REL-03.\"],\"interfaces\":[\"playwright.config.ts: projects chromium/firefox/webkit, baseURL http://127.0.0.1:4173, webServer command npm run build && npm run serve:dist with reuseExistingServer false and forced VITE_BASE=/.\",\"tests/e2e/helpers.ts exports FieldElement, DuelSeat, VisibleHandCard, GreedyTurnResult, seededPath(seed), openApp(page, seed), startSolo(page, element), playGreedyTurn(page), dismissPrivacy(page, player), expectNoHorizontalScroll(page), collectConsoleErrors(page), expectNoConsoleErrors(errors, label), currentScreen(page), expectScreen(page, kind, detail), handSection(page).\",\"tests/e2e/smoke.spec.ts: seeded menu smoke and rules-reference navigation smoke, both asserting zero console/page errors.\"],\"tests\":[\"npm run test:e2e -- tests/e2e/smoke.spec.ts: 6 passed (2 tests x 3 projects), exit 0\",\"npm run typecheck: exit 0\",\"Occupied-port run: Playwright exit 1 with 'http://127.0.0.1:4173 is already used'; port confirmed free afterwards\",\"Temporary Chromium helper exercise (file deleted afterwards): solo start plus greedy turn, and duel start plus privacy dismissal plus exactly one hand plus greedy turn, both passed\"],\"warnings\":[\"Playwright browser binaries for Chromium, Firefox and WebKit were installed locally for verification; no package or lockfile change was made.\",\"The smoke suite includes a rules-reference navigation round-trip beyond the minimum menu load; it passed on all three engines without product changes.\"],\"unresolved\":[]}\n```\r\n",
+      "artifactId": "work-rel-01-001",
+      "inputArtifactIds": [
+        "work-shl-01-001",
+        "work-run-04-001",
+        "work-run-05-001",
+        "work-duel-03-001"
+      ]
     },
     "REL-02": {
       "taskId": "REL-02",
