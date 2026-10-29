@@ -4,7 +4,7 @@
 **Phase**: RELEASE-VERIFICATION-1
 **Status**: In Progress
 **Validation Gaps**: 3 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T08:08:36.827Z
+**Last Updated**: 2026-10-29T08:18:29.670Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -66,6 +66,8 @@
   - Files: src/ui/screens/DuelSetupScreen.tsx, src/ui/screens/PrivacyScreen.tsx, src/ui/screens/DuelBattleScreen.tsx, src/ui/screens/RoundResultScreen.tsx, src/ui/screens/MatchResultScreen.tsx, src/App.tsx, src/App.duel.test.tsx, src/styles/duel.css, src/ui/screens/duel-copy.ts
 - [x] Phase RELEASE-VERIFICATION-1, Task REL-01: Set up the Playwright harness and smoke journey (@qa-automation-engineer)
   - Files: playwright.config.ts, tests/e2e/helpers.ts, tests/e2e/smoke.spec.ts
+- [x] Phase RELEASE-VERIFICATION-1, Task REL-02: Drive a full seeded solo run with reload resume (@qa-automation-engineer)
+  - Files: tests/e2e/solo-run.spec.ts
 
 ## Current Task
 - None currently running

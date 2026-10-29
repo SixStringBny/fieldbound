@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T08:08:36.824Z",
+  "lastUpdatedAt": "2026-10-29T08:18:29.667Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -1530,10 +1530,47 @@
     },
     "REL-02": {
       "taskId": "REL-02",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "qa-automation-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "tests/e2e/solo-run.spec.ts"
+      ],
+      "startedAt": "2026-10-29T08:08:37.204Z",
+      "usage": {
+        "inputTokens": 106405,
+        "outputTokens": 16001,
+        "reasoningTokens": 39499,
+        "cacheReadTokens": 5692416,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.06633799800000001,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/REL-02.2026-10-29T08-18-29-658Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 106405,
+            "outputTokens": 16001,
+            "reasoningTokens": 39499,
+            "cacheReadTokens": 5692416,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.06633799800000001,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T08:18:29.664Z",
+      "agentOutput": "I'll start by reading the execution file and the referenced documentation.\r\nI'll first run a throwaway simulation of the greedy policy against the real engine to learn which seeds are winnable before writing the spec.\r\nNow I'll write the Chromium solo journey spec.\r\nThe journey passes in 23.8s. Now the typecheck gate.\r\nThe happy path passes. I'll also verify the bounded-retry failure path lists the attempted seeds, using a temporary all-losing seed list, then restore the real list.\r\nThe required gates pass. I'll run the existing smoke suite once to confirm the harness is still green alongside the new journey.\r\nImplemented REL-02.\n\n**Created**\n- `tests/e2e/solo-run.spec.ts`\n\n**Verified**\n- `npm run test:e2e -- tests/e2e/solo-run.spec.ts --project=chromium` → exit 0, Chromium passed in 23.4s, Firefox/WebKit skipped by the Chromium-only guard.\n- `npm run typecheck` → exit 0.\n- `npm run test:e2e -- tests/e2e/smoke.spec.ts` → exit 0, 6 passed across all three engines (sanity check).\n- Temporary all-losing seed run → exited 1 after 38.9s and listed all five attempted seeds, confirming the bounded retry and failure reporting; the winning seed list was restored and re-verified.\n\n```forge-result\n{\n  \"summary\": \"Implemented REL-02: a Chromium-only seeded Ember solo journey that plays the greedy policy from deck selection to a four-encounter victory, reloads mid-battle, proves Continue Run restores the exact battle (health, energy, hand and more), and asserts the victory result and the fieldbound.stats.v1 record. The required E2E and typecheck gates pass.\",\n  \"decisions\": [\n    \"Five fixed seeds [80, 19, 254, 1234, 7] form the whole retry budget. An attempt that ends in defeat at any ladder step, including the boss, consumes one seed and retries because the acceptance requires a victory result and an updated record; the failure lists every attempted seed and outcome. The cap is never raised.\",\n    \"The reload checkpoint is the first greedy turn that leaves the battle open (seed 80: the opening turn of encounter 1). The post-reload comparison covers health, energy, hand instance/card pairs, turn marker, field, defense, enemy health and the enemy telegraph, not only the acceptance trio.\",\n    \"The spec reads fieldbound.stats.v1 only after the victory (never writes it) and asserts schemaVersion 1, furthestEncounter 4, bossClears = baseline + 1 and bestCompletedTurns tied to the result screen's turn total; the DOM best-run panel is cross-checked.\",\n    \"A Chromium-only test.skip enforces the long-journey policy; console errors are collected before the first navigation and asserted after the winning run and on the all-seeds-fail path.\"\n  ],\n  \"interfaces\": [\n    \"tests/e2e/solo-run.spec.ts is the only new file; it reuses the REL-01 helpers openApp, startSolo, playGreedyTurn, currentScreen, expectScreen, collectConsoleErrors and expectNoConsoleErrors.\",\n    \"Asserted product contracts: ?seed= seeding, menu Continue Run and #menu-continue-run-hint, the battle board meters/hand/telegraph, reward options, run overview, run result, and the documented fieldbound.stats.v1 schema.\"\n  ],\n  \"tests\": [\n    \"npm run test:e2e -- tests/e2e/solo-run.spec.ts --project=chromium: exit 0; chromium passed in 23.4s; firefox and webkit skipped by the spec's Chromium-only guard.\",\n    \"npm run typecheck: exit 0.\",\n    \"npm run test:e2e -- tests/e2e/smoke.spec.ts: exit 0; 6 passed across chromium, firefox and webkit.\",\n    \"Temporary negative run with SEEDS [1,7,42,1234,20261029]: exit 1 after 38.9s with all five attempted seeds listed; seeds restored to [80,19,254,1234,7] and the final required run re-passed.\",\n    \"Temporary tsc project including tests/e2e and playwright.config.ts: exit 0; the temporary config was removed.\"\n  ],\n  \"warnings\": [\n    \"The documented greedy policy is weak against the frozen content: a throwaway 300-seed engine simulation completed the ladder on 3 seeds (19, 80, 254) and reached the boss on 4. The fixed list starts with observed winners and keeps the five-seed cap; the retry/failure path was verified with five losing seeds. This is a content-balance observation for the human reviewer, not a relaxed assertion.\",\n    \"In this environment npm did not forward --project=chromium to Playwright (all three projects were enumerated); the spec's own Chromium-only skip ensured the long journey executed only on Chromium and the command still exited 0.\",\n    \"The spec reads fieldbound.stats.v1 but never writes it; seeding uses ?seed= throughout.\",\n    \"The project's npm run typecheck include list does not cover tests/; a temporary extended tsconfig typechecked the new spec and the existing helpers cleanly.\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-rel-02-001",
+      "inputArtifactIds": [
+        "work-rel-01-001",
+        "work-run-05-001",
+        "work-run-04-001",
+        "work-duel-03-001"
+      ]
     },
     "REL-03": {
       "taskId": "REL-03",
