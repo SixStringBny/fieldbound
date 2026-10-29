@@ -1,0 +1,13 @@
+{
+  "taskId": "REL-HR-1",
+  "taskDigest": "8c5db0ed6dc022c787ece2d0f4e0884610edd9fa2096841e550e81da92d93cf6",
+  "reviewer": "SixStringBunny",
+  "reviewedAt": "2026-10-29T16:55:22.809Z",
+  "decision": "approved",
+  "evidence": [
+    {
+      "path": "docs/reviews/REL-HR-1-console-review.md",
+      "sha256": "f33939db28a8d09811052e6316db591e548472e16eef3c8f17bf934419b7b129"
+    }
+  ]
+}
