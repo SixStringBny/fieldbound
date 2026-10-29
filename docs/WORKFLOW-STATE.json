@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T17:57:21.056Z",
+  "lastUpdatedAt": "2026-10-29T18:05:18.532Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -1990,10 +1990,51 @@
     },
     "LOG-04": {
       "taskId": "LOG-04",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "ux-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/ui/components/BattleLog.tsx",
+        "src/ui/components/BattleLog.test.tsx",
+        "src/styles/battle-log.css"
+      ],
+      "startedAt": "2026-10-29T17:57:21.558Z",
+      "usage": {
+        "inputTokens": 97279,
+        "outputTokens": 21341,
+        "reasoningTokens": 50130,
+        "cacheReadTokens": 5877376,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.075106578,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/LOG-04.2026-10-29T18-05-18-513Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 97279,
+            "outputTokens": 21341,
+            "reasoningTokens": 50130,
+            "cacheReadTokens": 5877376,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.075106578,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T18:05:18.524Z",
+      "agentOutput": "I'll start by reading the execution file and orienting myself in the project.\r\nNow I have the full picture. Let me create the component.\r\nLet me verify the shipped CSS in a real browser at 375px and 1280px, including keyboard, focus return and reduced motion.\r\nImplemented and verified LOG-04. All required checks pass.\n\n**Files created**\n- `src/ui/components/BattleLog.tsx`\n- `src/ui/components/BattleLog.test.tsx`\n- `src/styles/battle-log.css`\n\nNo existing source files were changed; the execution file and `docs/artifacts/` were left untouched.\n\n```forge-result\n{\n  \"summary\": \"Implemented LOG-04: a props-only BattleLog surface with an always-visible one-line latest strip, a 44px native Log toggle with aria-expanded/aria-controls, a keyboard-operable history drawer that closes on Escape with focus return, a chronological ordered list inside a labelled non-live region, an empty state, and a 1024px right-hand column layout with reduced-motion handling. 18 tests pass, typecheck passes, and a temporary Chromium pass verified 375px no-overflow, the 44px target, focus return, the desktop column and reduced-motion behavior.\",\n  \"decisions\": [\n    \"BattleLogLineView is declared locally and is structurally identical to BattleLogLine, so BattleLog imports no engine, content, controller, storage or text-rendering module; screens pass rendered lines straight through.\",\n    \"The toggle is a native button with explicit Enter (keydown) and Space (keyup) handling so exactly one state change occurs in browsers and in jsdom; a temporary Chromium check confirmed one toggle per key press.\",\n    \"Escape is handled by a document listener only while the drawer is open, ignores already-prevented events, and defers when a modal dialog is open, so it never dismisses a card sheet or privacy screen. Focus is returned to the toggle on close.\",\n    \"One DOM copy of the history is used for both modes: below 1024px it is the drawer scroller; at 1024px and wider CSS displays the same list as a sticky right-hand column and hides the toggle. Screens opt into the two-column layout with the .battle-log-layout wrapper.\",\n    \"The latest strip reserves its line height and clamps the factual sentence to one line with ellipsis, preventing board reflow as text changes. The empty state sits outside the closed drawer so it is visible at 375px while the region remains labelled.\",\n    \"The history is the log's only scroll container (overflow-y: auto, overflow-x: hidden, overscroll-behavior: contain); the latest strip, list and surface never scroll. Reduced motion removes the entry animation and transform and caps the toggle transition at 1ms for both the OS preference and the explicit data-reduced-motion override, with the explicit false branch restoring normal motion.\",\n    \"The component has no aria-live, role=log, role=status or role=alert anywhere, preserving the single polite battle announcement.\"\n  ],\n  \"interfaces\": [\n    \"src/ui/components/BattleLog.tsx: BattleLogProps { lines: readonly BattleLogLineView[]; toggleLabel: string }, BattleLogLineView { id, ordinal, turn, factual, dialogue }, BattleLog(). BattleLogLineView is structurally compatible with BattleLogLine from src/battle-log/text.ts.\",\n    \"DOM hooks: section.battle-log[data-battle-log='true'] backed by aria-labelledby, .battle-log__toggle with aria-expanded/aria-controls, .battle-log__latest (role=group, aria-label='Latest battle log entry'), .battle-log__history[data-open='true'|'false'], ol.battle-log__list, li.battle-log__item[data-battle-log-entry], and .battle-log__empty[role=note].\",\n    \"Screen integration for LOG-06: render <BattleLog lines={renderBattleLog(...)} toggleLabel=\\\"Log\\\" /> and wrap the board plus the log in <div className=\\\"battle-log-layout\\\"> for the 1024px right-hand column.\",\n    \"src/styles/battle-log.css: .battle-log, .battle-log-layout, .battle-log__head, __title, __toggle, __toggle-glyph, __latest, __latest-text, __history, __list, __item, __turn, __factual, __dialogue, __empty, __empty-text, plus the fb-battle-log-entry keyframes.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/ui/components/BattleLog.test.tsx: 18 passed, exit 0\",\n    \"npm run typecheck: exit 0\",\n    \"Temporary headless Chromium verification (script removed after use): 375px scrollWidth 375 with the drawer closed and open, toggle 78.6x44px, drawer scrollable and scrolled to the newest entry, Escape closed the drawer and returned focus to the toggle, 1280px produced a two-column layout with the toggle hidden and history visible, reduced-motion OS and data-reduced-motion='true' produced animation-name none and 1ms transitions, and data-reduced-motion='false' restored the entry animation.\"\n  ],\n  \"unresolved\": [],\n  \"validationLimitations\": [\n    \"jsdom cannot compute layout, so the committed unit test validates the 375px/1024px/44px/reduced-motion contract against structure and the shipped CSS; the temporary Chromium pass covered the real pixels. LOG-08 owns the committed Playwright journey.\"\n  ]\n}\n```\r\n",
+      "validationLimitations": [
+        "jsdom cannot compute layout, so the committed unit test validates the 375px/1024px/44px/reduced-motion contract against structure and the shipped CSS; the temporary Chromium pass covered the real pixels. LOG-08 owns the committed Playwright journey."
+      ],
+      "artifactId": "work-log-04-001",
+      "inputArtifactIds": [
+        "work-log-02-001",
+        "work-shl-02-001",
+        "work-log-01-001"
+      ]
     },
     "LOG-05": {
       "taskId": "LOG-05",

@@ -1,0 +1,356 @@
+/**
+ * Battle log layout (LOG-FR-04, LOG-FR-07, LOG-NF-02).
+ *
+ * Three surfaces, one DOM copy:
+ *
+ *   - `.battle-log__latest` is the always-visible one-line strip. Its height is
+ *     reserved and the sentence is clamped to one line, so a longer entry can
+ *     never resize the board.
+ *   - `.battle-log__history` is the drawer below 1024px. It is the log's only
+ *     scroll container: it scrolls vertically, contains overscroll and never
+ *     scrolls sideways.
+ *   - At 1024px and wider the same history is displayed as a right-hand column,
+ *     the toggle is hidden and `.battle-log` becomes sticky. Wrap the board and
+ *     the log in `.battle-log-layout` to get the two-column grid.
+ *
+ * Plain CSS with the shared custom properties only. No framework, icon library
+ * or animation library; the glyph in the toggle is text. Motion is a short
+ * entry fade/rise and collapses to nothing when reduced motion is active,
+ * whether from the OS preference or the explicit `data-reduced-motion`
+ * override on the app root.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Optional two-column shell for the screen                                   */
+/* -------------------------------------------------------------------------- */
+
+.battle-log-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--fb-space-3);
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Log surface                                                                */
+/* -------------------------------------------------------------------------- */
+
+.battle-log {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--fb-space-2);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: var(--fb-space-2) var(--fb-space-3);
+  border: var(--fb-border);
+  border-radius: var(--fb-radius-md);
+  background: var(--fb-panel);
+  color: var(--fb-ink);
+  font-family: var(--fb-font-ui);
+  font-size: var(--fb-text-body);
+  line-height: var(--fb-line-body);
+}
+
+.battle-log__head,
+.battle-log__latest,
+.battle-log__history,
+.battle-log__list,
+.battle-log__item,
+.battle-log__factual,
+.battle-log__dialogue {
+  min-width: 0;
+}
+
+.battle-log__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fb-space-1) var(--fb-space-2);
+}
+
+.battle-log__title {
+  margin: 0;
+  color: var(--fb-ink-soft);
+  font-family: var(--fb-font-ui);
+  font-size: var(--fb-text-tiny);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Toggle: a real button with a 44x44 hit box                                 */
+/* -------------------------------------------------------------------------- */
+
+.battle-log__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: var(--fb-target);
+  min-height: var(--fb-target);
+  padding: 0.4rem 0.9rem;
+  border: 1px solid rgb(43 36 25 / 24%);
+  border-radius: var(--fb-radius-pill);
+  background: var(--fb-paper);
+  color: var(--fb-ink);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color var(--fb-motion-lift, 120ms)
+      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
+    border-color var(--fb-motion-lift, 120ms)
+      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
+    color var(--fb-motion-lift, 120ms)
+      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1));
+  -webkit-tap-highlight-color: transparent;
+}
+
+.battle-log__toggle[aria-expanded='true'] {
+  border-color: var(--fb-accent);
+  background: var(--fb-accent);
+  color: #fffaf0;
+}
+
+.battle-log__toggle:focus-visible {
+  outline: var(--fb-focus-ring) solid var(--fb-focus);
+  outline-offset: 3px;
+}
+
+.battle-log__toggle-glyph {
+  font-family: var(--fb-font-glyph);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Latest strip: one reserved line, never a reflow                             */
+/* -------------------------------------------------------------------------- */
+
+.battle-log__latest {
+  display: flex;
+  align-items: center;
+  min-height: calc(1.55em + 2 * var(--fb-space-1));
+  padding: var(--fb-space-1) var(--fb-space-2);
+  overflow: hidden;
+  border-left: 3px solid var(--fb-accent);
+  border-radius: 0 var(--fb-radius-sm) var(--fb-radius-sm) 0;
+  background: rgb(43 36 25 / 5%);
+}
+
+.battle-log__latest-text {
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--fb-text-body);
+  line-height: var(--fb-line-body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------------------- */
+/* History drawer / desktop column                                            */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * The only scroll container in the log. `overscroll-behavior` stops a scroll
+ * gesture from chaining to the page; `overflow-x` stays hidden so a long
+ * unbroken word can never widen the 375px layout.
+ */
+.battle-log__history {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.battle-log__history[data-open='false'] {
+  display: none;
+}
+
+.battle-log__history[data-open='true'] {
+  max-height: 40vh;
+  max-height: min(40dvh, 22rem);
+  padding-top: var(--fb-space-2);
+  padding-right: var(--fb-space-1);
+  border-top: 1px dashed rgb(43 36 25 / 18%);
+}
+
+.battle-log__list {
+  display: grid;
+  gap: var(--fb-space-1);
+  margin: 0;
+  padding: 0 0 0 1.4rem;
+  list-style: decimal;
+}
+
+.battle-log__item {
+  padding: var(--fb-space-1) var(--fb-space-2);
+  border-left: 2px solid rgb(43 36 25 / 13%);
+  overflow-wrap: anywhere;
+  animation: fb-battle-log-entry var(--fb-motion-draw, 180ms)
+    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+}
+
+.battle-log__item:last-child {
+  border-left-color: var(--fb-accent);
+  background: rgb(122 63 29 / 7%);
+}
+
+.battle-log__turn {
+  display: inline-block;
+  margin-right: 0.35em;
+  color: var(--fb-ink-soft);
+  font-size: var(--fb-text-tiny);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.battle-log__factual {
+  margin: 0;
+  font-size: var(--fb-text-body);
+  line-height: var(--fb-line-body);
+  overflow-wrap: anywhere;
+}
+
+.battle-log__dialogue {
+  margin: var(--fb-space-1) 0 0;
+  color: var(--fb-ink-soft);
+  font-family: var(--fb-font-body);
+  font-size: var(--fb-text-body);
+  font-style: italic;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.battle-log__dialogue::before {
+  content: '\201C';
+}
+
+.battle-log__dialogue::after {
+  content: '\201D';
+}
+
+.battle-log__empty {
+  padding: var(--fb-space-2);
+  color: var(--fb-ink-soft);
+}
+
+.battle-log__empty-text {
+  margin: 0;
+  font-size: var(--fb-text-body);
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+@keyframes fb-battle-log-entry {
+  from {
+    opacity: 0;
+    transform: translateY(0.3rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Tablet                                                                     */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 640px) {
+  .battle-log {
+    padding: var(--fb-space-3) var(--fb-space-4);
+  }
+
+  .battle-log__history[data-open='true'] {
+    max-height: 50vh;
+    max-height: min(50dvh, 26rem);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Desktop: the same list becomes a visible right-hand column                 */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 1024px) {
+  .battle-log-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(15rem, 20rem);
+    gap: var(--fb-space-4);
+  }
+
+  [data-battle-log='true'] {
+    position: sticky;
+    top: var(--fb-space-4);
+    align-self: start;
+  }
+
+  /* The column is always visible, so the drawer toggle has no job here. */
+  [data-battle-log='true'] .battle-log__toggle {
+    display: none;
+  }
+
+  [data-battle-log='true'] .battle-log__history,
+  [data-battle-log='true'] .battle-log__history[data-open='false'] {
+    display: block;
+    max-height: 60vh;
+    max-height: min(60dvh, 34rem);
+    padding-top: var(--fb-space-2);
+    padding-right: 0;
+    border-top: 1px dashed rgb(43 36 25 / 18%);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced motion: OS preference                                              */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-log__item {
+    animation: none;
+    transform: none;
+  }
+
+  .battle-log__toggle {
+    transition-duration: 1ms;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced motion: explicit in-app override                                   */
+/* -------------------------------------------------------------------------- */
+
+[data-reduced-motion='true'] .battle-log__item {
+  animation: none;
+  transform: none;
+}
+
+[data-reduced-motion='true'] .battle-log__toggle {
+  transition-duration: 1ms;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Explicit "motion on" wins over a matching OS query (both directions)       */
+/* -------------------------------------------------------------------------- */
+
+[data-reduced-motion='false'] .battle-log__item {
+  animation: fb-battle-log-entry var(--fb-motion-draw, 180ms)
+    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+}
+
+[data-reduced-motion='false'] .battle-log__toggle {
+  transition-duration: var(--fb-motion-lift, 120ms);
+}

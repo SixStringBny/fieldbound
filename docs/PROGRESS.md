@@ -3,8 +3,8 @@
 ## Current State
 **Phase**: BATTLE-LOG-DYNAMIC-DIALOGUE-2
 **Status**: In Progress
-**Validation Gaps**: 4 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T17:57:21.062Z
+**Validation Gaps**: 5 unverified check(s) - see "Validation Gaps"
+**Last Updated**: 2026-10-29T18:05:18.538Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -84,12 +84,13 @@
   - Files: src/content/battle-dialogue.ts, src/content/battle-dialogue.test.ts, src/battle-log/text.ts, src/battle-log/text.test.ts
 - [x] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-2, Task LOG-03: Carry a bounded battle log through the battle controller (@frontend-engineer)
   - Files: src/state/battle-controller.ts, src/state/battle-controller.test.ts, src/state/resume-run.ts
+- [x] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-2, Task LOG-04: Build the accessible battle log strip and drawer (@ux-engineer)
+  - Files: src/ui/components/BattleLog.tsx, src/ui/components/BattleLog.test.tsx, src/styles/battle-log.css
 
 ## Current Task
 - None currently running
 
 ## Remaining
-- [ ] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-2: Phase 2: Controller and Presentation
 - [ ] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-3: Phase 3: Duel Privacy and Screen Wiring
 - [ ] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-4: Phase 4: Persistence and Verification
 
@@ -102,6 +103,7 @@
 - Task RUN-04: check:build's source-token heuristic fails on pre-existing duel test string literals; it was not treated as a RUN-04 check and the duel tests were left untouched to avoid out-of-scope changes.
 - Task RUN-05: check:build's source-token heuristic fails on pre-existing duel test string literals; it was not treated as a RUN-05 check and those files were left untouched to avoid out-of-scope changes.
 - Task REL-03: Privacy-leak failure behaviour was not demonstrated by deliberately breaking the product (out of scope); non-vacuity is instead proved by the active-hand scan requiring the real hand names to be found in the rendered DOM on every turn.
+- Task LOG-04: jsdom cannot compute layout, so the committed unit test validates the 375px/1024px/44px/reduced-motion contract against structure and the shipped CSS; the temporary Chromium pass covered the real pixels. LOG-08 owns the committed Playwright journey.
 
 ## Notes
 - Workflow engine run 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
