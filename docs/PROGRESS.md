@@ -4,7 +4,7 @@
 **Phase**: BATTLE-LOG-DYNAMIC-DIALOGUE-4
 **Status**: In Progress
 **Validation Gaps**: 6 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T18:20:30.528Z
+**Last Updated**: 2026-10-29T18:26:28.583Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -92,6 +92,8 @@
   - Files: src/ui/screens/BattleScreen.tsx, src/ui/screens/DuelBattleScreen.tsx, src/App.battle-log.test.tsx, src/App.tsx, src/battle-log/text.ts, src/styles/duel.css
 - [x] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-4, Task LOG-07: Persist and restore the solo battle log (@solo-mode-engineer)
   - Files: src/persistence/run-save.ts, src/persistence/run-save.test.ts, src/state/run-controller.ts, src/state/run-controller.test.ts, src/state/resume-run.ts, src/state/resume-run.test.ts
+- [x] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-4, Task LOG-08: Verify the battle log in the production build (@qa-automation-engineer)
+  - Files: tests/e2e/battle-log.spec.ts
 
 ## Current Task
 - None currently running

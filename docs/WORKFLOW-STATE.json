@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T18:20:30.520Z",
+  "lastUpdatedAt": "2026-10-29T18:26:28.576Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -2186,10 +2186,47 @@
     },
     "LOG-08": {
       "taskId": "LOG-08",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "qa-automation-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "tests/e2e/battle-log.spec.ts"
+      ],
+      "startedAt": "2026-10-29T18:20:31.034Z",
+      "usage": {
+        "inputTokens": 115909,
+        "outputTokens": 13461,
+        "reasoningTokens": 27398,
+        "cacheReadTokens": 3556224,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.052570422,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/LOG-08.2026-10-29T18-26-28-558Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 115909,
+            "outputTokens": 13461,
+            "reasoningTokens": 27398,
+            "cacheReadTokens": 3556224,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.052570422,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T18:26:28.569Z",
+      "agentOutput": "I'll start by reading the execution file and understanding the task scope.\r\nNow I have the full picture. Let me write the spec.\r\nThe required checks pass. Let me strengthen the local-only (LOG-NF-03) coverage the audit owns before reporting.\r\nTask complete. All required validation commands were run in this session and passed.\n\n**Files created/changed**\n- `tests/e2e/battle-log.spec.ts` (created)\n\nNo application source, build config, CSS, or `docs/artifacts/` file was modified. The two `docs/` files shown as modified in git status are engine-managed run-state files, not my edits.\n\n**What the spec proves (observed passing)**\n- Solo Chromium at 375x667: one affordable card play appends exactly one line naming the card and `You`; completing the turn appends handoff/enemy lines; drawer opens with Enter, closes with Escape with focus restored; mid-battle reload + Continue Run restores the exact ordered entry text.\n- Duel Chromium: while the privacy interstitial is still visible there is no log region, latest strip, history, entry, or Log toggle, and no log prose; after dismissal the battle-start log appears, playing a card appends one public entry, and only the played card's name may appear inside the log.\n- 375x667 on Chromium/Firefox/WebKit: `scrollWidth <= innerWidth` with drawer closed and open, 44px toggle, newest entry reached, End Turn reachable, Escape focus return.\n- 1280x800 on all three: history column visible unopened, toggle hidden, log sits to the right of the board.\n- Local-only audit: zero off-origin requests after document load; storage limited to the three versioned keys; no solo run key written during a duel.\n- Console errors collected and failed on.\n\n```forge-result\n{\"summary\":\"Added tests/e2e/battle-log.spec.ts: a Chromium-only solo log journey (card and turn entries, 375px keyboard drawer with Escape focus return, mid-battle reload and Continue Run restoring exact entry text) and duel privacy/public-entry journey (no log or toggle behind privacy, only the played card named in the active-turn log), plus 375x667 keyboard/no-overflow and 1280x800 desktop-column checks on all three projects, a no-aria-live/single-live-region boundary check, off-origin request and storage-key audits, and zero-console-error enforcement. All 8 applicable tests passed (4 Chromium-only tests skipped on Firefox/WebKit), check-budget and typecheck passed.\",\"decisions\":[\"The solo journey runs at 375x667 because the drawer is the sub-1024px surface; the duel and the two long journeys stay Chromium-only, while the 375px and 1280px layout checks run on all three engines without adding a project.\",\"The reload is gated on durability: the spec reads (never writes) fieldbound.run.v1 and waits for the raw payload to change for each settled action before reloading.\",\"History restoration compares the full ordered entry text (turn marker, factual sentence and dialogue), not just an element count.\",\"Duel privacy is asserted before dismissal using absent log selectors, absent region/toggle and a body-text scan for log prose; the gate is re-asserted visible after the checks.\",\"The public-entry scan reads the frozen test-side catalog (src/content/cards.json) and fails if any card name other than the played card appears anywhere inside the log.\",\"The log is asserted to be a labelled region with an ordered list, no aria-live descendant and exactly one polite live region in the document; no log announcement is expected.\",\"LOG-NF-03 is covered by observing off-origin requests after document load and asserting storage keys never exceed the three versioned keys, with no solo run key written during a duel.\"],\"interfaces\":[\"tests/e2e/battle-log.spec.ts: four Playwright tests (solo journey, duel journey, 375x667 drawer, 1280x800 column) reusing openApp, startSolo, dismissPrivacy, expectScreen, expectNoHorizontalScroll, expectNoConsoleErrors and collectConsoleErrors from tests/e2e/helpers.ts.\",\"DOM contract asserted: [data-battle-log] region named \\\"Battle log\\\", [data-battle-log-latest], ol.battle-log__list / .battle-log__item, .battle-log__toggle aria-expanded, .battle-log__history, .battle-controls__end, .battle-board, [data-live-region].\"],\"tests\":[\"npm run test:e2e -- tests/e2e/battle-log.spec.ts: 8 passed, 4 skipped (Chromium-only journeys skipped on Firefox/WebKit)\",\"node scripts/check-budget.mjs: exit 0; 115257 B gzip / 307200 B, 191943 B headroom; manifest 41/41\",\"npm run typecheck: exit 0\"],\"warnings\":[\"Playwright browser binaries were already installed locally; no package or lockfile change was made.\",\"The 375px and 1280px layout tests additionally pass on Firefox and WebKit, beyond the Chromium-only long journeys.\"],\"unresolved\":[]}\n```\r\n",
+      "artifactId": "work-log-08-001",
+      "inputArtifactIds": [
+        "work-log-06-001",
+        "work-log-07-001",
+        "work-rel-01-001",
+        "work-log-05-001"
+      ]
     },
     "LOG-HR-1": {
       "taskId": "LOG-HR-1",
