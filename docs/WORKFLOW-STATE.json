@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T07:11:48.690Z",
+  "lastUpdatedAt": "2026-10-29T07:16:18.900Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -1191,10 +1191,45 @@
     },
     "DUEL-02": {
       "taskId": "DUEL-02",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "duel-mode-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/duel/round.ts",
+        "src/duel/round.test.ts"
+      ],
+      "startedAt": "2026-10-29T07:11:49.267Z",
+      "usage": {
+        "inputTokens": 51809,
+        "outputTokens": 13204,
+        "reasoningTokens": 33424,
+        "cacheReadTokens": 1229312,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.039436085999999995,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/DUEL-02.2026-10-29T07-16-18-893Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 51809,
+            "outputTokens": 13204,
+            "reasoningTokens": 33424,
+            "cacheReadTokens": 1229312,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.039436085999999995,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T07:16:18.897Z",
+      "agentOutput": "I'll start by reading the execution file and relevant docs.\r\nNow I have the full picture. Let me write the round controller.\r\nImplemented and verified DUEL-02.\n\n**Files created**\n- `src/duel/round.ts`\n- `src/duel/round.test.ts`\n\n**Validation run**\n- `npm test -- src/duel/round.test.ts` → 21/21 passed\n- `npm run typecheck` → passed\n- `npm test` (full suite) → 813/813 passed\n\n```forge-result\n{\n  \"summary\": \"Implemented the privacy-gated duel round controller over the real symmetric engine: round creation from locked decks and the round seed, a structural privacy gate before every turn, active-hand-only views with count-only opponents, viewer handoff after End Turn, and immediate round settlement with typed rejection of all later actions.\",\n  \"decisions\": [\n    \"Round state is a discriminated union of privacy, battle and complete variants, so privacyPending is a literal true/false and only the complete variant can name a roundWinner; an inconsistent gate state is unrepresentable.\",\n    \"The engine battle is built at round creation (so both hands are dealt behind the gate) but duelRoundView projects it into redacted screen contracts; the privacy view carries only viewer, round and entering score, and the battle view carries only the viewer's hand.\",\n    \"Every action funnels through one actionGate that checks completed, then pending privacy, then active-side consistency before any engine call; engine rejections are forwarded with their original codes and the supplied state is never mutated.\",\n    \"Settled engine outcomes are mapped back to seats through the fixed player1=player / player2=opponent mapping rather than health, and the round controller records only the round winner; series wins remain owned by recordRoundWinner in match.ts.\",\n    \"createDuelRound validates the match phase and both deck ids against the content catalog, seeds createBattle with match.roundSeed and startingSide from match.firstPlayer, and rejects a completed match or unknown deck with typed errors.\",\n    \"The round controller imports only content decks/cards, the engine battle functions and the match contract; it never calls the planner, snapshot module, storage, React or the DOM.\"\n  ],\n  \"interfaces\": [\n    \"src/duel/round.ts: DUEL_ROUND_PHASES, DuelRoundPhase, DuelRoundErrorCode, DuelRoundError, DuelRoundSuccess, DuelRoundFailure, DuelRoundResult.\",\n    \"src/duel/round.ts: DuelRoundPrivacy, DuelRoundBattle, DuelRoundComplete, DuelRoundState, DuelRoundView and redacted DuelPrivacyView, DuelBattleView, DuelRoundResultView, DuelSelfView, DuelOpponentView, DuelHandCard.\",\n    \"src/duel/round.ts: createDuelRound(match), dismissDuelPrivacy(state), playDuelCard(state, instanceId), endDuelTurn(state), canDuelAct(state), duelActivePlayer(state), duelRoundView(state).\",\n    \"src/duel/round.test.ts: node-environment Vitest integration suite over the real engine and starter content, plus source-purity checks for imports, storage/DOM/AI tokens and restated combat rules.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/duel/round.test.ts: exit 0, 21 tests passed\",\n    \"npm run typecheck: exit 0\",\n    \"npm test: exit 0, 813 tests passed across 27 files\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-duel-02-001",
+      "inputArtifactIds": [
+        "work-duel-01-001"
+      ]
     },
     "DUEL-03": {
       "taskId": "DUEL-03",
