@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T07:06:52.003Z",
+  "lastUpdatedAt": "2026-10-29T07:11:48.690Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "LOCAL-DUEL-1",
+  "currentPhase": "LOCAL-DUEL-2",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -1069,10 +1069,50 @@
     },
     "RUN-02": {
       "taskId": "RUN-02",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "solo-mode-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/run/rewards.ts",
+        "src/run/rewards.test.ts"
+      ],
+      "startedAt": "2026-10-29T07:06:52.357Z",
+      "usage": {
+        "inputTokens": 57282,
+        "outputTokens": 16053,
+        "reasoningTokens": 22782,
+        "cacheReadTokens": 2755712,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.040160436,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/RUN-02.2026-10-29T07-11-48-682Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 57282,
+            "outputTokens": 16053,
+            "reasoningTokens": 22782,
+            "cacheReadTokens": 2755712,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.040160436,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T07:11:48.687Z",
+      "agentOutput": "I'll start by reading the execution file and relevant documentation.\r\nNow I have the full picture. Let me write the rewards module.\r\nNow let me write the test suite and remove the scratch file.\r\nAll required checks pass. Here is the result report and the file list.\n\n```forge-result\n{\n  \"summary\": \"Implemented seeded reward offers and the mandatory reward choice (RUN-FR-03): a 17-card element-plus-Neutral pool, three unique cards drawn from the run PRNG (retried on duplicates), the third slot replaced by Heal 12 strictly below 20 health while still consuming the third draw, a total offer validator, and a one-shot apply that delegates the transition to the run model. The required test command (75 tests), typecheck and the full 792-test suite pass.\",\n  \"decisions\": [\n    \"The pool is the run's five element cards plus all twelve Neutral cards (eight Neutral plus the four Shift cards), 17 per element, per card-content.md open question 3 that Shift cards are reward-eligible.\",\n    \"Each offer slot consumes one nextUint32 draw, scaling value*pool.length/2^32 exactly like the engine shuffle; a duplicate index is retried for the same slot, so no offer repeats a card id.\",\n    \"The third slot is always drawn and then discarded when health is below 20, so the PRNG state after a reward is identical at 19 and at 20 health; a test pins that equality.\",\n    \"Generation requires the run to be in the reward phase and on a normal (non-boss) encounter, so a boss victory can never produce an offer.\",\n    \"The heal option is {kind:'heal', amount:12} so a screen can render it without importing a constant; validation rejects any other amount.\",\n    \"applyRewardChoice re-validates the whole offer set (length 3, unique, in-pool, heal only in slot 3) and then delegates to run-model.resolveReward, so exactly one choice is applied and a second choice is rejected with invalid-phase; the heal cap at 40 stays in the run model.\",\n    \"validateRewardOffers is total and canonical (drops unknown keys), intended for RUN-03's pendingReward validation with the saved run element.\",\n    \"A bounded retry ceiling plus typed insufficient-reward-pool/reward-draw-exhausted failures keep the draw total; the constant-stream exhaustion path is covered with a mocked PRNG.\"\n  ],\n  \"interfaces\": [\n    \"src/run/rewards.ts: REWARD_OFFER_COUNT=3, REWARD_HEAL_THRESHOLD=20, REWARD_HEAL_AMOUNT=12 (=== RUN_HEAL).\",\n    \"Types: RewardCardOffer {kind:'card', cardId}, RewardHealOffer {kind:'heal', amount}, RewardOffer union, RewardOfferGeneration {offers, rngState}, RewardErrorCode, RewardResult<T>.\",\n    \"rewardPool(element: FieldElement): readonly CardDefinition[] (element + Neutral in catalog order; [] for a non-field element).\",\n    \"generateRewardOffers(run: RunState, rngState: RngState): RewardResult<RewardOfferGeneration>.\",\n    \"applyRewardChoice(run: RunState, offers: readonly RewardOffer[], choice: RunRewardChoice): RewardResult<RunState>.\",\n    \"validateRewardOffers(input: unknown, element: FieldElement): RewardResult<readonly RewardOffer[]>.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/run/rewards.test.ts: exit 0, 75 tests passed\",\n    \"npm run typecheck: exit 0\",\n    \"npm test (full suite): exit 0, 26 files / 792 tests passed\"\n  ],\n  \"warnings\": [\n    \"insufficient-reward-pool is unreachable with the frozen 17-card pool; it remains a totality guard should a future catalog shrink below three cards.\",\n    \"The pinned golden offers and rngState for seed 12345 freeze the draw algorithm; changing index scaling or the duplicate-retry policy changes every seeded reward sequence.\",\n    \"RUN-03 should validate a stored pendingReward with validateRewardOffers(input, run.element); RUN-04 should call generateRewardOffers only in the reward phase and persist the returned rngState.\"\n  ],\n  \"unresolved\": []\n}\n```\n\nFiles created:\n- `src/run/rewards.ts`\n- `src/run/rewards.test.ts`\n\nNo other files were changed by this task (the modified `docs/EXECUTION-AUDIT.jsonl` and `docs/WORKFLOW-STATE.json` are engine-managed and were not touched by me).\r\n",
+      "artifactId": "work-run-02-001",
+      "inputArtifactIds": [
+        "work-run-01-001",
+        "work-cnt-01-001",
+        "work-shl-04-001",
+        "work-shl-05-001",
+        "work-shl-06-001",
+        "work-shl-07-001"
+      ]
     },
     "RUN-06": {
       "taskId": "RUN-06",

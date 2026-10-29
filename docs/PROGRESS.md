@@ -1,10 +1,10 @@
 # Project Progress
 
 ## Current State
-**Phase**: LOCAL-DUEL-1
+**Phase**: LOCAL-DUEL-2
 **Status**: In Progress
 **Validation Gaps**: 1 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T07:06:52.005Z
+**Last Updated**: 2026-10-29T07:11:48.693Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -48,6 +48,8 @@
   - Files: src/ui/a11y/useKeyboardControls.ts, src/ui/components/LiveRegion.tsx, src/ui/a11y/useKeyboardControls.test.tsx, src/App.tsx, src/App.a11y.test.tsx
 - [x] Phase SOLO-RUN-1, Task RUN-01: Implement run creation, ladder progression and healing (@solo-mode-engineer)
   - Files: src/run/run-model.ts, src/run/run-model.test.ts
+- [x] Phase SOLO-RUN-1, Task RUN-02: Generate and apply seeded reward offers (@solo-mode-engineer)
+  - Files: src/run/rewards.ts, src/run/rewards.test.ts
 - [x] Phase LOCAL-DUEL-1, Task DUEL-01: Implement the best-of-three match model (@duel-mode-engineer)
   - Files: src/duel/match.ts, src/duel/match.test.ts
 
