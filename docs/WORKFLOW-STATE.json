@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T07:20:36.880Z",
+  "lastUpdatedAt": "2026-10-29T07:31:18.013Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -1287,10 +1287,53 @@
     },
     "DUEL-03": {
       "taskId": "DUEL-03",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "frontend-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/ui/screens/DuelSetupScreen.tsx",
+        "src/ui/screens/PrivacyScreen.tsx",
+        "src/ui/screens/DuelBattleScreen.tsx",
+        "src/ui/screens/RoundResultScreen.tsx",
+        "src/ui/screens/MatchResultScreen.tsx",
+        "src/App.tsx",
+        "src/App.duel.test.tsx",
+        "src/styles/duel.css",
+        "src/ui/screens/duel-copy.ts"
+      ],
+      "startedAt": "2026-10-29T07:20:37.246Z",
+      "usage": {
+        "inputTokens": 104530,
+        "outputTokens": 26330,
+        "reasoningTokens": 62116,
+        "cacheReadTokens": 7973888,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.092668764,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/DUEL-03.2026-10-29T07-31-18-004Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 104530,
+            "outputTokens": 26330,
+            "reasoningTokens": 62116,
+            "cacheReadTokens": 7973888,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.092668764,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T07:31:18.010Z",
+      "agentOutput": "I'll start by reading the execution file for this task.\r\nNow I have a clear picture. Let me create the duel presentation copy helper and the five screens.\r\nNow the interaction test suite through the real `App`.\r\nImplemented DUEL-03 end to end through the real composition root.\n\n## What I built\n\n- **Two-step deck setup** — Player 1 chooses/confirms behind a “Player 2, look away” callout; Player 2 then chooses from the same deck list with no mark or restatement of Player 1’s pick; both decks are revealed only on the locked summary, where Start Match becomes available. Leaving discards the partial choice.\n- **Full-screen privacy interstitial** — a fixed, fully opaque `role=\"dialog\"` with `aria-modal`, naming the player who takes the device, a single focused “I’m ready” button, and no board/deck/hand/health/field/cost/intent content. Enter/Space dismiss; Escape is consumed but is a deliberate no-op. No timers.\n- **Duel battle screen** — two seat panels (opponent health/defense/statuses and **hand count**; active seat energy), shared field banner, only the active viewer’s hand, End Turn, card detail for active cards only, and the same `E` shortcut guards as solo.\n- **Round and match results** — round winner + series score and Next Round; match winner + final score with Rematch, Change decks and Menu.\n- **App wiring** — an in-memory `DuelSession` that selects the existing `battle` screen kind for a live duel turn (so the 12-kind `Screen` union is unchanged), starts every round at privacy, records winners through `recordRoundWinner`, and never reads or writes a duel key.\n\n## Validation observed\n\n- `npm test -- src/App.duel.test.tsx` → **11 passed** (setup, privacy, Escape, hidden hand, handoff, 2-0 series, rematch, change decks, menu, reload, E shortcut)\n- `npm run typecheck` → **exit 0**\n- `npm test` → **859 passed / 29 files**\n- `npm run build` → **success** (`dist` produced)\n\n## Files created / changed\n\n- `src/ui/screens/DuelSetupScreen.tsx` (new)\n- `src/ui/screens/PrivacyScreen.tsx` (new)\n- `src/ui/screens/DuelBattleScreen.tsx` (new)\n- `src/ui/screens/RoundResultScreen.tsx` (new)\n- `src/ui/screens/MatchResultScreen.tsx` (new)\n- `src/ui/screens/duel-copy.ts` (new, shared seat/score/count copy)\n- `src/styles/duel.css` (new, setup/privacy/battle/result presentation)\n- `src/App.tsx` (changed: duel session, intents, routes, E wiring, `duelMatch` test seam, unavailable fallback)\n- `src/App.duel.test.tsx` (new)\n\n```forge-result\n{\n  \"summary\": \"Built the complete local-duel flow through App: two-step locked deck setup, an opaque non-dismissible privacy interstitial, an active-hand-only duel battle with opponent counts, round and match results with Rematch/Change decks/Menu, and in-memory-only session state with no duel persistence. Verified App-level interaction tests, typecheck, the full suite and a production build.\",\n  \"decisions\": [\n    \"The active duel turn reuses the existing 'battle' screen kind instead of adding a 13th Screen member, preserving SHL-FR-01 and the exact SCREEN_KINDS contract; the route chooses DuelBattleScreen whenever a live round view is a battle, otherwise the solo practice board.\",\n    \"App holds the whole duel as an ephemeral DuelSession and is the only layer calling createDuelRound, dismissDuelPrivacy, playDuelCard, endDuelTurn and recordRoundWinner; screens receive redacted views and dispatch typed intents.\",\n    \"The privacy screen relies on the shared dialog focus trap with a no-op close handler, so Escape is consumed and cannot dismiss while Enter/Space/tap on the only button is the sole way forward; switching screens unmounts the battle rather than covering it.\",\n    \"Deck selection and confirmation live inside DuelSetupScreen, which clears the selected marker before step 2 and reveals both decks only on the summary after Player 2 confirms; unmounting on Back discards the partial choice.\",\n    \"A test-only duelMatch prop mirrors the existing battleConfig/initialScreen seams so match-result actions can be exercised without replaying a full series; production passes nothing.\",\n    \"Duel battle reuses Hand, CardDetail, FieldBanner, StatMeter and StatusList so card faces, detail focus behaviour and manifest-backed art stay owned by the presentation layer; the duel only composes them.\",\n    \"E ends a duel turn through the same useKeyboardControls guard as solo and is not mounted on the privacy screen, so the handoff cannot be skipped by keyboard.\",\n    \"Rematch calls the match model's rematch (same deck ids, deterministic new seed, 0-0, Player 1 privacy); Change decks and Menu clear the session. No storage module is imported by any duel screen or path.\"\n  ],\n  \"interfaces\": [\n    \"src/ui/screens/DuelSetupScreen.tsx: DuelSetupScreenProps { decks, onStartMatch(player1DeckId, player2DeckId), onBack } — two-step picker plus locked summary, Start Match disabled until both confirmations.\",\n    \"src/ui/screens/PrivacyScreen.tsx: PrivacyScreenProps { viewer, onReady } — fixed opaque role=dialog/aria-modal handoff, focused 'I'm ready' button, Escape no-op.\",\n    \"src/ui/screens/DuelBattleScreen.tsx: DuelBattleScreenProps { view: DuelBattleView, cards, fieldMatchup, baseUrl, onPlayCard, onEndTurn, onExit } — two seat panels, active hand only, opponent hand count.\",\n    \"src/ui/screens/RoundResultScreen.tsx: RoundResultScreenProps { round, winner, wins, onNextRound }.\",\n    \"src/ui/screens/MatchResultScreen.tsx: MatchResultScreenProps { winner, wins, onRematch, onChangeDecks, onMenu }.\",\n    \"src/ui/screens/duel-copy.ts: duelPlayerName(player), duelScoreText(wins), duelHandCountText(count).\",\n    \"src/App.tsx: AppProps gains test-only duelMatch?: DuelMatch; internal DuelSession union (round | round-result | match-result), beginDuelSetup, leaveDuel, openRound, handleStartMatch, handleDuelReady, settleRound, handleDuelPlay, handleDuelEndTurn, handleNextRound, handleRematch, DuelBattleRoute and DuelUnavailable.\",\n    \"src/styles/duel.css: .duel-setup, .duel-decks/.duel-deck, .duel-privacy, .duel-battle/.duel-panel, .duel-result surfaces.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/App.duel.test.tsx: exit 0 (11 tests passed)\",\n    \"npm run typecheck: exit 0\",\n    \"npm test: exit 0 (29 files, 859 tests passed)\",\n    \"npm run build: exit 0 (vite production build, dist emitted)\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-duel-03-001",
+      "inputArtifactIds": [
+        "work-duel-02-001",
+        "work-shl-07-001"
+      ]
     },
     "REL-01": {
       "taskId": "REL-01",

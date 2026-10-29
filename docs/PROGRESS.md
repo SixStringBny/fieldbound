@@ -4,7 +4,7 @@
 **Phase**: LOCAL-DUEL-3
 **Status**: In Progress
 **Validation Gaps**: 1 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T07:20:36.882Z
+**Last Updated**: 2026-10-29T07:31:18.015Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -56,6 +56,8 @@
   - Files: src/duel/match.ts, src/duel/match.test.ts
 - [x] Phase LOCAL-DUEL-2, Task DUEL-02: Gate duel turns behind privacy and hide the off-turn hand (@duel-mode-engineer)
   - Files: src/duel/round.ts, src/duel/round.test.ts
+- [x] Phase LOCAL-DUEL-3, Task DUEL-03: Build the duel setup, privacy, battle and result screens (@frontend-engineer)
+  - Files: src/ui/screens/DuelSetupScreen.tsx, src/ui/screens/PrivacyScreen.tsx, src/ui/screens/DuelBattleScreen.tsx, src/ui/screens/RoundResultScreen.tsx, src/ui/screens/MatchResultScreen.tsx, src/App.tsx, src/App.duel.test.tsx, src/styles/duel.css, src/ui/screens/duel-copy.ts
 
 ## Current Task
 - None currently running
@@ -63,7 +65,6 @@
 ## Remaining
 - [ ] Phase SOLO-RUN-2: Phase 2: Persistence
 - [ ] Phase SOLO-RUN-3: Phase 3: Solo Flow
-- [ ] Phase LOCAL-DUEL-3: Phase 3: Duel UI
 - [ ] Phase RELEASE-VERIFICATION-1: Phase 1: Browser Harness
 - [ ] Phase RELEASE-VERIFICATION-2: Phase 2: Build, Deploy and Budget
 - [ ] Phase RELEASE-VERIFICATION-3: Phase 3: Human Review

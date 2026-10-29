@@ -1,0 +1,369 @@
+/**
+ * Local duel surfaces (DUEL-FR-01, DUEL-FR-03, DUEL-FR-04, DUEL-FR-05,
+ * SHL-FR-02, VIS-NFR-03).
+ *
+ * Three groups:
+ *
+ *   - setup: the two-step deck picker and its locked summary;
+ *   - privacy: a fixed, fully opaque interstitial that covers the viewport;
+ *   - battle and result: two seat panels, the shared field and the score
+ *     surfaces, reusing the board components where they already exist.
+ *
+ * Plain CSS custom properties only. Every interactive control is at least
+ * 44px, focus styling comes from the shared `:focus-visible` rule, and no
+ * animation is introduced here beyond the reduced-motion-safe transitions the
+ * board already owns.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Shared duel surfaces                                                       */
+/* -------------------------------------------------------------------------- */
+
+.duel-setup,
+.duel-battle,
+.duel-result {
+  display: grid;
+  gap: var(--fb-space-4);
+  width: 100%;
+  min-width: 0;
+  font-family: var(--fb-font-ui);
+}
+
+.duel-setup__head {
+  display: grid;
+  gap: var(--fb-space-2);
+}
+
+.duel-setup__step {
+  display: grid;
+  gap: var(--fb-space-3);
+}
+
+.duel-setup__step-label {
+  color: var(--fb-ink-soft);
+  font-size: var(--fb-text-small);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.duel-setup__callout {
+  padding: 0.65rem 0.9rem;
+  border-left: 4px solid var(--fb-accent);
+  border-radius: 0 var(--fb-radius-sm) var(--fb-radius-sm) 0;
+  background: rgb(122 63 29 / 8%);
+  font-weight: 700;
+}
+
+.duel-setup__confirm,
+.duel-setup__start {
+  justify-self: start;
+}
+
+.duel-setup .shell__button:disabled {
+  border-color: #b8a68a;
+  background: #d9cbb3;
+  color: #5b4f3d;
+  cursor: not-allowed;
+}
+
+.duel-setup__summary {
+  display: grid;
+  gap: var(--fb-space-3);
+}
+
+.duel-setup__picks {
+  display: grid;
+  gap: var(--fb-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.duel-setup__deck-line {
+  padding: 0.6rem 0.9rem;
+  border: 1px solid rgb(122 63 29 / 22%);
+  border-radius: 10px;
+  background: rgb(255 253 247 / 78%);
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.duel-setup__footer {
+  margin-top: var(--fb-space-2);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Deck picker                                                                */
+/* -------------------------------------------------------------------------- */
+
+.duel-decks {
+  display: grid;
+  gap: var(--fb-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.duel-deck {
+  display: grid;
+  grid-template-areas:
+    'name state'
+    'meta state';
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.2rem 0.75rem;
+  width: 100%;
+  min-height: var(--fb-target);
+  padding: 0.8rem 1rem;
+  border: 1px solid rgb(122 63 29 / 30%);
+  border-radius: 12px;
+  background: var(--fb-paper);
+  color: var(--fb-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.duel-deck:hover {
+  border-color: var(--fb-accent);
+}
+
+.duel-deck[aria-pressed='true'] {
+  border-color: var(--fb-accent);
+  box-shadow: inset 0 0 0 2px var(--fb-accent);
+}
+
+.duel-deck__name {
+  grid-area: name;
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+
+.duel-deck__meta {
+  grid-area: meta;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--fb-ink-soft);
+  font-size: 0.9375rem;
+}
+
+.duel-deck__state {
+  grid-area: state;
+  align-self: center;
+  color: var(--fb-accent);
+  font-weight: 700;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Privacy interstitial                                                       */
+/* -------------------------------------------------------------------------- */
+
+/* Fixed and fully opaque: the battle is unmounted, and the backdrop itself
+   must not let anything behind it show through. */
+.duel-privacy {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: var(--fb-space-4);
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 20% 8%, #fffaf0 0%, transparent 55%),
+    var(--fb-parchment-deep);
+}
+
+.duel-privacy__dialog {
+  display: grid;
+  gap: var(--fb-space-3);
+  width: min(100%, 30rem);
+  padding: var(--fb-space-6) var(--fb-space-4);
+  border: 1px solid rgb(122 63 29 / 30%);
+  border-radius: var(--fb-radius-lg);
+  background: var(--fb-paper);
+  box-shadow: var(--fb-shadow);
+  text-align: center;
+}
+
+.duel-privacy__kicker {
+  color: var(--fb-ink-soft);
+  font-size: var(--fb-text-small);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.duel-privacy__title {
+  font-size: clamp(1.75rem, 8vw, 2.75rem);
+  line-height: 1.1;
+}
+
+.duel-privacy__hint {
+  color: var(--fb-ink-soft);
+  font-size: 1.0625rem;
+}
+
+.duel-privacy__ready {
+  width: 100%;
+  min-height: var(--fb-target);
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--fb-accent);
+  border-radius: 12px;
+  background: var(--fb-accent);
+  color: #fffaf0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.duel-privacy__ready:hover {
+  background: var(--fb-accent-strong);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Duel battle                                                                */
+/* -------------------------------------------------------------------------- */
+
+.duel-battle {
+  gap: var(--fb-space-3);
+  padding: 0 0 var(--fb-space-4);
+  color: var(--fb-ink);
+  font-size: var(--fb-text-body);
+  line-height: var(--fb-line-body);
+}
+
+.duel-battle > * {
+  min-width: 0;
+}
+
+.duel-battle__head {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: start;
+}
+
+.duel-battle__head .shell__eyebrow {
+  margin: 0;
+}
+
+.duel-battle__turn {
+  color: var(--fb-ink-soft);
+  font-size: var(--fb-text-small);
+  font-weight: 700;
+}
+
+.duel-panel {
+  display: grid;
+  gap: var(--fb-space-2);
+  min-width: 0;
+  padding: var(--fb-space-3);
+  border: 1px solid rgb(43 36 25 / 18%);
+  border-radius: var(--fb-radius-md);
+  background: var(--fb-panel);
+}
+
+.duel-panel--opponent {
+  border-color: rgb(159 29 29 / 35%);
+}
+
+.duel-panel--self {
+  border-color: rgb(122 63 29 / 45%);
+  background: var(--fb-paper);
+}
+
+.duel-panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+}
+
+.duel-panel__title {
+  font-family: var(--fb-font-body);
+  font-size: 1.125rem;
+  line-height: 1.2;
+}
+
+.duel-panel__element {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--fb-ink-soft);
+  font-size: var(--fb-text-small);
+}
+
+.duel-panel__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+}
+
+.duel-panel__energy,
+.duel-panel__count {
+  font-weight: 700;
+}
+
+.duel-panel__piles {
+  color: var(--fb-ink-soft);
+  font-size: var(--fb-text-small);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Round and match results                                                    */
+/* -------------------------------------------------------------------------- */
+
+.duel-result {
+  padding: var(--fb-space-5);
+  border: 1px solid rgb(122 63 29 / 22%);
+  border-radius: var(--fb-radius);
+  background: rgb(255 252 244 / 78%);
+  box-shadow: var(--fb-shadow);
+}
+
+.duel-result__score {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.duel-result__next {
+  margin-top: var(--fb-space-4);
+}
+
+.duel-result__actions {
+  display: grid;
+  gap: var(--fb-space-3);
+  margin: var(--fb-space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.duel-result__actions .shell__button,
+.duel-result__next .shell__button {
+  width: 100%;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Breakpoints                                                                */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 640px) {
+  .duel-decks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .duel-result__actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .duel-result__next .shell__button {
+    width: auto;
+    min-width: 12rem;
+  }
+}

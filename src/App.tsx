@@ -7,10 +7,15 @@
  * without a matching route. Screens dispatch navigation intents; only this file
  * decides which screen is mounted.
  *
- * The menu, rules, settings and battle surfaces are built. Solo and duel
- * surfaces owned by later tasks resolve to a single shared notice until then,
- * which keeps the menu's entries alive and the router exhaustive without
+ * The menu, rules, settings, battle and full local-duel flow are built. The solo
+ * run surfaces owned by later tasks resolve to a single shared notice until
+ * then, which keeps the menu's entries alive and the router exhaustive without
  * creating empty screen files that a later task would have to delete.
+ *
+ * The duel is an in-memory session held beside the screen union: the privacy,
+ * battle, round-result and match-result routes read the live round controller's
+ * redacted view, so an inactive hand cannot reach the DOM and a reload cannot
+ * resume a duel (DUEL-FR-03, DUEL-FR-04, DUEL-FR-05, VIS-CON-03).
  *
  * The root also owns the cross-cutting runtime wiring: the versioned settings
  * store, the resolved reduced-motion attribute, the single subscription that
@@ -23,12 +28,23 @@ import { useCallback, useEffect, useState } from 'react';
 import type { MouseEvent, ReactNode } from 'react';
 import { createSfxEngine } from './audio/sfx';
 import { byId as cardCatalog } from './content/cards';
-import { deckByElement } from './content/decks';
+import { deckByElement, STARTER_DECKS } from './content/decks';
 import { enemyById } from './content/enemies';
+import { createMatch, matchWinner, recordRoundWinner, rematch } from './duel/match';
+import type { DuelMatch, DuelPlayer, DuelRound } from './duel/match';
+import {
+  createDuelRound,
+  dismissDuelPrivacy,
+  duelRoundView,
+  endDuelTurn,
+  playDuelCard,
+} from './duel/round';
+import type { DuelRoundState } from './duel/round';
 import type { Settings, SettingsStorage } from './persistence/settings';
 import { createSettingsStore } from './persistence/settings';
 import {
   createBattleControllerState,
+  fieldMatchupFor,
   useBattleController,
 } from './state/battle-controller';
 import type {
@@ -44,8 +60,15 @@ import {
   useReducedMotion,
 } from './ui/motion/useReducedMotion';
 import { BattleScreen } from './ui/screens/BattleScreen';
+import { DuelBattleScreen } from './ui/screens/DuelBattleScreen';
+import type { DuelBattleScreenProps } from './ui/screens/DuelBattleScreen';
+import { DuelSetupScreen } from './ui/screens/DuelSetupScreen';
+import { duelPlayerName, duelScoreText } from './ui/screens/duel-copy';
 import { HowToPlayScreen } from './ui/screens/HowToPlayScreen';
+import { MatchResultScreen } from './ui/screens/MatchResultScreen';
 import { MenuScreen } from './ui/screens/MenuScreen';
+import { PrivacyScreen } from './ui/screens/PrivacyScreen';
+import { RoundResultScreen } from './ui/screens/RoundResultScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
 
 export const SCREEN_KINDS = [
@@ -125,6 +148,78 @@ function buildPracticeBattleConfig(): BattleControllerConfig | null {
 const PRACTICE_BATTLE_CONFIG: BattleControllerConfig | null =
   buildPracticeBattleConfig();
 
+/* -------------------------------------------------------------------------- */
+/* Local duel session                                                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The in-memory duel flow. Duels are intentionally ephemeral (DUEL-FR-05,
+ * VIS-CON-03), so this state is never written to storage and a reload starts
+ * again at the menu.
+ *
+ * `round` holds the live privacy-gated round controller state; the other
+ * variants exist only after `recordRoundWinner` has scored a settled round.
+ */
+type DuelSession =
+  | {
+      readonly phase: 'round';
+      readonly match: DuelMatch;
+      readonly round: DuelRoundState;
+    }
+  | {
+      readonly phase: 'round-result';
+      /** Match after the winner was recorded: the next round or complete. */
+      readonly match: DuelMatch;
+      /** The round that just settled, for the result heading. */
+      readonly round: DuelRound;
+      readonly winner: DuelPlayer;
+    }
+  | { readonly phase: 'match-result'; readonly match: DuelMatch };
+
+/**
+ * Entry state for the test-only `duelMatch` seam. A complete match opens its
+ * result; an in-progress match opens the privacy gate for its current round.
+ */
+function duelSessionFrom(match: DuelMatch | undefined): DuelSession | null {
+  if (match === undefined) {
+    return null;
+  }
+
+  if (match.phase === 'complete') {
+    return { phase: 'match-result', match };
+  }
+
+  const created = createDuelRound(match);
+
+  return created.ok
+    ? { phase: 'round', match, round: created.value }
+    : null;
+}
+
+/**
+ * A fresh unsigned 32-bit match seed. Duels are local and ephemeral, so the
+ * seed only needs to vary between series; the match model derives every round
+ * seed and the rematch seed from it deterministically.
+ */
+let duelSeedCounter = 0;
+
+function freshDuelSeed(): number {
+  duelSeedCounter = (duelSeedCounter + 1) >>> 0;
+
+  if (typeof globalThis.crypto !== 'undefined') {
+    const draw = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(draw);
+
+    const value = draw[0];
+
+    if (value !== undefined) {
+      return value;
+    }
+  }
+
+  return (Date.now() ^ Math.imul(duelSeedCounter, 0x9e3779b1)) >>> 0;
+}
+
 export interface AppProps {
   /**
    * Test-only entry point: mount the composition root directly on a surface.
@@ -147,6 +242,12 @@ export interface AppProps {
    * simulate a browser where storage is unavailable. Production omits it.
    */
   readonly settingsStorage?: SettingsStorage | null;
+  /**
+   * Test-only: mount the duel flow from a prepared match instead of the setup
+   * screen. A completed match opens the match result; an in-progress match
+   * opens its privacy handoff. Production never passes it.
+   */
+  readonly duelMatch?: DuelMatch;
 }
 
 export function App({
@@ -154,8 +255,15 @@ export function App({
   hasSave = false,
   battleConfig,
   settingsStorage,
+  duelMatch,
 }: AppProps = {}) {
   const [screen, setScreen] = useState<Screen>(initialScreen);
+
+  // The whole duel exists only in this state. It is created on demand, holds
+  // the privacy-gated round state, and is discarded on Menu or Change decks.
+  const [duel, setDuel] = useState<DuelSession | null>(() =>
+    duelSessionFrom(duelMatch),
+  );
 
   // The one polite live region for the whole session. Screens publish a
   // settled message; the region replaces its text rather than appending, so a
@@ -265,6 +373,210 @@ export function App({
     emitCue('ui');
   }, []);
 
+  /* ------------------------------------------------------------------------ */
+  /* Duel intents                                                             */
+  /* ------------------------------------------------------------------------ */
+
+  const beginDuelSetup = useCallback(() => {
+    setDuel(null);
+    navigate('duel-setup');
+  }, [navigate]);
+
+  const leaveDuel = useCallback(() => {
+    setDuel(null);
+    navigate('menu');
+  }, [navigate]);
+
+  /**
+   * Creates the privacy-gated round for `match` and shows the handoff. Every
+   * round, including a rematch and the next round in a series, starts here.
+   */
+  const openRound = useCallback(
+    (match: DuelMatch, message: string) => {
+      const created = createDuelRound(match);
+
+      if (!created.ok) {
+        announce(`The duel could not continue: ${created.error.message}`);
+        return;
+      }
+
+      setDuel({ phase: 'round', match, round: created.value });
+      navigate('privacy');
+      announce(message);
+    },
+    [announce, navigate],
+  );
+
+  const handleStartMatch = useCallback(
+    (player1DeckId: string, player2DeckId: string) => {
+      const created = createMatch({
+        player1DeckId,
+        player2DeckId,
+        seed: freshDuelSeed(),
+      });
+
+      if (!created.ok) {
+        announce(`The duel could not start: ${created.error.message}`);
+        return;
+      }
+
+      openRound(
+        created.value,
+        `Pass the device to ${duelPlayerName(created.value.firstPlayer)}.`,
+      );
+    },
+    [announce, openRound],
+  );
+
+  /** The only way past the privacy gate: an explicit ready action. */
+  const handleDuelReady = useCallback(() => {
+    if (duel?.phase !== 'round') {
+      return;
+    }
+
+    const result = dismissDuelPrivacy(duel.round);
+
+    if (!result.ok) {
+      announce(result.error.message);
+      return;
+    }
+
+    setDuel({ phase: 'round', match: duel.match, round: result.value });
+    navigate('battle');
+
+    const view = duelRoundView(result.value);
+
+    if (view.kind === 'battle') {
+      announce(
+        `${duelPlayerName(view.viewer)}'s turn. Turn ${view.turn}.`,
+      );
+    }
+  }, [announce, duel, navigate]);
+
+  /**
+   * Records a settled round and moves the flow to the next round or the match
+   * result. Returns true when the round had settled, so callers do not also
+   * redraw the finished battle.
+   */
+  const settleRound = useCallback(
+    (match: DuelMatch, next: DuelRoundState): boolean => {
+      if (next.phase !== 'complete') {
+        return false;
+      }
+
+      const updated = recordRoundWinner(match, next.roundWinner);
+
+      if (!updated.ok) {
+        announce(`The round could not be scored: ${updated.error.message}`);
+        return true;
+      }
+
+      if (updated.value.phase === 'complete') {
+        setDuel({ phase: 'match-result', match: updated.value });
+        navigate('match-result');
+        announce(
+          `${duelPlayerName(next.roundWinner)} wins the match. ${duelScoreText(
+            updated.value.wins,
+          )}.`,
+        );
+        return true;
+      }
+
+      setDuel({
+        phase: 'round-result',
+        match: updated.value,
+        round: match.round,
+        winner: next.roundWinner,
+      });
+      navigate('round-result');
+      announce(
+        `${duelPlayerName(next.roundWinner)} wins round ${
+          match.round
+        }. ${duelScoreText(updated.value.wins)}.`,
+      );
+      return true;
+    },
+    [announce, navigate],
+  );
+
+  const handleDuelPlay = useCallback(
+    (instanceId: string) => {
+      if (duel?.phase !== 'round') {
+        return;
+      }
+
+      const result = playDuelCard(duel.round, instanceId);
+
+      if (!result.ok) {
+        announce(`That action was refused. ${result.error.message}`);
+        return;
+      }
+
+      emitCue('card-play');
+
+      if (settleRound(duel.match, result.value)) {
+        return;
+      }
+
+      setDuel({ phase: 'round', match: duel.match, round: result.value });
+      announce(`${duelPlayerName(duel.round.viewer)} played a card.`);
+    },
+    [announce, duel, settleRound],
+  );
+
+  const handleDuelEndTurn = useCallback(() => {
+    if (duel?.phase !== 'round') {
+      return;
+    }
+
+    const result = endDuelTurn(duel.round);
+
+    if (!result.ok) {
+      announce(`That action was refused. ${result.error.message}`);
+      return;
+    }
+
+    if (settleRound(duel.match, result.value)) {
+      return;
+    }
+
+    setDuel({ phase: 'round', match: duel.match, round: result.value });
+
+    if (result.value.phase === 'privacy') {
+      navigate('privacy');
+      announce(`Pass the device to ${duelPlayerName(result.value.viewer)}.`);
+    }
+  }, [announce, duel, navigate, settleRound]);
+
+  const handleNextRound = useCallback(() => {
+    if (duel?.phase !== 'round-result') {
+      return;
+    }
+
+    openRound(
+      duel.match,
+      `Pass the device to ${duelPlayerName(duel.match.firstPlayer)}.`,
+    );
+  }, [duel, openRound]);
+
+  const handleRematch = useCallback(() => {
+    if (duel?.phase !== 'match-result') {
+      return;
+    }
+
+    const next = rematch(duel.match);
+
+    if (!next.ok) {
+      announce(`The rematch could not start: ${next.error.message}`);
+      return;
+    }
+
+    openRound(
+      next.value,
+      `Pass the device to ${duelPlayerName(next.value.firstPlayer)}.`,
+    );
+  }, [announce, duel, openRound]);
+
   const handleSoundChange = useCallback(
     (enabled: boolean) => {
       const next: Settings = { ...settings, muted: !enabled };
@@ -293,12 +605,18 @@ export function App({
 
   const battle = battleConfig ?? PRACTICE_BATTLE_CONFIG;
 
+  // Redacted view of the live duel round. `null` whenever no round is running,
+  // so every non-duel route keeps rendering its own surface.
+  const duelView = duel?.phase === 'round' ? duelRoundView(duel.round) : null;
+  const duelMatchWinner =
+    duel?.phase === 'match-result' ? matchWinner(duel.match) : null;
+
   const routes: { readonly [Kind in ScreenKind]: ReactNode } = {
     menu: (
       <MenuScreen
         hasSave={hasSave}
         onPlaySolo={() => navigate('solo-setup')}
-        onLocalDuel={() => navigate('duel-setup')}
+        onLocalDuel={beginDuelSetup}
         // RUN-05 replaces this with the screen stored in the validated save.
         onContinueRun={() => navigate('battle')}
         onHowToPlay={() => navigate('how-to-play')}
@@ -321,19 +639,62 @@ export function App({
     ),
     'solo-setup': pending('Solo setup'),
     'run-overview': pending('Run overview'),
-    battle: (
-      <BattleRoute
-        config={battle}
-        onAnnounce={announce}
-        onExit={() => navigate('menu')}
-      />
-    ),
+    battle:
+      duelView?.kind === 'battle' ? (
+        <DuelBattleRoute
+          view={duelView}
+          cards={cardCatalog}
+          fieldMatchup={fieldMatchupFor(duelView.field)}
+          baseUrl={import.meta.env.BASE_URL}
+          onPlayCard={handleDuelPlay}
+          onEndTurn={handleDuelEndTurn}
+          onExit={leaveDuel}
+        />
+      ) : (
+        <BattleRoute
+          config={battle}
+          onAnnounce={announce}
+          onExit={() => navigate('menu')}
+        />
+      ),
     reward: pending('Reward'),
     'run-result': pending('Run result'),
-    'duel-setup': pending('Duel setup'),
-    privacy: pending('Privacy handoff'),
-    'round-result': pending('Round result'),
-    'match-result': pending('Match result'),
+    'duel-setup': (
+      <DuelSetupScreen
+        decks={STARTER_DECKS}
+        onStartMatch={handleStartMatch}
+        onBack={leaveDuel}
+      />
+    ),
+    privacy:
+      duelView?.kind === 'privacy' ? (
+        <PrivacyScreen viewer={duelView.viewer} onReady={handleDuelReady} />
+      ) : (
+        <DuelUnavailable title="Privacy handoff" onBack={leaveDuel} />
+      ),
+    'round-result':
+      duel?.phase === 'round-result' ? (
+        <RoundResultScreen
+          round={duel.round}
+          winner={duel.winner}
+          wins={duel.match.wins}
+          onNextRound={handleNextRound}
+        />
+      ) : (
+        <DuelUnavailable title="Round result" onBack={leaveDuel} />
+      ),
+    'match-result':
+      duel?.phase === 'match-result' && duelMatchWinner !== null ? (
+        <MatchResultScreen
+          winner={duelMatchWinner}
+          wins={duel.match.wins}
+          onRematch={handleRematch}
+          onChangeDecks={beginDuelSetup}
+          onMenu={leaveDuel}
+        />
+      ) : (
+        <DuelUnavailable title="Match result" onBack={leaveDuel} />
+      ),
   };
 
   return (
@@ -435,6 +796,20 @@ function BattleSession({
   );
 }
 
+/**
+ * The duel battle route adds the same app-wide E shortcut the solo board uses.
+ * The privacy handoff is a separate screen with its own modal listener, so E
+ * can never skip or settle a turn while the device is being passed.
+ */
+function DuelBattleRoute({
+  onEndTurn,
+  ...screenProps
+}: DuelBattleScreenProps) {
+  useKeyboardControls({ onEndTurn, enabled: true });
+
+  return <DuelBattleScreen onEndTurn={onEndTurn} {...screenProps} />;
+}
+
 function BattleUnavailable({
   message,
   onExit,
@@ -450,6 +825,36 @@ function BattleUnavailable({
       <p className="shell__copy">The battle could not start: {message}</p>
       <p>
         <button type="button" className="shell__button" onClick={onExit}>
+          Back to menu
+        </button>
+      </p>
+    </section>
+  );
+}
+
+/**
+ * Reachable only through the `initialScreen` test seam or a transient
+ * navigation mismatch: a duel surface mounted with no live duel. It never
+ * advertises a resumable duel, because duels are not persisted (DUEL-FR-05).
+ */
+function DuelUnavailable({
+  title,
+  onBack,
+}: {
+  readonly title: string;
+  readonly onBack: () => void;
+}) {
+  return (
+    <section className="shell__panel" aria-labelledby="duel-unavailable-title">
+      <h1 className="shell__page-title" id="duel-unavailable-title">
+        {title}
+      </h1>
+      <p className="shell__copy">
+        No duel is in progress. Duels are never saved, so start a new one from
+        the menu.
+      </p>
+      <p>
+        <button type="button" className="shell__button" onClick={onBack}>
           Back to menu
         </button>
       </p>
