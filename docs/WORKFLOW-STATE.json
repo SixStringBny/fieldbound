@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T04:45:41.989Z",
+  "lastUpdatedAt": "2026-10-29T04:51:10.172Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -867,10 +867,47 @@
     },
     "SHL-05": {
       "taskId": "SHL-05",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "ux-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/audio/sfx.ts",
+        "src/audio/sfx.test.ts"
+      ],
+      "startedAt": "2026-10-29T04:47:56.254Z",
+      "usage": {
+        "inputTokens": 42415,
+        "outputTokens": 9874,
+        "reasoningTokens": 22949,
+        "cacheReadTokens": 838656,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.028572017999999998,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/SHL-05.2026-10-29T04-51-10-162Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 42415,
+            "outputTokens": 9874,
+            "reasoningTokens": 22949,
+            "cacheReadTokens": 838656,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.028572017999999998,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T04:51:10.168Z",
+      "agentOutput": "I'll start by reading the execution file and the referenced documentation.\r\nNow I have the full picture. Let me check the `.opencode` skill for any audio conventions (unlikely, but quick) and then write the engine.\r\nBoth gates pass. Let me review the final diff and confirm nothing outside scope changed.\r\nImplemented the SHL-05 cue engine and its test suite, then verified with the required command plus typecheck and the full suite.\n\n**Files created**\n- `src/audio/sfx.ts` — synthesized WebAudio cue engine\n- `src/audio/sfx.test.ts` — 16 focused tests against a mockable AudioContext\n\n**Behaviour delivered**\n- `unlock()` is the only path that constructs an AudioContext (default factory is inert until called), is idempotent, resumes a suspended context, and refuses to wake audio while muted.\n- `play(cue)` schedules oscillator/noise layers with gain envelopes; every recipe ends within 300 ms (max 280 ms) and routes through one low master gain (`0.16`).\n- `setMuted(true)` / `mute()` stops every in-flight source and disconnects source and gain nodes immediately; later cues are skipped until `setMuted(false)`.\n- `dispose()` stops voices, disconnects the master, closes the context, and leaves play silent; a later `unlock()` may open a fresh context.\n- No recorded media anywhere: no fetch/XHR, no audio URLs, no `new Audio`, no `decodeAudioData`, no `import.meta`.\n\n**Validation actually run**\n- `npm test -- src/audio/sfx.test.ts` → 16 passed\n- `npm run typecheck` → exit 0\n- `npm test` → 19 files, 528 tests passed\n\n```forge-result\n{\"summary\":\"Implemented SHL-05: a factory-injected WebAudio cue engine that constructs no AudioContext before unlock, synthesizes all seven cues under 300ms through a low master gain, hard-stops in-flight nodes on mute, skips scheduling while muted, and disposes cleanly; 16 new tests, typecheck and the full 528-test suite pass.\",\"decisions\":[\"unlock() is the sole AudioContext construction path and is suppressed while muted, so muting before the first gesture keeps audio hardware asleep; callers re-unlock on the gesture that unmutes.\",\"Cue recipes live in the exported CUE_SPECS record keyed by the shared CueName union from src/ui/events.ts, making the seven-cue set exhaustive at typecheck and testable for duration.\",\"Mute tears down voices with stop() plus source/gain disconnect rather than only skipping future cues, so a muting click cuts a victory arpeggio at once.\",\"The default AudioContext factory resolves globalThis.AudioContext or webkitAudioContext lazily inside unlock; all tests inject a fake factory, and one test exercises the default path with a stubbed global.\",\"Layer envelopes use a 12ms linear attack to peak and an exponential decay to 0.0001 so there is no click and no invalid zero-valued exponential ramp.\",\"Noise is generated into a short per-cue AudioBuffer; noise and sweep randomness is cosmetic only and never touches gameplay determinism.\"],\"interfaces\":[\"src/audio/sfx.ts: CueName (type-only import from src/ui/events), ToneLayer, NoiseLayer, CueLayer, CueSpec, CUE_SPECS, MAX_CUE_DURATION (0.3), DEFAULT_MASTER_GAIN (0.16), cueDuration(spec).\",\"src/audio/sfx.ts: AudioContextFactory, SfxEngineOptions { createContext?, initialMuted?, masterGain? }, SfxEngine { isUnlocked, isMuted, unlock(), setMuted(muted), mute(), play(cue), dispose() }, createSfxEngine(options?).\",\"Integration contract for SHL-06 is documented in the module header: construct with initialMuted, call unlock() on gestures, play(event.cue) from the cue bus, setMuted(next) from settings.\"],\"tests\":[\"npm test -- src/audio/sfx.test.ts: exit 0, 16 tests passed\",\"npm run typecheck: exit 0\",\"npm test: exit 0, 19 files / 528 tests passed\"],\"unresolved\":[]}\n```\r\n",
+      "artifactId": "work-shl-05-001",
+      "inputArtifactIds": [
+        "work-shl-01-001",
+        "work-shl-02-001",
+        "work-shl-03-001"
+      ]
     },
     "SHL-06": {
       "taskId": "SHL-06",
