@@ -2,9 +2,9 @@
 
 ## Current State
 **Phase**: RELEASE-VERIFICATION-3
-**Status**: Paused
+**Status**: In Progress
 **Validation Gaps**: 4 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T17:27:28.492Z
+**Last Updated**: 2026-10-29T17:34:58.409Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -76,15 +76,21 @@
   - Files: scripts/check-build.mjs, .github/workflows/ci.yml, .github/workflows/pages.yml, README.md
 - [x] Phase RELEASE-VERIFICATION-2, Task REL-06: Enforce the production bundle budget (@qa-automation-engineer)
   - Files: scripts/check-budget.mjs
+- [x] Phase RELEASE-VERIFICATION-3, Task REL-HR-1: Human release review of both journeys
+  - Files: docs/reviews/v1-release-review.json
 
 ## Current Task
 - None currently running
 
 ## Remaining
-- [ ] Phase RELEASE-VERIFICATION-3: Phase 3: Human Review
+- [ ] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-1: Phase 1: Log Domain and Prose
+- [ ] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-2: Phase 2: Controller and Presentation
+- [ ] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-3: Phase 3: Duel Privacy and Screen Wiring
+- [ ] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-4: Phase 4: Persistence and Verification
 
 ## Blockers
-- None
+- Manifest reconciliation added 9 pending task(s): LOG-01, LOG-02, LOG-03, LOG-04, LOG-05, LOG-06, LOG-07, LOG-08, LOG-HR-1
+- Manifest reconciliation changed 34 existing task(s): ENG-00, ENG-01, ENG-02, ENG-03, ENG-04, ENG-05, ENG-06, ENG-07, CNT-01, CNT-02, CNT-03, SHL-01, SHL-02, SHL-03, SHL-04, SHL-05, SHL-06, SHL-07, RUN-01, RUN-02, RUN-06, RUN-03, RUN-04, RUN-05, DUEL-01, DUEL-02, DUEL-03, REL-01, REL-02, REL-03, REL-04, REL-05, REL-06, REL-HR-1
 
 ## Validation Gaps
 - Task SHL-04: jsdom does not compute cascade or animation timing, so motion.css is asserted through its stylesheet text and the hook through behaviour; real-browser motion verification remains with REL-04's Playwright suite.

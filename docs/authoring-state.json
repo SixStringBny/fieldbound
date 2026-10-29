@@ -78,16 +78,5 @@
       ],
       "noSkillsRequired": false
     }
-  },
-  "featureIncrementHandoff": {
-    "featureFingerprints": {
-      "battle-engine.md": "806dcf462ab28b4dcb3762fa7f0c3b9d69d230363f37ba529c7a4f08e4b8a154",
-      "card-content.md": "c3e4de983ebf295b407058bd3e75cae4f41c75e80e9cc4f27278c452d2aca9eb",
-      "game-shell.md": "a251fef4a8990bb049861450e5030d014cef7f585a130d95a4e5b8b5992cde87",
-      "local-duel.md": "7c59fc81bd96d5d6ee47c6a44eb9944f65dce793e884c5f81b4ff633491d2b5c",
-      "release-verification.md": "353318c9b1d5e41c4e500d5332b683d80b0e6dfa0eb834da168f798881dd12eb",
-      "solo-run.md": "e1f67153e138688fb22f712880ea0e98a4d58567a7a0d9ed5e9a7fa946de4f60"
-    },
-    "createdAt": "2026-10-29T16:57:45.387Z"
   }
 }

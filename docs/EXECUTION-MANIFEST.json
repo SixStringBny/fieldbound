@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generatedAt": "2026-10-28T19:13:31.392Z",
+  "generatedAt": "2026-10-29T17:31:56.420Z",
   "granularity": "fine",
   "sourceLayout": "features",
   "repoRoot": "c:\\dev-work\\Card-Game-Project",
@@ -13,7 +13,8 @@
     "Game Shell & Presentation",
     "Solo Run",
     "Local Duel",
-    "Release Verification"
+    "Release Verification",
+    "Battle Log & Dynamic Dialogue"
   ],
   "progressPath": "c:\\dev-work\\Card-Game-Project\\docs\\PROGRESS.md",
   "auditPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-AUDIT.jsonl",
@@ -100,8 +101,7 @@
           "approvalRequired": false,
           "sourceLines": [],
           "produces": "work.eng-00",
-          "inputs": [],
-          "timeoutMs": 3600000
+          "inputs": []
         }
       ]
     },
@@ -170,8 +170,7 @@
           "produces": "work.eng-01",
           "inputs": [
             "work.eng-00"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "ENG-02",
@@ -224,8 +223,7 @@
           "inputs": [
             "work.eng-01",
             "work.eng-00"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "ENG-03",
@@ -278,8 +276,7 @@
           "inputs": [
             "work.eng-01",
             "work.eng-00"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -355,8 +352,7 @@
             "work.eng-02",
             "work.eng-03",
             "work.eng-01"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "ENG-05",
@@ -410,8 +406,7 @@
             "work.eng-01",
             "work.eng-02",
             "work.eng-03"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -485,8 +480,7 @@
           "inputs": [
             "work.eng-04",
             "work.eng-05"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "ENG-07",
@@ -542,8 +536,7 @@
             "work.eng-06",
             "work.eng-04",
             "work.eng-05"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -618,8 +611,7 @@
             "work.eng-01",
             "work.eng-06",
             "work.eng-07"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -693,8 +685,7 @@
           "produces": "work.cnt-02",
           "inputs": [
             "work.cnt-01"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -771,8 +762,7 @@
           "produces": "work.cnt-03",
           "inputs": [
             "work.cnt-02"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -848,8 +838,7 @@
             "work.eng-06",
             "work.eng-07",
             "work.cnt-03"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -940,8 +929,7 @@
             "work.shl-01",
             "work.cnt-03",
             "work.eng-01"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "SHL-03",
@@ -1009,8 +997,7 @@
             "work.eng-07",
             "work.cnt-02",
             "work.shl-01"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -1080,8 +1067,7 @@
           "inputs": [
             "work.shl-02",
             "work.shl-03"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "SHL-05",
@@ -1135,8 +1121,7 @@
             "work.shl-01",
             "work.shl-02",
             "work.shl-03"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "SHL-06",
@@ -1201,8 +1186,7 @@
             "work.shl-05",
             "work.shl-02",
             "work.shl-03"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "SHL-07",
@@ -1260,8 +1244,7 @@
             "work.shl-03",
             "work.shl-06",
             "work.shl-02"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -1338,8 +1321,7 @@
             "work.shl-05",
             "work.shl-06",
             "work.shl-07"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "RUN-02",
@@ -1398,8 +1380,7 @@
             "work.shl-05",
             "work.shl-06",
             "work.shl-07"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "RUN-06",
@@ -1455,8 +1436,7 @@
             "work.shl-05",
             "work.shl-06",
             "work.shl-07"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -1534,8 +1514,7 @@
             "work.run-02",
             "work.eng-05",
             "work.run-06"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -1628,8 +1607,7 @@
             "work.run-02",
             "work.run-03",
             "work.run-06"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "RUN-05",
@@ -1690,8 +1668,7 @@
           "inputs": [
             "work.run-04",
             "work.run-03"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -1767,8 +1744,7 @@
             "work.shl-05",
             "work.shl-06",
             "work.shl-07"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -1841,8 +1817,7 @@
           "produces": "work.duel-02",
           "inputs": [
             "work.duel-01"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -1929,8 +1904,7 @@
           "inputs": [
             "work.duel-02",
             "work.shl-07"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -2004,8 +1978,7 @@
             "work.run-04",
             "work.run-05",
             "work.duel-03"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "REL-02",
@@ -2061,8 +2034,7 @@
             "work.run-05",
             "work.run-04",
             "work.duel-03"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "REL-03",
@@ -2120,8 +2092,7 @@
             "work.duel-03",
             "work.run-04",
             "work.run-05"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "REL-04",
@@ -2184,8 +2155,7 @@
             "work.run-04",
             "work.run-05",
             "work.duel-03"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -2270,8 +2240,7 @@
             "work.rel-02",
             "work.rel-03",
             "work.rel-04"
-          ],
-          "timeoutMs": 3600000
+          ]
         },
         {
           "id": "REL-06",
@@ -2327,8 +2296,7 @@
             "work.rel-02",
             "work.rel-03",
             "work.rel-04"
-          ],
-          "timeoutMs": 3600000
+          ]
         }
       ]
     },
@@ -2408,12 +2376,819 @@
             "work.rel-04",
             "work.rel-05",
             "work.rel-06"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BATTLE-LOG-DYNAMIC-DIALOGUE-1",
+      "title": "Phase 1: Log Domain and Prose",
+      "feature": "Battle Log & Dynamic Dialogue",
+      "description": "```forge-task {   \"id\": \"LOG-01\",",
+      "ownerAgents": [
+        "rules-engineer",
+        "content-designer"
+      ],
+      "dependencies": [
+        "BATTLE-ENGINE-RULES-4",
+        "CARD-ENEMY-CONTENT-3",
+        "GAME-SHELL-PRESENTATION-3",
+        "SOLO-RUN-3",
+        "LOCAL-DUEL-3",
+        "RELEASE-VERIFICATION-3"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "LOG-01",
+          "title": "Define the battle-log domain, derivation and validator",
+          "description": "Create the pure battle-log domain module: typed entries and effects, the transition-to-entry derivation, and the untrusted-log validator. Derive damage, healing, defense, status applications, field shifts and outcome by comparing before/after BattleState; take the played card id from the supplied context. Require a strictly increasing ordinal and a unique id; cap a validated log at the last 80 entries. Do not render prose, import content, call engine mutators, or touch React, DOM or storage.",
+          "ownerAgent": "rules-engineer",
+          "dependencies": [
+            "ENG-01",
+            "ENG-04"
           ],
-          "timeoutMs": 3600000
+          "expectedOutputs": [
+            "src/battle-log/types.ts",
+            "src/battle-log/derive.ts",
+            "src/battle-log/validate.ts",
+            "src/battle-log/derive.test.ts",
+            "src/battle-log/validate.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/battle-log/derive.test.ts src/battle-log/validate.test.ts",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "Damage, healing, defense, status, field and outcome effects are derived from before/after state deltas only",
+              "A validated log is capped at the last 80 entries and preserves the ordinals of the surviving entries",
+              "A card entry requires a card id and a battle-start entry requires the opening opposing maximum health and field",
+              "LOG-FR-01: Record exactly one battle-log entry for each settled transition: a battle-start entry at setup, one card entry for every card played by either side, and one turn entry when control passes between sides. Each entry carries a stable id, a strictly increasing ordinal, the turn number, the acting side, the optional played card id, and an ordered effects list covering damage, healing, defense, status application, field shift and battle outcome. Rejected actions and renders add no entry. Keep at most 80 entries per battle by dropping the oldest.",
+              "LOG-NF-01: Derive log entries, dialogue selection and rendered text as pure functions of the battle seed and the settled transition sequence, such that replaying the same seed and actions produces identical entries and text, and rendering the log leaves BattleState, its PRNG state and the battle outcome unchanged.",
+              "VIS-NFR-04: Use one seeded PRNG for every random decision so a fixed seed and action sequence reproduce identical shuffles, rewards, enemy plans and battle outcomes."
+            ],
+            "acceptanceCriteria": [
+              "Table-driven tests cover damage to either side, healing, defense gain, status application, field shift and victory/defeat, and a zero-delta transition produces no damage, heal, defense, status or field effect",
+              "A card entry without a card id is rejected, and a validated entry with a duplicate id or a non-increasing ordinal is rejected",
+              "An input array of 81 valid entries validates to the last 80 entries with their original ordinals intact",
+              "JSON.stringify then JSON.parse of a validated log round-trips without functions or undefined values",
+              "A repository grep over src/battle-log finds no Math.random call and no engine mutator import"
+            ],
+            "constraints": [
+              "No prose, dialogue or UI strings in this module",
+              "Import only types and frozen constants from src/engine; never import src/content, React, DOM, storage or a controller",
+              "Return canonical new arrays; never mutate the supplied entries",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/features/battle-log.md#5. Technical Approach",
+              "docs/features/battle-engine.md#4.2 Damage pipeline",
+              "docs/features/battle-engine.md#4.4 Status rules",
+              "docs/features/battle-log.md#LOG-FR-01",
+              "docs/features/battle-log.md#LOG-NF-01",
+              "docs/PRD.md#VIS-NFR-04",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.log-01",
+          "inputs": [
+            "work.eng-01",
+            "work.eng-04",
+            "work.eng-06",
+            "work.eng-07",
+            "work.cnt-03",
+            "work.shl-04",
+            "work.shl-05",
+            "work.shl-06",
+            "work.shl-07",
+            "work.run-04",
+            "work.run-05",
+            "work.duel-03",
+            "work.rel-hr-1"
+          ]
+        },
+        {
+          "id": "LOG-02",
+          "title": "Author battle prose and deterministic dialogue",
+          "description": "Author the battle prose and dialogue layer: a bundled narrator set plus per-enemy lines for all four enemies and the boss, a deterministic trigger-to-line picker, and a pure renderer that turns entries into factual and dialogue lines. Use a local 32-bit hash of the battle seed, entry ordinal and trigger tag; never call Math.random or consume the engine PRNG. Keep every line English and at most 140 characters. Do not change card, enemy or battle data, and do not render React.",
+          "ownerAgent": "content-designer",
+          "dependencies": [
+            "LOG-01",
+            "CNT-01"
+          ],
+          "expectedOutputs": [
+            "src/content/battle-dialogue.ts",
+            "src/content/battle-dialogue.test.ts",
+            "src/battle-log/text.ts",
+            "src/battle-log/text.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/content/battle-dialogue.test.ts src/battle-log/text.test.ts",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "Factual lines name the actor, the card and every non-zero effect with its remaining or total value",
+              "Dialogue selection is stable for a seed, ordinal and trigger and covers the narrator plus Cinder Warden, Rime Sentinel, Storm Herald and The Hollow Field",
+              "Rendering a log returns plain strings and leaves the battle state and its PRNG state unchanged",
+              "LOG-FR-02: Render each entry as one factual English sentence, plus at most one dialogue line, from its effects and the card catalog: name the actor and card, state each non-zero delta with remaining and maximum health or total defense, name status stacks and the field matchup in words, and state victory or defeat. Omit zero-value effects. The renderer must not compute damage, draw, status or affordability rules; it only formats engine-reported facts.",
+              "LOG-FR-03: Provide deterministic dynamic dialogue: a neutral narrator line for notable public events and authored per-enemy lines for the battle start, enemy low health, field shift, victory and defeat, including the boss. Select a line from the applicable set using a pure 32-bit hash of the battle seed, the entry ordinal and a trigger tag; never read or advance the engine PRNG, never use Math.random, and never produce more than one dialogue line per entry.",
+              "LOG-NF-01: Derive log entries, dialogue selection and rendered text as pure functions of the battle seed and the settled transition sequence, such that replaying the same seed and actions produces identical entries and text, and rendering the log leaves BattleState, its PRNG state and the battle outcome unchanged.",
+              "VIS-NFR-04: Use one seeded PRNG for every random decision so a fixed seed and action sequence reproduce identical shuffles, rewards, enemy plans and battle outcomes."
+            ],
+            "acceptanceCriteria": [
+              "Every enemy id, including the boss, has battle-start, low-health, victory and defeat line sets, and the narrator has every non-enemy trigger",
+              "The same seed, ordinal and trigger returns the same line on repeated calls, while at least two ordinals select different lines from a set of two or more",
+              "Rendering a battle log does not change BattleState.rngState or the outcome",
+              "A card line includes the card name, the actor and each non-zero damage, heal or defense value; a zero-value effect is omitted",
+              "A field line names the empowered and countered elements in words, and a victory or defeat line closes the final entry",
+              "No line exceeds 140 characters and no test or module calls Math.random"
+            ],
+            "constraints": [
+              "All copy is bundled English; no fetch, remote content or localization framework",
+              "Do not modify card, deck or enemy definitions and do not add a runtime dependency",
+              "The text module imports no React component, controller or storage module",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package.",
+              "VIS-CON-05: Ship English-only strings and no localization framework; all user-facing copy is bundled, not fetched.",
+              "VIS-CON-06: Load art only from committed same-origin SVG placeholders mapped by the manifest, and generate audio only with WebAudio; do not fetch remote fonts, images or audio files."
+            ],
+            "references": [
+              "docs/features/battle-log.md#5.5 What an Entry Contains",
+              "docs/features/battle-log.md#5.6 Dialogue Triggers",
+              "docs/features/card-content.md#4. UI / Interaction Design",
+              "docs/features/battle-log.md#LOG-FR-02",
+              "docs/features/battle-log.md#LOG-FR-03",
+              "docs/features/battle-log.md#LOG-NF-01",
+              "docs/PRD.md#VIS-NFR-04",
+              "docs/PRD.md#VIS-CON-01",
+              "docs/PRD.md#VIS-CON-05",
+              "docs/PRD.md#VIS-CON-06"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.log-02",
+          "inputs": [
+            "work.log-01",
+            "work.cnt-01",
+            "work.eng-06",
+            "work.eng-07",
+            "work.cnt-03",
+            "work.shl-04",
+            "work.shl-05",
+            "work.shl-06",
+            "work.shl-07",
+            "work.run-04",
+            "work.run-05",
+            "work.duel-03",
+            "work.rel-hr-1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BATTLE-LOG-DYNAMIC-DIALOGUE-2",
+      "title": "Phase 2: Controller and Presentation",
+      "feature": "Battle Log & Dynamic Dialogue",
+      "description": "```forge-task {   \"id\": \"LOG-03\",",
+      "ownerAgents": [
+        "frontend-engineer",
+        "ux-engineer"
+      ],
+      "dependencies": [
+        "BATTLE-LOG-DYNAMIC-DIALOGUE-1"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "LOG-03",
+          "title": "Carry a bounded battle log through the battle controller",
+          "description": "Extend the battle controller state with the bounded battle log and append entries for every settled transition: battle setup, each player card, each telegraphed enemy plan step, and each turn handoff. Preserve the existing cue and report contract and the rejection behavior; a rejected intent appends nothing. Accept an optional initial log so a resumed battle keeps its history. Do not render prose, read storage or change engine rules.",
+          "ownerAgent": "frontend-engineer",
+          "dependencies": [
+            "LOG-01",
+            "LOG-02",
+            "SHL-03"
+          ],
+          "expectedOutputs": [
+            "src/state/battle-controller.ts",
+            "src/state/battle-controller.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/state/battle-controller.test.ts",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "A new controller state starts with exactly one battle-start entry and every settled player card, enemy plan step and turn handoff appends exactly one entry",
+              "A rejected intent appends no entry and leaves the existing report and cue behavior unchanged",
+              "An optional initial log is adopted without re-deriving or re-ordering it, and the 80-entry cap drops only the oldest entry",
+              "LOG-FR-01: Record exactly one battle-log entry for each settled transition: a battle-start entry at setup, one card entry for every card played by either side, and one turn entry when control passes between sides. Each entry carries a stable id, a strictly increasing ordinal, the turn number, the acting side, the optional played card id, and an ordered effects list covering damage, healing, defense, status application, field shift and battle outcome. Rejected actions and renders add no entry. Keep at most 80 entries per battle by dropping the oldest.",
+              "LOG-NF-01: Derive log entries, dialogue selection and rendered text as pure functions of the battle seed and the settled transition sequence, such that replaying the same seed and actions produces identical entries and text, and rendering the log leaves BattleState, its PRNG state and the battle outcome unchanged.",
+              "LOG-NF-02: Hold at most 80 entries per battle, keep the latest entry visible without layout shift, and keep the production initial JavaScript plus CSS at or below the existing 300 KB gzip budget with no new runtime dependency.",
+              "VIS-NFR-04: Use one seeded PRNG for every random decision so a fixed seed and action sequence reproduce identical shuffles, rewards, enemy plans and battle outcomes."
+            ],
+            "acceptanceCriteria": [
+              "A fresh controller state has one battle-start entry with ordinal 0 and the opening field",
+              "Playing one affordable card appends exactly one card entry with that card id, the correct actor and the damage, defense, status or field effects the engine produced",
+              "Ending a turn appends one enemy card entry per executed plan step and one turn entry for the handoff back to the player",
+              "A rejected unaffordable or out-of-turn play appends no entry and leaves sequence, report and cues unchanged",
+              "Passing an initial log with three entries yields those three entries unchanged and appends the next ordinal after them",
+              "Appending 81 entries leaves the last 80 in order and preserves their ordinals",
+              "The existing battle-controller tests still pass without changes to their cue or report assertions"
+            ],
+            "constraints": [
+              "The controller remains the only layer that calls engine mutators",
+              "Do not generate prose, dialogue or JSX in the controller",
+              "Do not read or write storage",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/features/battle-log.md#5.4 Data Flow",
+              "docs/features/battle-engine.md#4.1 Turn sequence",
+              "docs/features/game-shell.md#4.2 Battle board layout",
+              "docs/features/battle-log.md#LOG-FR-01",
+              "docs/features/battle-log.md#LOG-NF-01",
+              "docs/features/battle-log.md#LOG-NF-02",
+              "docs/PRD.md#VIS-NFR-04",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.log-03",
+          "inputs": [
+            "work.log-01",
+            "work.log-02",
+            "work.shl-03"
+          ]
+        },
+        {
+          "id": "LOG-04",
+          "title": "Build the accessible battle log strip and drawer",
+          "description": "Build the BattleLog presentational component and its CSS: a one-line latest-entry strip, a 44px Log toggle with aria-expanded, a scrollable history drawer that closes on Escape and restores focus, and a desktop column at 1024px and wider. Render pre-rendered lines only; do not import engine, content, controller or storage modules. Keep the markup a labelled region and ordered list, not an aria-live area. Do not wire screens.",
+          "ownerAgent": "ux-engineer",
+          "dependencies": [
+            "LOG-02",
+            "SHL-02"
+          ],
+          "expectedOutputs": [
+            "src/ui/components/BattleLog.tsx",
+            "src/ui/components/BattleLog.test.tsx",
+            "src/styles/battle-log.css"
+          ],
+          "validationCommands": [
+            "npm test -- src/ui/components/BattleLog.test.tsx",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "The latest entry is always visible and the history is an ordered list inside a labelled region",
+              "The Log toggle is at least 44px, reports aria-expanded and opens and closes the drawer by pointer, Enter and Space; Escape closes it and returns focus to the toggle",
+              "At 1024px and wider the log is a right-hand column, and reduced motion makes entry appearance instant",
+              "LOG-FR-04: Present the log in both battle screens as a labelled, scrollable region: a one-line latest-entry strip is always visible; a Log toggle with a 44px target opens and closes the history drawer on mobile; at 1024px and wider the history is a right-hand column. The drawer closes on Escape and returns focus to the toggle. Newest entries are reachable, the page does not scroll horizontally at 375px, and reduced motion makes entry appearance instant.",
+              "LOG-FR-07: Keep the log out of the live-region path: it is a labelled region and ordered list, not an aria-live area, and the existing single polite battle summary remains the only announcement per settled transition, so no event is announced twice. Entries are readable in DOM order, the latest entry is programmatically discoverable, and the toggle and drawer are fully keyboard operable.",
+              "LOG-NF-02: Hold at most 80 entries per battle, keep the latest entry visible without layout shift, and keep the production initial JavaScript plus CSS at or below the existing 300 KB gzip budget with no new runtime dependency.",
+              "VIS-NFR-01: Render without horizontal page scroll from 375px through 1440px, keep all five hand cards reachable at 375px, and center the board at a maximum width of 1080px on wider screens.",
+              "VIS-NFR-03: Support keyboard-only play, visible focus, 44px minimum interactive targets, text labels beside element colors, dialog focus trapping and reduced-motion behavior; no formal WCAG audit is required in v1."
+            ],
+            "acceptanceCriteria": [
+              "Rendering with an empty log shows a labelled empty state and no latest sentence; rendering with entries shows the newest text in the strip",
+              "The log container has no aria-live attribute and the history is an ordered list in chronological DOM order",
+              "The toggle exposes aria-expanded false then true, and Enter, Space and a pointer click all operate it",
+              "Pressing Escape while the drawer is open closes it and focus returns to the toggle",
+              "Eighty lines render in the list and the drawer is the only scroll container",
+              "The desktop class or data attribute is present at the 1024px breakpoint and the reduced-motion branch sets at most a 1ms transition",
+              "A repository grep of the component and CSS finds no engine, content, controller or storage import and no new dependency"
+            ],
+            "constraints": [
+              "Use plain CSS with custom properties; no UI framework, icon library or animation library",
+              "No hover-only action and no positive tabindex values",
+              "Do not add a second live region",
+              "VIS-CON-01: Use React 19.3.1, Vite 8.3.5, TypeScript 7.0.2, Vitest 5.0.5, Testing Library 16.3.3 and Playwright 1.64.1; add no runtime state, routing or CSS framework, and do not introduce an unverified package."
+            ],
+            "references": [
+              "docs/features/battle-log.md#4. User Stories",
+              "docs/features/game-shell.md#4.2 Battle board layout",
+              "docs/PRD.md#9. Accessibility",
+              "docs/features/battle-log.md#LOG-FR-04",
+              "docs/features/battle-log.md#LOG-FR-07",
+              "docs/features/battle-log.md#LOG-NF-02",
+              "docs/PRD.md#VIS-NFR-01",
+              "docs/PRD.md#VIS-NFR-03",
+              "docs/PRD.md#VIS-CON-01"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.log-04",
+          "inputs": [
+            "work.log-02",
+            "work.shl-02",
+            "work.log-01"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BATTLE-LOG-DYNAMIC-DIALOGUE-3",
+      "title": "Phase 3: Duel Privacy and Screen Wiring",
+      "feature": "Battle Log & Dynamic Dialogue",
+      "description": "```forge-task {   \"id\": \"LOG-05\",",
+      "ownerAgents": [
+        "duel-mode-engineer",
+        "frontend-engineer"
+      ],
+      "dependencies": [
+        "BATTLE-LOG-DYNAMIC-DIALOGUE-2"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "LOG-05",
+          "title": "Add the privacy-safe duel battle log",
+          "description": "Add the shared public battle log to the duel round model: create a battle-start entry, append entries for each settled play and turn handoff, reset per round and cap at 80. Expose the log only in the active battle view; the privacy view and result view carry no log, and no entry may contain a card id that was not played or any other hidden information. Do not persist duel state or call the AI planner.",
+          "ownerAgent": "duel-mode-engineer",
+          "dependencies": [
+            "LOG-01",
+            "LOG-02",
+            "DUEL-02"
+          ],
+          "expectedOutputs": [
+            "src/duel/round.ts",
+            "src/duel/round.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/duel/round.test.ts",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "A new duel round starts with one battle-start entry and appends one card entry per settled play and one turn entry per handoff",
+              "The privacy view and result view expose no log, while the active battle view exposes the shared public entries",
+              "No entry contains an unplayed card id, hand count, deck order, intent or hidden energy, and each round starts a fresh log",
+              "LOG-FR-01: Record exactly one battle-log entry for each settled transition: a battle-start entry at setup, one card entry for every card played by either side, and one turn entry when control passes between sides. Each entry carries a stable id, a strictly increasing ordinal, the turn number, the acting side, the optional played card id, and an ordered effects list covering damage, healing, defense, status application, field shift and battle outcome. Rejected actions and renders add no entry. Keep at most 80 entries per battle by dropping the oldest.",
+              "LOG-FR-05: Record only public information in a duel: card plays, damage, healing, defense, status applications, field shifts, turn boundaries and outcomes. Never record hand contents, draws, deck order, intent, hidden energy or another player's unplayed cards. The privacy interstitial exposes no log or log toggle; the battle view exposes the shared public log; each round starts a fresh log.",
+              "LOG-NF-01: Derive log entries, dialogue selection and rendered text as pure functions of the battle seed and the settled transition sequence, such that replaying the same seed and actions produces identical entries and text, and rendering the log leaves BattleState, its PRNG state and the battle outcome unchanged.",
+              "VIS-NFR-05: After the initial same-origin asset load, make no network requests and transmit no data; all saves, settings and statistics stay in localStorage under Fieldbound keys."
+            ],
+            "acceptanceCriteria": [
+              "A new round's battle view contains one battle-start entry and the privacy view has no log field or log text",
+              "Playing a card appends one card entry naming only that card id and its public effects; the opponent's other hand ids never appear in the serialized view",
+              "Ending a turn appends one turn entry and returns to privacy with no log exposed",
+              "The round result view has no log, and creating the next round starts a new log with ordinal 0",
+              "The log is capped at 80 entries without changing the surviving ordinals",
+              "No localStorage key is read or written and the AI planner is never called"
+            ],
+            "constraints": [
+              "Do not add hidden information to any view",
+              "Do not persist duel state",
+              "Do not copy damage or draw rules into the round controller",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/features/battle-log.md#5.4 Data Flow",
+              "docs/features/local-duel.md#4.3 Privacy interstitial",
+              "docs/features/local-duel.md#4.4 Duel battle",
+              "docs/features/battle-log.md#LOG-FR-01",
+              "docs/features/battle-log.md#LOG-FR-05",
+              "docs/features/battle-log.md#LOG-NF-01",
+              "docs/PRD.md#VIS-NFR-05",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.log-05",
+          "inputs": [
+            "work.log-01",
+            "work.log-02",
+            "work.duel-02",
+            "work.log-03",
+            "work.log-04"
+          ]
+        },
+        {
+          "id": "LOG-06",
+          "title": "Wire the battle log into both battle screens",
+          "description": "Wire the battle log into both battle screens: render the controller's entries through the text renderer and pass the resulting lines to BattleLog; use the enemy name and battle seed in solo and viewer-relative player names in duel. Place the latest strip and drawer without covering End Turn; hide the log entirely on the duel privacy screen. Add App-level tests that navigate to a solo battle and a duel, play a card, end a turn, open the drawer with the keyboard and assert the log; keep the existing live-region announcement single. Do not compute rules or duplicate prose in screens.",
+          "ownerAgent": "frontend-engineer",
+          "dependencies": [
+            "LOG-03",
+            "LOG-04",
+            "LOG-05"
+          ],
+          "expectedOutputs": [
+            "src/ui/screens/BattleScreen.tsx",
+            "src/ui/screens/DuelBattleScreen.tsx",
+            "src/App.battle-log.test.tsx"
+          ],
+          "validationCommands": [
+            "npm test -- src/App.battle-log.test.tsx",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "Rendering App and navigating to a solo battle shows the latest log line and a Log toggle that opens the history",
+              "Rendering App and navigating to a duel shows the shared public log only after privacy is dismissed, and the privacy screen exposes no log",
+              "The existing polite announcement remains the only live-region message for a settled transition",
+              "LOG-FR-02: Render each entry as one factual English sentence, plus at most one dialogue line, from its effects and the card catalog: name the actor and card, state each non-zero delta with remaining and maximum health or total defense, name status stacks and the field matchup in words, and state victory or defeat. Omit zero-value effects. The renderer must not compute damage, draw, status or affordability rules; it only formats engine-reported facts.",
+              "LOG-FR-04: Present the log in both battle screens as a labelled, scrollable region: a one-line latest-entry strip is always visible; a Log toggle with a 44px target opens and closes the history drawer on mobile; at 1024px and wider the history is a right-hand column. The drawer closes on Escape and returns focus to the toggle. Newest entries are reachable, the page does not scroll horizontally at 375px, and reduced motion makes entry appearance instant.",
+              "LOG-FR-05: Record only public information in a duel: card plays, damage, healing, defense, status applications, field shifts, turn boundaries and outcomes. Never record hand contents, draws, deck order, intent, hidden energy or another player's unplayed cards. The privacy interstitial exposes no log or log toggle; the battle view exposes the shared public log; each round starts a fresh log.",
+              "LOG-FR-07: Keep the log out of the live-region path: it is a labelled region and ordered list, not an aria-live area, and the existing single polite battle summary remains the only announcement per settled transition, so no event is announced twice. Entries are readable in DOM order, the latest entry is programmatically discoverable, and the toggle and drawer are fully keyboard operable.",
+              "VIS-NFR-03: Support keyboard-only play, visible focus, 44px minimum interactive targets, text labels beside element colors, dialog focus trapping and reduced-motion behavior; no formal WCAG audit is required in v1."
+            ],
+            "acceptanceCriteria": [
+              "The App-level solo test starts a battle, sees the battle-start line, plays a card, sees a new latest line naming the card, ends a turn and sees an enemy entry",
+              "The App-level solo test opens the log with Enter or Space, closes it with Escape and finds focus back on the toggle",
+              "The App-level duel test starts a match, asserts the privacy screen has no log or Log toggle, dismisses privacy, plays a card and sees only the public entry",
+              "The live region receives exactly one summary per settled transition and the log region is not an aria-live area",
+              "The log is rendered through src/battle-log/text.ts and neither screen imports a damage, status or draw function",
+              "The latest strip and drawer do not prevent End Turn from being reachable at 375px"
+            ],
+            "constraints": [
+              "Screens may not import engine mutators or duplicate prose",
+              "Do not add a new screen, route or storage read",
+              "Do not change the existing announcement wording or make the log live",
+              "VIS-CON-08: Keep gameplay rules in the pure engine and content values in data files; UI, controllers and content must not duplicate damage, draw, status or affordability logic."
+            ],
+            "references": [
+              "docs/features/battle-log.md#5.4 Data Flow",
+              "docs/features/game-shell.md#4.2 Battle board layout",
+              "docs/PRD.md#9. Accessibility",
+              "docs/features/battle-log.md#LOG-FR-02",
+              "docs/features/battle-log.md#LOG-FR-04",
+              "docs/features/battle-log.md#LOG-FR-05",
+              "docs/features/battle-log.md#LOG-FR-07",
+              "docs/PRD.md#VIS-NFR-03",
+              "docs/PRD.md#VIS-CON-08"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.log-06",
+          "inputs": [
+            "work.log-03",
+            "work.log-04",
+            "work.log-05"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BATTLE-LOG-DYNAMIC-DIALOGUE-4",
+      "title": "Phase 4: Persistence and Verification",
+      "feature": "Battle Log & Dynamic Dialogue",
+      "description": "```forge-task {   \"id\": \"LOG-07\",",
+      "ownerAgents": [
+        "solo-mode-engineer",
+        "qa-automation-engineer"
+      ],
+      "dependencies": [
+        "BATTLE-LOG-DYNAMIC-DIALOGUE-3"
+      ],
+      "approvalRequired": true,
+      "tasks": [
+        {
+          "id": "LOG-07",
+          "title": "Persist and restore the solo battle log",
+          "description": "Add the additive battleLog field to the run save contract and carry it through solo creation, autosave and resume. Serialize the battle controller's bounded log in the battle phase, normalize it to null outside a battle, validate untrusted entries, and drop only the log when it is malformed so the rest of the save still resumes. Restore the entries into the resumed controller state in order. Do not add a storage key or bump the save schema version.",
+          "ownerAgent": "solo-mode-engineer",
+          "dependencies": [
+            "LOG-01",
+            "LOG-03",
+            "RUN-03",
+            "RUN-05"
+          ],
+          "expectedOutputs": [
+            "src/persistence/run-save.ts",
+            "src/persistence/run-save.test.ts",
+            "src/state/run-controller.ts",
+            "src/state/run-controller.test.ts",
+            "src/state/resume-run.ts",
+            "src/state/resume-run.test.ts"
+          ],
+          "validationCommands": [
+            "npm test -- src/persistence/run-save.test.ts src/state/run-controller.test.ts src/state/resume-run.test.ts",
+            "npm run typecheck"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "A battle-phase save carries the exact bounded log and a non-battle-phase save carries null",
+              "A valid save round-trips the entries in order and Continue Run restores them into the controller state",
+              "A missing battleLog restores an empty log and a malformed battleLog is dropped without discarding the rest of the save",
+              "LOG-FR-06: Persist the solo battle log as an additive optional battleLog array inside the existing fieldbound.run.v1 payload, capped at 80 entries, written with every settled-action save and restored byte-for-byte in order by Continue Run. A missing log restores an empty log; an invalid log is dropped without discarding the rest of the save. Add no localStorage key and do not change the run save schema version.",
+              "LOG-NF-03: Keep the feature local-only: no network request, telemetry or remote content; store log data only inside the existing solo run key; never write duel logs to storage.",
+              "RUN-FR-05: Autosave the run to one versioned localStorage slot after every settled action, including card plays, turn ends, reward choices, encounter starts and run end, and offer Continue Run on load with the exact saved battle.",
+              "VIS-NFR-05: After the initial same-origin asset load, make no network requests and transmit no data; all saves, settings and statistics stay in localStorage under Fieldbound keys.",
+              "VIS-NFR-06: Validate every persisted payload against its schema version before use; on corrupt, foreign or unknown-version data, discard only the affected key and continue with defaults."
+            ],
+            "acceptanceCriteria": [
+              "Saving a battle with three log entries then loading it returns the same three entries in the same order",
+              "A battle-phase save without battleLog validates and resumes with an empty log",
+              "A battleLog containing an unknown effect, a duplicate id, a non-increasing ordinal or a non-integer amount is dropped to an empty log while the run and restored battle still load",
+              "A battleLog with 81 valid entries loads as the last 80 entries",
+              "A reward-phase, overview-phase or result-phase save serializes battleLog as null",
+              "Saving, loading and resuming never read or write fieldbound.settings.v1, fieldbound.stats.v1 or a fourth key",
+              "RUN_SAVE_SCHEMA_VERSION remains 1 and the existing run-save tests still pass"
+            ],
+            "constraints": [
+              "Only the run module may touch fieldbound.run.v1",
+              "Validate before reconstructing any state; a bad log must not become a thrown error",
+              "Do not change the run save schema version or add a storage key",
+              "VIS-CON-03: Ship no backend, accounts, cloud save, telemetry or remote API; persist only the run, settings and stats keys in localStorage, and never transmit them."
+            ],
+            "references": [
+              "docs/features/solo-run.md#4.3 Save contract",
+              "docs/features/battle-log.md#5.7 Persistence Shape",
+              "docs/features/battle-log.md#5.4 Data Flow",
+              "docs/features/battle-log.md#LOG-FR-06",
+              "docs/features/battle-log.md#LOG-NF-03",
+              "docs/features/solo-run.md#RUN-FR-05",
+              "docs/PRD.md#VIS-NFR-05",
+              "docs/PRD.md#VIS-NFR-06",
+              "docs/PRD.md#VIS-CON-03"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.log-07",
+          "inputs": [
+            "work.log-01",
+            "work.log-03",
+            "work.run-03",
+            "work.run-05",
+            "work.log-05",
+            "work.log-06"
+          ]
+        },
+        {
+          "id": "LOG-08",
+          "title": "Verify the battle log in the production build",
+          "description": "Add a Playwright journey for the battle log against the production build: start a seeded solo run, play a card, assert the latest line names the action, open and close the log with the keyboard, reload mid-battle, resume and assert the history returns; then start a duel, assert the privacy screen exposes no log, dismiss, play a public card and assert the log; check 375px has no horizontal scroll and 1280px shows the log column. Fail on console errors and keep the existing budget check passing.",
+          "ownerAgent": "qa-automation-engineer",
+          "dependencies": [
+            "LOG-06",
+            "LOG-07",
+            "REL-01"
+          ],
+          "expectedOutputs": [
+            "tests/e2e/battle-log.spec.ts"
+          ],
+          "validationCommands": [
+            "npm run test:e2e -- tests/e2e/battle-log.spec.ts",
+            "node scripts/check-budget.mjs"
+          ],
+          "contract": {
+            "version": 1,
+            "kind": "implementation",
+            "requirements": [
+              "A seeded solo battle shows a new log line after a card play and after a completed turn",
+              "A mid-battle reload followed by Continue Run restores the same log history",
+              "A duel privacy screen exposes no log or log toggle, and the active duel turn exposes only public entries",
+              "The log drawer is keyboard operable at 375px without horizontal page scroll, and the desktop column is visible at 1280px",
+              "LOG-FR-04: Present the log in both battle screens as a labelled, scrollable region: a one-line latest-entry strip is always visible; a Log toggle with a 44px target opens and closes the history drawer on mobile; at 1024px and wider the history is a right-hand column. The drawer closes on Escape and returns focus to the toggle. Newest entries are reachable, the page does not scroll horizontally at 375px, and reduced motion makes entry appearance instant.",
+              "LOG-FR-05: Record only public information in a duel: card plays, damage, healing, defense, status applications, field shifts, turn boundaries and outcomes. Never record hand contents, draws, deck order, intent, hidden energy or another player's unplayed cards. The privacy interstitial exposes no log or log toggle; the battle view exposes the shared public log; each round starts a fresh log.",
+              "LOG-FR-06: Persist the solo battle log as an additive optional battleLog array inside the existing fieldbound.run.v1 payload, capped at 80 entries, written with every settled-action save and restored byte-for-byte in order by Continue Run. A missing log restores an empty log; an invalid log is dropped without discarding the rest of the save. Add no localStorage key and do not change the run save schema version.",
+              "LOG-FR-07: Keep the log out of the live-region path: it is a labelled region and ordered list, not an aria-live area, and the existing single polite battle summary remains the only announcement per settled transition, so no event is announced twice. Entries are readable in DOM order, the latest entry is programmatically discoverable, and the toggle and drawer are fully keyboard operable.",
+              "LOG-NF-02: Hold at most 80 entries per battle, keep the latest entry visible without layout shift, and keep the production initial JavaScript plus CSS at or below the existing 300 KB gzip budget with no new runtime dependency.",
+              "LOG-NF-03: Keep the feature local-only: no network request, telemetry or remote content; store log data only inside the existing solo run key; never write duel logs to storage.",
+              "VIS-NFR-01: Render without horizontal page scroll from 375px through 1440px, keep all five hand cards reachable at 375px, and center the board at a maximum width of 1080px on wider screens.",
+              "VIS-NFR-02: Keep initial JavaScript plus CSS at or below 300 KB gzip in the production build, make card actions visible within 100ms of input, and avoid layout shift when SVGs load.",
+              "VIS-NFR-07: Support the current and previous major versions of Chrome, Edge, Firefox and Safari, including iOS 16 or newer Safari on a 375px viewport."
+            ],
+            "acceptanceCriteria": [
+              "The solo spec plays one affordable card and asserts the latest region text contains that card's name and the acting player",
+              "The solo spec opens the drawer with Enter, closes it with Escape, reloads mid-battle, resumes with Continue Run and asserts the same entry text is still present",
+              "The duel spec asserts no log text or Log toggle exists while privacy is displayed, then after dismissal plays a card and asserts a public entry appears",
+              "At 375x667 the document scrollWidth does not exceed innerWidth while the drawer is open and closed, and End Turn remains reachable",
+              "At 1280x800 the log column is visible without opening a drawer",
+              "The spec collects console errors and fails on any non-empty collection, and node scripts/check-budget.mjs still passes"
+            ],
+            "constraints": [
+              "Use the existing tests/e2e/helpers.ts journey helpers and the production dist served by playwright.config.ts",
+              "Do not mock application modules or reach into controller state; assert user-visible text and roles",
+              "Keep the long solo journey on Chromium; do not add a new Playwright project"
+            ],
+            "references": [
+              "docs/features/battle-log.md#4. User Stories",
+              "docs/features/release-verification.md#4.1 E2E harness",
+              "docs/features/release-verification.md#4.4 Responsive and accessibility checks",
+              "docs/features/battle-log.md#LOG-FR-04",
+              "docs/features/battle-log.md#LOG-FR-05",
+              "docs/features/battle-log.md#LOG-FR-06",
+              "docs/features/battle-log.md#LOG-FR-07",
+              "docs/features/battle-log.md#LOG-NF-02",
+              "docs/features/battle-log.md#LOG-NF-03",
+              "docs/PRD.md#VIS-NFR-01",
+              "docs/PRD.md#VIS-NFR-02",
+              "docs/PRD.md#VIS-NFR-07"
+            ]
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.log-08",
+          "inputs": [
+            "work.log-06",
+            "work.log-07",
+            "work.rel-01",
+            "work.log-05"
+          ]
+        },
+        {
+          "id": "LOG-HR-1",
+          "title": "Human review of battle-log readability and dialogue",
+          "description": "Review the running static build at 390x844 and 1280x800. Complete a solo battle far enough to see player cards, an enemy turn, a field shift and a victory or defeat, and complete a duel turn after dismissing privacy. Judge whether the latest line makes the turn understandable without opening the drawer, whether the drawer is discoverable and keyboard operable, whether dialogue tone and frequency help rather than distract, and whether the duel log ever exposes hidden information. Record what was exercised, viewport sizes, and any gaps in docs/reviews/battle-log-review.json.",
+          "dependencies": [
+            "LOG-08"
+          ],
+          "expectedOutputs": [],
+          "validationCommands": [],
+          "contract": {
+            "version": 1,
+            "kind": "human-review",
+            "requirements": [
+              "The reviewer completes the primary solo and duel journeys against the running production build",
+              "The review judges readability, dialogue tone and frequency, drawer discoverability and duel privacy",
+              "The review records what was exercised and any unresolved gaps",
+              "LOG-FR-03: Provide deterministic dynamic dialogue: a neutral narrator line for notable public events and authored per-enemy lines for the battle start, enemy low health, field shift, victory and defeat, including the boss. Select a line from the applicable set using a pure 32-bit hash of the battle seed, the entry ordinal and a trigger tag; never read or advance the engine PRNG, never use Math.random, and never produce more than one dialogue line per entry.",
+              "LOG-FR-04: Present the log in both battle screens as a labelled, scrollable region: a one-line latest-entry strip is always visible; a Log toggle with a 44px target opens and closes the history drawer on mobile; at 1024px and wider the history is a right-hand column. The drawer closes on Escape and returns focus to the toggle. Newest entries are reachable, the page does not scroll horizontally at 375px, and reduced motion makes entry appearance instant.",
+              "LOG-FR-05: Record only public information in a duel: card plays, damage, healing, defense, status applications, field shifts, turn boundaries and outcomes. Never record hand contents, draws, deck order, intent, hidden energy or another player's unplayed cards. The privacy interstitial exposes no log or log toggle; the battle view exposes the shared public log; each round starts a fresh log.",
+              "VIS-NFR-03: Support keyboard-only play, visible focus, 44px minimum interactive targets, text labels beside element colors, dialog focus trapping and reduced-motion behavior; no formal WCAG audit is required in v1."
+            ],
+            "acceptanceCriteria": [
+              "The reviewer completed a solo battle and a duel turn at 390x844 and 1280x800 against the built app",
+              "The review states whether the latest line alone explained each turn and whether the drawer was discoverable without instruction",
+              "The review states whether dialogue tone and frequency were acceptable and whether any line was confusing or repetitive",
+              "The review confirms the duel privacy screen exposed no log, card name, health, field or intent information",
+              "The review records what was exercised and any unresolved gaps in docs/reviews/battle-log-review.json"
+            ],
+            "constraints": [
+              "Do not approve from screenshots alone; the primary journeys must be completed against the running system",
+              "Do not claim WCAG conformance or a formal accessibility audit",
+              "Do not change implementation files during the review"
+            ],
+            "references": [
+              "docs/features/battle-log.md#4. User Stories",
+              "docs/features/battle-log.md#5.6 Dialogue Triggers",
+              "docs/reviews/v1-release-review.json",
+              "docs/features/battle-log.md#LOG-FR-03",
+              "docs/features/battle-log.md#LOG-FR-04",
+              "docs/features/battle-log.md#LOG-FR-05",
+              "docs/PRD.md#VIS-NFR-03"
+            ],
+            "reviewFile": "docs/reviews/battle-log-review.json"
+          },
+          "requiredCapabilities": [
+            "repository-tools"
+          ],
+          "approvalRequired": false,
+          "sourceLines": [],
+          "produces": "work.log-hr-1",
+          "inputs": [
+            "work.log-08",
+            "work.log-05",
+            "work.log-06"
+          ]
         }
       ]
     }
   ],
-  "warnings": [],
+  "warnings": [
+    "Manifest reconciliation: 9 new task(s) start pending.",
+    "Manifest reconciliation: 34 existing task(s) changed; review their preserved state before running.",
+    "Team validation: file 'src/state/run-controller.ts' is owned by multiple agents (frontend-engineer, solo-mode-engineer).",
+    "Team validation: file 'src/state/run-controller.test.ts' is owned by multiple agents (frontend-engineer, solo-mode-engineer).",
+    "Team validation: file 'src/state/resume-run.ts' is owned by multiple agents (frontend-engineer, solo-mode-engineer).",
+    "Team validation: file 'src/state/resume-run.test.ts' is owned by multiple agents (frontend-engineer, solo-mode-engineer)."
+  ],
+  "reconciliation": {
+    "previousGeneratedAt": "2026-10-28T19:13:31.392Z",
+    "preservedTaskIds": [
+      "ENG-00",
+      "ENG-01",
+      "ENG-02",
+      "ENG-03",
+      "ENG-04",
+      "ENG-05",
+      "ENG-06",
+      "ENG-07",
+      "CNT-01",
+      "CNT-02",
+      "CNT-03",
+      "SHL-01",
+      "SHL-02",
+      "SHL-03",
+      "SHL-04",
+      "SHL-05",
+      "SHL-06",
+      "SHL-07",
+      "RUN-01",
+      "RUN-02",
+      "RUN-06",
+      "RUN-03",
+      "RUN-04",
+      "RUN-05",
+      "DUEL-01",
+      "DUEL-02",
+      "DUEL-03",
+      "REL-01",
+      "REL-02",
+      "REL-03",
+      "REL-04",
+      "REL-05",
+      "REL-06",
+      "REL-HR-1"
+    ],
+    "newTaskIds": [
+      "LOG-01",
+      "LOG-02",
+      "LOG-03",
+      "LOG-04",
+      "LOG-05",
+      "LOG-06",
+      "LOG-07",
+      "LOG-08",
+      "LOG-HR-1"
+    ],
+    "removedTaskIds": [],
+    "changedTaskIds": [
+      "ENG-00",
+      "ENG-01",
+      "ENG-02",
+      "ENG-03",
+      "ENG-04",
+      "ENG-05",
+      "ENG-06",
+      "ENG-07",
+      "CNT-01",
+      "CNT-02",
+      "CNT-03",
+      "SHL-01",
+      "SHL-02",
+      "SHL-03",
+      "SHL-04",
+      "SHL-05",
+      "SHL-06",
+      "SHL-07",
+      "RUN-01",
+      "RUN-02",
+      "RUN-06",
+      "RUN-03",
+      "RUN-04",
+      "RUN-05",
+      "DUEL-01",
+      "DUEL-02",
+      "DUEL-03",
+      "REL-01",
+      "REL-02",
+      "REL-03",
+      "REL-04",
+      "REL-05",
+      "REL-06",
+      "REL-HR-1"
+    ]
+  },
   "responsibilityMatrixPath": "c:\\dev-work\\Card-Game-Project\\docs\\agent-responsibility-matrix.md"
 }

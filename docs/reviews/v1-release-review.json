@@ -1,13 +1,13 @@
 {
   "taskId": "REL-HR-1",
-  "taskDigest": "8c5db0ed6dc022c787ece2d0f4e0884610edd9fa2096841e550e81da92d93cf6",
-  "reviewer": "SixStringBunny",
-  "reviewedAt": "2026-10-29T16:55:22.809Z",
+  "taskDigest": "22f2d055be132bb8ef6af16bb8eb9b322e38036c3820dd8f95e7ca8753bf0711",
+  "reviewer": "Doug",
+  "reviewedAt": "2026-10-29T17:34:54.311Z",
   "decision": "approved",
   "evidence": [
     {
       "path": "docs/reviews/REL-HR-1-console-review.md",
-      "sha256": "f33939db28a8d09811052e6316db591e548472e16eef3c8f17bf934419b7b129"
+      "sha256": "bfc769b09987205e64c0f84acfd48f1ffa131d5ab6b6d60027498c92ae03bc01"
     }
   ]
 }

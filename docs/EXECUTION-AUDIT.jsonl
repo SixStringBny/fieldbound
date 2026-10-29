@@ -288,3 +288,8 @@
 {"timestamp":"2026-10-29T16:55:27.433Z","action":"run.complete","runId":"8d8c7086-35b8-4e1f-ab83-08fc940bcf62"}
 {"timestamp":"2026-10-29T17:27:28.373Z","action":"run.started","runId":"8d8c7086-35b8-4e1f-ab83-08fc940bcf62","note":"harness=opencode"}
 {"timestamp":"2026-10-29T17:27:28.488Z","action":"run.paused","runId":"8d8c7086-35b8-4e1f-ab83-08fc940bcf62","note":"Human review required for REL-HR-1. Record operator evidence with workflow-engine approve-task (or the Console), then resume. --yes does not approve human work."}
+{"timestamp":"2026-10-29T17:31:56.434Z","action":"manifest.compiled","note":"c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json"}
+{"timestamp":"2026-10-29T17:34:58.229Z","action":"state.reconciled","runId":"8d8c7086-35b8-4e1f-ab83-08fc940bcf62","note":"manifest=2026-10-29T17:31:56.420Z"}
+{"timestamp":"2026-10-29T17:34:58.233Z","action":"run.started","runId":"8d8c7086-35b8-4e1f-ab83-08fc940bcf62","note":"harness=opencode"}
+{"timestamp":"2026-10-29T17:34:58.385Z","action":"phase.started","runId":"8d8c7086-35b8-4e1f-ab83-08fc940bcf62","phaseId":"RELEASE-VERIFICATION-3"}
+{"timestamp":"2026-10-29T17:34:58.401Z","action":"task.complete","runId":"8d8c7086-35b8-4e1f-ab83-08fc940bcf62","taskId":"REL-HR-1","note":"Human attestation: docs/reviews/v1-release-review.json"}
