@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T06:56:43.471Z",
+  "lastUpdatedAt": "2026-10-29T07:02:50.882Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "GAME-SHELL-PRESENTATION-3",
+  "currentPhase": "LOCAL-DUEL-1",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -1022,10 +1022,50 @@
     },
     "RUN-01": {
       "taskId": "RUN-01",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "solo-mode-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/run/run-model.ts",
+        "src/run/run-model.test.ts"
+      ],
+      "startedAt": "2026-10-29T06:57:05.528Z",
+      "usage": {
+        "inputTokens": 76056,
+        "outputTokens": 18319,
+        "reasoningTokens": 38117,
+        "cacheReadTokens": 2682752,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.05331825599999999,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/RUN-01.2026-10-29T07-02-50-872Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 76056,
+            "outputTokens": 18319,
+            "reasoningTokens": 38117,
+            "cacheReadTokens": 2682752,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.05331825599999999,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T07:02:50.879Z",
+      "agentOutput": "I'll start by reading the execution file and exploring the project structure.\r\nNow I have enough context. Let me create the run model.\r\nNow the test suite:\r\nThe required checks pass. Let me tighten two invariants before the final run: a defeat must report 0 health, and card ids must not carry surrounding whitespace.\r\nImplemented and verified RUN-01.\n\n**Files created**\n- `src/run/run-model.ts`\n- `src/run/run-model.test.ts`\n\n**Validation**\n- `npm test -- src/run/run-model.test.ts` → 105 tests passed\n- `npm run typecheck` → passed\n\n```forge-result\n{\n  \"summary\": \"Implemented the pure solo run model: creation from a starter element and seed, the fixed four-enemy ladder, health/deck/totals carry, normal-victory heal 12 capped at 40, boss victory without reward, defeat preservation, atomic one-shot reward resolution, derived result summaries, and a total run-state validator. The required test suite (105 tests) and typecheck pass.\",\n  \"decisions\": [\n    \"RunState carries the fixed seed, but RunSaveV1 hoists it beside rngState; the nested serialized run can match the documented save-contract fields.\",\n    \"Creation starts in an overview phase so the run overview screen exists and a battle-phase save must have a battle snapshot; the controller calls startEncounter to open a fight.\",\n    \"applyBattleResult accepts the engine's final player health plus reported turn and damage totals, because BattleState does not accumulate damage and in-battle healing must survive the carry exactly.\",\n    \"Normal victories heal 12 before entering reward; boss victories enter victory with no heal and no reward; defeats enter defeat and preserve the encounter index and all totals.\",\n    \"resolveReward is the single atomic transition out of reward, so a second choice is rejected by the phase guard and cannot add a duplicate card.\",\n    \"The reported damage must be at least the health actually lost, and a defeat must report 0 health, so an impossible battle report is a typed rejection.\",\n    \"validateRunState reconstructs a canonical run from untrusted data, ignores unknown extra keys, and enforces phase/encounter agreement without importing storage or the card catalog.\"\n  ],\n  \"interfaces\": [\n    \"src/run/run-model.ts: RUN_SCHEMA_VERSION=1, RUN_MAX_HEALTH=40, RUN_HEAL=12, RUN_LADDER (content ENEMIES in ladder order), RUN_ENCOUNTER_COUNT=4, RUN_PHASES.\",\n    \"Types: RunPhase, RunState (schemaVersion, seed, element, health, deck, encounterIndex, turnsTotal, cardsAdded, damageTaken, phase), RunBattleResult, RunRewardChoice, RunSummary, RunResult<T>, RunErrorCode.\",\n    \"Transitions: createRun(element, seed), startEncounter(run), applyBattleResult(run, result), resolveReward(run, choice), validateRunState(input).\",\n    \"Queries: currentEnemy(run), isBossEncounter(run), isRunOver(run), encountersCleared(run), reachedEncounter(run), runSummary(run).\"\n  ],\n  \"tests\": [\n    \"npm test -- src/run/run-model.test.ts: exit 0, 105 tests passed\",\n    \"npm run typecheck: exit 0\"\n  ],\n  \"warnings\": [\n    \"RUN-03 must persist run.seed at RunSaveV1 top level and validate deck card ids against the card catalog; validateRunState is structural and deliberately does not import the catalog.\",\n    \"RUN-04 should call startEncounter after createRun or resolveReward because a created run and a post-reward run are in the overview phase.\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-run-01-001",
+      "inputArtifactIds": [
+        "work-eng-05-001",
+        "work-cnt-02-001",
+        "work-shl-04-001",
+        "work-shl-05-001",
+        "work-shl-06-001",
+        "work-shl-07-001"
+      ]
     },
     "RUN-02": {
       "taskId": "RUN-02",

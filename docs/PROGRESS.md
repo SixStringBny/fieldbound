@@ -1,10 +1,10 @@
 # Project Progress
 
 ## Current State
-**Phase**: GAME-SHELL-PRESENTATION-3
+**Phase**: LOCAL-DUEL-1
 **Status**: In Progress
 **Validation Gaps**: 1 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T06:56:43.474Z
+**Last Updated**: 2026-10-29T07:02:50.885Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -46,6 +46,8 @@
   - Files: src/ui/screens/SettingsScreen.tsx, src/persistence/settings.ts, src/persistence/settings.test.ts, src/App.tsx, src/App.settings.test.tsx, src/styles/base.css
 - [x] Phase GAME-SHELL-PRESENTATION-3, Task SHL-07: Add keyboard controls, live announcements and focus handling (@frontend-engineer)
   - Files: src/ui/a11y/useKeyboardControls.ts, src/ui/components/LiveRegion.tsx, src/ui/a11y/useKeyboardControls.test.tsx, src/App.tsx, src/App.a11y.test.tsx
+- [x] Phase SOLO-RUN-1, Task RUN-01: Implement run creation, ladder progression and healing (@solo-mode-engineer)
+  - Files: src/run/run-model.ts, src/run/run-model.test.ts
 
 ## Current Task
 - None currently running
