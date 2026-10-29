@@ -210,6 +210,18 @@ function continueRunHint(state: SoloRunState): string {
   }
 }
 
+/**
+ * The deck line under the Continue hint. The menu never reads storage or the
+ * catalog itself; the composition root hands it the restored run's deck name
+ * and current size, and the screen renders exactly that.
+ */
+function continueDeckSummary(state: SoloRunState): string {
+  const deck = deckByElement(state.run.element);
+  const name = deck?.name ?? state.run.element;
+
+  return `${name} deck · ${state.run.deck.length} cards`;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Local duel session                                                         */
 /* -------------------------------------------------------------------------- */
@@ -980,7 +992,12 @@ export function App({
     menu: (
       <MenuScreen
         hasSave={showContinueRun}
-        {...(runState === null ? {} : { resumeHint: continueRunHint(runState) })}
+        {...(runState === null
+          ? {}
+          : {
+              resumeHint: continueRunHint(runState),
+              deckSummary: continueDeckSummary(runState),
+            })}
         onPlaySolo={() => navigate('solo-setup')}
         onLocalDuel={beginDuelSetup}
         onContinueRun={handleContinueRun}
