@@ -1,0 +1,269 @@
+/**
+ * Fieldbound motion layer (SHL-FR-04, game-shell section 4.5, PRD section 9).
+ *
+ * Normal branch durations from the documented motion table:
+ *
+ *   card draw          180ms  translate + fade
+ *   card play          160ms  lift and fade
+ *   damage number      400ms  float and fade
+ *   field shift        300ms  palette crossfade
+ *   hover/focus lift   120ms  transform
+ *
+ * Durations come from tokens.css. Each `var()` keeps the documented value as a
+ * fallback so this stylesheet is self-contained if it is loaded without the
+ * token file.
+ *
+ * Reduced motion is a resolved state, not a lock: `prefers-reduced-motion` is
+ * the initial value, `data-reduced-motion` on the app root can force either
+ * direction, and the explicit `false` rules sit last so an in-app "motion on"
+ * choice wins over a matching OS query. Reduced mode removes every transform
+ * and caps transitions at 1ms. The damage number is not removed: it stays
+ * visible for its full 400ms, it just stops moving.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Normal branch                                                              */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Draw: a hand card fades and rises into place when its list item mounts.
+ * The generic `[data-motion]` hooks below let the controller mark a transient
+ * element (a played card leaving the board, a damage float) without the
+ * presentation layer owning the timing.
+ */
+.hand__item,
+[data-motion='draw'] {
+  animation: fb-motion-draw var(--fb-motion-draw, 180ms)
+    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+}
+
+[data-motion='play'] {
+  animation: fb-motion-play var(--fb-motion-play, 160ms)
+    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+}
+
+[data-motion='damage'] {
+  animation: fb-motion-damage var(--fb-motion-damage, 400ms)
+    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+}
+
+[data-motion='shift'] {
+  animation: fb-motion-shift var(--fb-motion-shift, 300ms)
+    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+}
+
+/*
+ * Field shift: the field banner and the panels that borrow the element accent
+ * crossfade their palette when `data-field` / `data-element` changes. The text
+ * and glyphs still carry the meaning; this is decoration only.
+ */
+.field-banner,
+.field-banner__cycle-step,
+.player-panel,
+.enemy-panel {
+  transition:
+    border-color var(--fb-motion-shift, 300ms)
+      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
+    background-color var(--fb-motion-shift, 300ms)
+      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
+    color var(--fb-motion-shift, 300ms)
+      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1));
+}
+
+/* Hover/focus lift and the other short affordance transitions. */
+.card-view,
+.card-detail,
+.card-detail__close,
+.card-detail__play,
+.battle-controls__end {
+  transition:
+    transform var(--fb-motion-lift, 120ms)
+      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
+    box-shadow var(--fb-motion-lift, 120ms)
+      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
+    border-color var(--fb-motion-lift, 120ms)
+      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
+    background-color var(--fb-motion-lift, 120ms)
+      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
+    color var(--fb-motion-lift, 120ms)
+      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1));
+}
+
+@keyframes fb-motion-draw {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fb-motion-play {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-1rem);
+  }
+}
+
+@keyframes fb-motion-damage {
+  0% {
+    opacity: 0;
+    transform: translateY(0.25rem);
+  }
+
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-0.9rem);
+  }
+}
+
+@keyframes fb-motion-shift {
+  from {
+    opacity: 0.6;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced branch: OS preference                                              */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .hand__item,
+  [data-motion='draw'],
+  [data-motion='play'],
+  [data-motion='shift'] {
+    animation: none;
+    transform: none;
+  }
+
+  /*
+   * Keep the number on screen for its full 400ms so damage feedback is not
+   * lost; only the float and fade are removed.
+   */
+  [data-motion='damage'] {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .card-view,
+  .card-detail,
+  .card-detail__close,
+  .card-detail__play,
+  .battle-controls__end,
+  .field-banner,
+  .field-banner__cycle-step,
+  .player-panel,
+  .enemy-panel {
+    transition-duration: 1ms;
+  }
+
+  .card-view,
+  .card-view:active,
+  .card-view:hover {
+    transform: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced branch: explicit in-app override on the app root                   */
+/* -------------------------------------------------------------------------- */
+
+[data-reduced-motion='true'] .hand__item,
+[data-reduced-motion='true'] [data-motion='draw'],
+[data-reduced-motion='true'] [data-motion='play'],
+[data-reduced-motion='true'] [data-motion='shift'] {
+  animation: none;
+  transform: none;
+}
+
+[data-reduced-motion='true'] [data-motion='damage'] {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+[data-reduced-motion='true'] .card-view,
+[data-reduced-motion='true'] .card-detail,
+[data-reduced-motion='true'] .card-detail__close,
+[data-reduced-motion='true'] .card-detail__play,
+[data-reduced-motion='true'] .battle-controls__end,
+[data-reduced-motion='true'] .field-banner,
+[data-reduced-motion='true'] .field-banner__cycle-step,
+[data-reduced-motion='true'] .player-panel,
+[data-reduced-motion='true'] .enemy-panel {
+  transition-duration: 1ms;
+}
+
+[data-reduced-motion='true'] .card-view,
+[data-reduced-motion='true'] .card-view:active,
+[data-reduced-motion='true'] .card-view:hover {
+  transform: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Explicit "motion on" wins over a matching OS query (both directions)       */
+/* -------------------------------------------------------------------------- */
+
+[data-reduced-motion='false'] .hand__item,
+[data-reduced-motion='false'] [data-motion='draw'] {
+  animation: fb-motion-draw var(--fb-motion-draw, 180ms)
+    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+}
+
+[data-reduced-motion='false'] [data-motion='play'] {
+  animation: fb-motion-play var(--fb-motion-play, 160ms)
+    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+}
+
+[data-reduced-motion='false'] [data-motion='damage'] {
+  animation: fb-motion-damage var(--fb-motion-damage, 400ms)
+    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+}
+
+[data-reduced-motion='false'] [data-motion='shift'] {
+  animation: fb-motion-shift var(--fb-motion-shift, 300ms)
+    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+}
+
+[data-reduced-motion='false'] .field-banner,
+[data-reduced-motion='false'] .field-banner__cycle-step,
+[data-reduced-motion='false'] .player-panel,
+[data-reduced-motion='false'] .enemy-panel {
+  transition-duration: var(--fb-motion-shift, 300ms);
+}
+
+[data-reduced-motion='false'] .card-view,
+[data-reduced-motion='false'] .card-detail,
+[data-reduced-motion='false'] .card-detail__close,
+[data-reduced-motion='false'] .card-detail__play,
+[data-reduced-motion='false'] .battle-controls__end {
+  transition-duration: var(--fb-motion-lift, 120ms);
+}
+
+[data-reduced-motion='false'] .card-view:active {
+  transform: translateY(1px);
+}
+
+@media (hover: hover) {
+  [data-reduced-motion='false'] .card-view:hover {
+    transform: translateY(-2px);
+  }
+}

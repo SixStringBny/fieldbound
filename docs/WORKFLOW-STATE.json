@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-28T21:41:58.971Z",
+  "lastUpdatedAt": "2026-10-29T04:45:41.989Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "GAME-SHELL-PRESENTATION-2",
+  "currentPhase": "GAME-SHELL-PRESENTATION-3",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -805,10 +805,65 @@
     },
     "SHL-04": {
       "taskId": "SHL-04",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "ux-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 2,
+      "outputFiles": [
+        "src/ui/motion/useReducedMotion.ts",
+        "src/ui/motion/motion.css",
+        "src/ui/motion/useReducedMotion.test.tsx"
+      ],
+      "startedAt": "2026-10-29T04:44:26.467Z",
+      "usage": {
+        "inputTokens": 66133,
+        "outputTokens": 11456,
+        "cacheReadTokens": 1387136,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 21312,
+        "costUsd": 0.033742158,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "failed",
+          "reason": "timed out after 3600000ms; process-tree cleanup failed: exceeded 1000ms; closing inherited output pipes",
+          "resultPath": "docs/artifacts/SHL-04.2026-10-29T03-39-11-434Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 40915,
+            "outputTokens": 8713,
+            "reasoningTokens": 16988,
+            "cacheReadTokens": 1027840,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.024641370000000003,
+            "source": "harness"
+          }
+        },
+        {
+          "attempt": 2,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/SHL-04.2026-10-29T04-45-41-980Z.attempt-2.result.json",
+          "usage": {
+            "inputTokens": 25218,
+            "outputTokens": 2743,
+            "reasoningTokens": 4324,
+            "cacheReadTokens": 359296,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.009100788,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T04:45:41.986Z",
+      "agentOutput": "I'll start by reading the execution file for my task.\r\nThe expected files already exist from attempt 1. Let me inspect their current state.\r\nFiles exist from attempt 1 (which timed out, likely during verification). Let me check integration and token definitions before re-running checks.\r\nThe implementation files are complete from attempt 1. Now I'll re-run the required checks.\r\nAll required checks pass. Let me verify the no-storage constraint and confirm the working-tree scope.\r\nImplementation and checks are verified. I'll run the full suite as a regression guard.\r\nAll required work is present and verified. Here is the outcome.\n\n## Verification run (this attempt)\n\n| Command | Result |\n|---|---|\n| `npm test -- src/ui/motion/useReducedMotion.test.tsx` | ✅ 13/13 passed |\n| `npm test -- src/ui/components/BattleBoard.test.tsx src/ui/components/CardView.test.tsx` | ✅ 27/27 passed |\n| `npm test` (full suite) | ✅ 512/512 passed, 18 files |\n| `npm run typecheck` | ✅ exit 0 |\n| `npm run build` | ✅ exit 0 |\n\n## What the implementation does\n\n- `useReducedMotion(override?)` reads `prefers-reduced-motion: reduce` synchronously in a lazy initializer, subscribes to `change` with `addEventListener` (legacy `addListener` behind a feature check) and cleans up on unmount. An explicit `true`/`false` override wins over the OS value in both directions; `null`/`undefined` follows the system. No storage is touched.\n- `resolveReducedMotion` and `reducedMotionAttribute` are exported so the app root can render `data-reduced-motion=\"true|false\"`.\n- `motion.css` implements draw (180ms), play (160ms), damage (400ms), field shift (300ms) and lift (120ms), then caps transitions at `1ms`, sets `animation: none` and `transform: none` under the OS query and under `[data-reduced-motion='true']`. `[data-reduced-motion='false']` restores motion even when the OS prefers reduced, and the damage number stays visible for its duration rather than being removed.\n- `BattleBoard.tsx` imports `motion.css` after `board.css`, so the presentation layer is self-contained.\n\n```forge-result\n{\"summary\":\"Implemented and re-verified SHL-FR-04: a useReducedMotion hook that mirrors the OS prefers-reduced-motion preference and lets an explicit override win in both directions, plus a motion stylesheet covering draw, play, damage, field shift and lift (120–400ms) with OS and explicit reduced branches that remove transforms and cap transitions at 1ms. The hook-triggered media-query listener is cleaned up, reduced motion never forces the override on first render, and no storage is read or written. The task's validation command, the related board tests, the full 512-test suite, typecheck and the production build all pass.\",\"decisions\":[\"The OS preference is the initial value via a lazy state initializer, so first paint honours prefers-reduced-motion without a forced in-app override; SHL-06 will supply any persisted override as an argument.\",\"Precedence is a pure function (resolveReducedMotion) so true/false/null semantics are testable without React, while the hook owns only the system subscription.\",\"The resolved value is exposed as a string 'true'/'false' through reducedMotionAttribute, because motion.css must match [data-reduced-motion='false'] to restore motion against a matching OS query.\",\"Reduced mode removes transforms and long animations but keeps the damage number mounted with opacity 1, so damage feedback is not lost when motion is off.\",\"motion.css is imported by BattleBoard after board.css so the motion layer wins the cascade, and each duration is written as var(--fb-motion-*, documented ms) so the stylesheet still carries the documented values if loaded without tokens.css.\",\"The explicit-motion rules are emitted last so an in-app 'motion on' choice beats the OS media query, making the toggle authoritative in both directions.\",\"No engine, controller or storage module is imported by the motion layer, keeping it presentational and side-effect free.\"],\"interfaces\":[\"src/ui/motion/useReducedMotion.ts: REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'; type ReducedMotionOverride = boolean | null | undefined; getSystemReducedMotion(): boolean; resolveReducedMotion(systemReducedMotion: boolean, override: ReducedMotionOverride): boolean; reducedMotionAttribute(reduced: boolean): 'true' | 'false'; useReducedMotion(override?: ReducedMotionOverride): boolean.\",\"src/ui/motion/motion.css: normal-branch keyframes fb-motion-{draw,play,damage,shift}, [data-motion='draw'|'play'|'damage'|'shift'] hooks, .hand__item draw animation, field/panel palette transitions, card and control lift transitions; reduced branches under @media (prefers-reduced-motion: reduce), [data-reduced-motion='true'] (1ms, no transforms, no long animations) and [data-reduced-motion='false'] (restores motion).\",\"src/ui/components/BattleBoard.tsx: now imports '../motion/motion.css' after tokens.css and board.css so motion styles are present wherever the board renders.\"],\"tests\":[\"npm test -- src/ui/motion/useReducedMotion.test.tsx: exit 0, 13 tests passed (system match/non-match, override true/false precedence, override cleared, change event and listener cleanup, missing matchMedia, root data attribute, pure precedence, all five normal-branch durations, reduced branching both directions)\",\"npm test -- src/ui/components/BattleBoard.test.tsx src/ui/components/CardView.test.tsx: exit 0, 27 tests passed\",\"npm test: exit 0, 512 tests passed across 18 files\",\"npm run typecheck: exit 0\",\"npm run build: exit 0 (vite production build)\"],\"warnings\":[\"src/styles/board.css retains its own small reduced-motion subset (card transition caps and transform removal) written before motion.css existed; it is consistent with motion.css today, but future motion changes should treat src/ui/motion/motion.css as the single source of truth.\"],\"validationLimitations\":[\"jsdom does not compute cascade or animation timing, so motion.css is asserted through its stylesheet text and the hook through behaviour; real-browser motion verification remains with REL-04's Playwright suite.\"],\"unresolved\":[]}\n```\n\n## Files created or changed\n\nCreated:\n- `src/ui/motion/useReducedMotion.ts`\n- `src/ui/motion/motion.css`\n- `src/ui/motion/useReducedMotion.test.tsx`\n\nChanged:\n- `src/ui/components/BattleBoard.tsx` (added the `../motion/motion.css` import)\n\nNo execution artifact or `docs/artifacts/` file was modified.\r\n",
+      "validationLimitations": [
+        "jsdom does not compute cascade or animation timing, so motion.css is asserted through its stylesheet text and the hook through behaviour; real-browser motion verification remains with REL-04's Playwright suite."
+      ],
+      "artifactId": "work-shl-04-001",
+      "inputArtifactIds": [
+        "work-shl-02-001",
+        "work-shl-03-001"
+      ]
     },
     "SHL-05": {
       "taskId": "SHL-05",

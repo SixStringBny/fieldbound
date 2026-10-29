@@ -15,6 +15,7 @@
 import { useState } from 'react';
 import '../../styles/tokens.css';
 import '../../styles/board.css';
+import '../motion/motion.css';
 import type {
   BattleState,
   CardDefinition,

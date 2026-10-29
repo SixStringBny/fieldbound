@@ -1,9 +1,10 @@
 # Project Progress
 
 ## Current State
-**Phase**: GAME-SHELL-PRESENTATION-2
+**Phase**: GAME-SHELL-PRESENTATION-3
 **Status**: In Progress
-**Last Updated**: 2026-10-28T21:41:58.973Z
+**Validation Gaps**: 1 unverified check(s) - see "Validation Gaps"
+**Last Updated**: 2026-10-29T04:45:41.992Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -37,6 +38,8 @@
   - Files: src/styles/tokens.css, src/styles/board.css, src/ui/components/BattleBoard.tsx, src/ui/components/EnemyPanel.tsx, src/ui/components/FieldBanner.tsx, src/ui/components/PlayerPanel.tsx, src/ui/components/Hand.tsx, src/ui/components/CardView.tsx, src/ui/components/CardDetail.tsx, src/ui/components/AssetImage.tsx, src/ui/components/BattleBoard.test.tsx, src/ui/components/CardView.test.tsx, src/ui/components/ElementCue.tsx, src/ui/components/StatMeter.tsx, src/ui/components/StatusList.tsx, src/ui/components/card-presentation.ts, src/ui/components/view-types.ts
 - [x] Phase GAME-SHELL-PRESENTATION-2, Task SHL-03: Wire the battle controller and playable battle screen (@frontend-engineer)
   - Files: src/state/battle-controller.ts, src/state/battle-controller.test.ts, src/ui/screens/BattleScreen.tsx, src/App.tsx, src/App.battle.test.tsx, src/styles/base.css
+- [x] Phase GAME-SHELL-PRESENTATION-3, Task SHL-04: Implement reduced-motion preference and motion styles (@ux-engineer)
+  - Files: src/ui/motion/useReducedMotion.ts, src/ui/motion/motion.css, src/ui/motion/useReducedMotion.test.tsx
 
 ## Current Task
 - None currently running
@@ -57,7 +60,7 @@
 - None
 
 ## Validation Gaps
-- None reported
+- Task SHL-04: jsdom does not compute cascade or animation timing, so motion.css is asserted through its stylesheet text and the hook through behaviour; real-browser motion verification remains with REL-04's Playwright suite.
 
 ## Notes
 - Workflow engine run 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
