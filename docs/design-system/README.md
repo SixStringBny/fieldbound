@@ -4,6 +4,7 @@
 **Machine-readable source:** [`tokens.css`](./tokens.css).
 **Battle screen spec:** [`battle-screen.md`](./battle-screen.md).
 **Menu / solo / reward spec:** [`solo-flow.md`](./solo-flow.md).
+**Duel flow spec:** [`duel-flow.md`](./duel-flow.md).
 **Evidence:** [refined battle prototype](https://github.com/SixStringBny/fieldbound/tree/prototype/battle-refined/.prototype/battle-refined), ticket #6.
 
 The overhaul keeps one **warm slate table** and one **parchment material**. The
