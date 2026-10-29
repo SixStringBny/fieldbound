@@ -14,11 +14,23 @@
  *   - the announcement effect turns the before/after state into one polite
  *     sentence for the app's single live region. It never announces a render,
  *     only a new sequence, so re-rendering cannot duplicate a message.
+ *
+ * Battle log (LOG-FR-02, LOG-FR-04, LOG-FR-07)
+ * --------------------------------------------
+ * The screen forwards the controller's settled entries to the pure text
+ * renderer and hands the resulting lines to the shared `BattleLog` surface. It
+ * chooses no words and computes no rule: the enemy name and battle seed are
+ * state facts, the catalog is frozen content, and every sentence is produced by
+ * `src/battle-log/text.ts`. The log is a labelled, non-live region beside the
+ * board; the one polite announcement above remains the only spoken summary.
  */
 import { useEffect, useRef } from 'react';
+import { renderBattleLog } from '../../battle-log/text';
+import { BATTLE_DIALOGUE } from '../../content/battle-dialogue';
 import type { BattleControllerState } from '../../state/battle-controller';
 import { describeBattleUpdate } from '../a11y/announcements';
 import { BattleBoard } from '../components/BattleBoard';
+import { BattleLog } from '../components/BattleLog';
 import { emitCue } from '../events';
 
 export interface BattleScreenProps {
@@ -50,6 +62,17 @@ export function BattleScreen({
   const report = state.report;
   const previousRef = useRef<BattleControllerState>(state);
   const mountedRef = useRef(false);
+
+  // One rendered line per settled entry (LOG-FR-02). Solo always views the
+  // engine player side, so `You` and the enemy name are the two actors and the
+  // enemy id lets its authored voice answer its own triggers.
+  const logLines = renderBattleLog(state.log, {
+    seed: state.battle.seed,
+    names: { player: 'You', opponent: state.enemy.name },
+    catalog: state.cards,
+    dialogue: BATTLE_DIALOGUE,
+    enemyId: state.enemy.id,
+  });
 
   useEffect(() => {
     // A board remounted from the run overview carries the last reduction in
@@ -117,15 +140,24 @@ export function BattleScreen({
         </p>
       ) : null}
 
-      <BattleBoard
-        state={state.battle}
-        enemy={state.enemy}
-        fieldMatchup={state.fieldMatchup}
-        cards={state.cards}
-        baseUrl={baseUrl}
-        onPlayCard={onPlayCard}
-        onEndTurn={onEndTurn}
-      />
+      <div className="battle-log-layout">
+        <BattleBoard
+          state={state.battle}
+          enemy={state.enemy}
+          fieldMatchup={state.fieldMatchup}
+          cards={state.cards}
+          baseUrl={baseUrl}
+          onPlayCard={onPlayCard}
+          onEndTurn={onEndTurn}
+        />
+
+        {/*
+          The log follows the board in DOM order, so at 375px the sticky End
+          Turn bar is never covered by the latest strip or the opened drawer,
+          and at 1024px the same list becomes the right-hand column.
+        */}
+        <BattleLog lines={logLines} toggleLabel="Log" />
+      </div>
     </div>
   );
 }

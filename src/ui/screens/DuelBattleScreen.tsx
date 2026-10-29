@@ -13,8 +13,19 @@
  * Card detail opens only from the active hand and plays through the same
  * `onPlayCard` intent as a card face tap. The screen imports no engine mutator,
  * controller or storage module; it receives view types and dispatches intents.
+ *
+ * Battle log (LOG-FR-02, LOG-FR-04, LOG-FR-05, LOG-FR-07)
+ * ------------------------------------------------------
+ * Only the active-turn view carries entries, so this screen is the only duel
+ * surface with a log. Every line is rendered by `src/battle-log/text.ts` from
+ * the public entries: names are viewer-relative (the acting seat's own name and
+ * the other seat's) and the round seed keys the deterministic dialogue, exactly
+ * as the solo board does. The privacy and result screens render no log at all,
+ * and the single app-wide polite announcement remains the only live region.
  */
 import { useState } from 'react';
+import { renderBattleLog } from '../../battle-log/text';
+import { BATTLE_DIALOGUE } from '../../content/battle-dialogue';
 import type { CardDefinition } from '../../engine/types';
 import { DEFENSE_CAP } from '../../engine/types';
 import type {
@@ -25,6 +36,7 @@ import type {
 import '../../styles/tokens.css';
 import '../../styles/board.css';
 import '../../styles/duel.css';
+import { BattleLog } from '../components/BattleLog';
 import { CardDetail } from '../components/CardDetail';
 import type { CardMatchup } from '../components/card-presentation';
 import { ElementCue, elementLabel } from '../components/ElementCue';
@@ -40,6 +52,11 @@ export interface DuelBattleScreenProps {
   /** Redacted active-turn view: one hand, an opponent count, no other cards. */
   readonly view: DuelBattleView;
   readonly cards: CardCatalogView;
+  /**
+   * The round's engine seed. It only keys the deterministic dialogue picker;
+   * no battle rule reads it here and it is not part of the redacted view.
+   */
+  readonly seed: number;
   /** Field facts resolved by the composition root from the engine's cycle. */
   readonly fieldMatchup: FieldMatchup | null;
   /** App base URL used by every manifest image. */
@@ -53,6 +70,7 @@ export interface DuelBattleScreenProps {
 export function DuelBattleScreen({
   view,
   cards,
+  seed,
   fieldMatchup,
   baseUrl,
   onPlayCard,
@@ -98,6 +116,19 @@ export function DuelBattleScreen({
   };
 
   const viewerName = duelPlayerName(view.viewer);
+  const opponentName = duelPlayerName(view.opponent.player);
+
+  // The shared public log, rendered relative to the seat holding the device:
+  // `names.player` is this viewer, so victory/defeat and every actor read from
+  // either side. No prose or rule is computed here (LOG-FR-02, LOG-FR-05).
+  const logLines = renderBattleLog(view.log, {
+    seed,
+    names: { player: viewerName, opponent: opponentName },
+    catalog: cards,
+    dialogue: BATTLE_DIALOGUE,
+    viewerSide: view.self.side,
+    enemyId: null,
+  });
 
   return (
     <div
@@ -116,37 +147,56 @@ export function DuelBattleScreen({
         </button>
       </header>
 
-      <DuelPanel
-        panel={view.opponent}
-        position="opponent"
-        titleId="duel-panel-opponent"
-      />
+      <div className="battle-log-layout">
+        <div className="duel-battle__board">
+          <DuelPanel
+            panel={view.opponent}
+            position="opponent"
+            titleId="duel-panel-opponent"
+          />
 
-      <FieldBanner
-        field={view.field}
-        matchup={fieldMatchup}
-        baseUrl={baseUrl}
-      />
+          <FieldBanner
+            field={view.field}
+            matchup={fieldMatchup}
+            baseUrl={baseUrl}
+          />
 
-      <DuelPanel panel={view.self} position="self" titleId="duel-panel-self" />
+          <DuelPanel
+            panel={view.self}
+            position="self"
+            titleId="duel-panel-self"
+          />
 
-      <Hand
-        hand={view.hand}
-        cards={cards}
-        energy={view.self.energy}
-        baseUrl={baseUrl}
-        onInspect={setOpenInstanceId}
-      />
+          <Hand
+            hand={view.hand}
+            cards={cards}
+            energy={view.self.energy}
+            baseUrl={baseUrl}
+            onInspect={setOpenInstanceId}
+          />
 
-      <div className="battle-controls" role="group" aria-label="Turn controls">
-        <p className="battle-controls__energy">{view.self.energy} energy</p>
-        <button
-          type="button"
-          className="battle-controls__end"
-          onClick={onEndTurn}
-        >
-          End Turn
-        </button>
+          <div
+            className="battle-controls"
+            role="group"
+            aria-label="Turn controls"
+          >
+            <p className="battle-controls__energy">{view.self.energy} energy</p>
+            <button
+              type="button"
+              className="battle-controls__end"
+              onClick={onEndTurn}
+            >
+              End Turn
+            </button>
+          </div>
+        </div>
+
+        {/*
+          Only the active-turn view reaches this branch. The privacy and result
+          screens are separate components with no log, so no CSS-hidden history
+          can leak an opponent's unplayed card to the DOM.
+        */}
+        <BattleLog lines={logLines} toggleLabel="Log" />
       </div>
 
       {openInstance !== undefined && openCard !== undefined ? (

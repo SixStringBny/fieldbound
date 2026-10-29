@@ -3,8 +3,8 @@
 ## Current State
 **Phase**: BATTLE-LOG-DYNAMIC-DIALOGUE-3
 **Status**: In Progress
-**Validation Gaps**: 5 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T18:09:11.756Z
+**Validation Gaps**: 6 unverified check(s) - see "Validation Gaps"
+**Last Updated**: 2026-10-29T18:15:09.948Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -88,12 +88,13 @@
   - Files: src/ui/components/BattleLog.tsx, src/ui/components/BattleLog.test.tsx, src/styles/battle-log.css
 - [x] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-3, Task LOG-05: Add the privacy-safe duel battle log (@duel-mode-engineer)
   - Files: src/duel/round.ts, src/duel/round.test.ts
+- [x] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-3, Task LOG-06: Wire the battle log into both battle screens (@frontend-engineer)
+  - Files: src/ui/screens/BattleScreen.tsx, src/ui/screens/DuelBattleScreen.tsx, src/App.battle-log.test.tsx, src/App.tsx, src/battle-log/text.ts, src/styles/duel.css
 
 ## Current Task
 - None currently running
 
 ## Remaining
-- [ ] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-3: Phase 3: Duel Privacy and Screen Wiring
 - [ ] Phase BATTLE-LOG-DYNAMIC-DIALOGUE-4: Phase 4: Persistence and Verification
 
 ## Blockers
@@ -106,6 +107,7 @@
 - Task RUN-05: check:build's source-token heuristic fails on pre-existing duel test string literals; it was not treated as a RUN-05 check and those files were left untouched to avoid out-of-scope changes.
 - Task REL-03: Privacy-leak failure behaviour was not demonstrated by deliberately breaking the product (out of scope); non-vacuity is instead proved by the active-hand scan requiring the real hand names to be found in the rendered DOM on every turn.
 - Task LOG-04: jsdom cannot compute layout, so the committed unit test validates the 375px/1024px/44px/reduced-motion contract against structure and the shipped CSS; the temporary Chromium pass covered the real pixels. LOG-08 owns the committed Playwright journey.
+- Task LOG-06: jsdom cannot measure the 375px layout; the test asserts the structural contract (log is outside the board, End Turn remains enabled with the drawer open). LOG-08 owns the committed browser pixel proof.
 
 ## Notes
 - Workflow engine run 8d8c7086-35b8-4e1f-ab83-08fc940bcf62

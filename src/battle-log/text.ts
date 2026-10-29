@@ -69,7 +69,9 @@ export interface BattleLogNames {
 }
 
 /** Card names are read from the frozen catalog, never derived from prose. */
-export type BattleLogCardCatalog = Readonly<Record<string, CardDefinition>>;
+export type BattleLogCardCatalog = Readonly<
+  Record<string, CardDefinition | undefined>
+>;
 
 /** Everything a render needs. No `BattleState` is accepted or returned. */
 export interface BattleLogRenderContext {

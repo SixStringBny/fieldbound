@@ -916,6 +916,9 @@ export function App({
   // Redacted view of the live duel round. `null` whenever no round is running,
   // so every non-duel route keeps rendering its own surface.
   const duelView = duel?.phase === 'round' ? duelRoundView(duel.round) : null;
+  // The round seed keys the shared public log's deterministic dialogue. Only
+  // the active battle view consumes it; every other duel surface has no log.
+  const duelLogSeed = duel?.phase === 'round' ? duel.match.roundSeed : 0;
   const duelMatchWinner =
     duel?.phase === 'match-result' ? matchWinner(duel.match) : null;
 
@@ -990,6 +993,7 @@ export function App({
         <DuelBattleRoute
           view={duelView}
           cards={cardCatalog}
+          seed={duelLogSeed}
           fieldMatchup={fieldMatchupFor(duelView.field)}
           baseUrl={import.meta.env.BASE_URL}
           onPlayCard={handleDuelPlay}

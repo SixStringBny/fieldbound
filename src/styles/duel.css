@@ -21,12 +21,19 @@
 
 .duel-setup,
 .duel-battle,
+.duel-battle__board,
 .duel-result {
   display: grid;
   gap: var(--fb-space-4);
   width: 100%;
   min-width: 0;
   font-family: var(--fb-font-ui);
+}
+
+/* The active-turn column inside the shared `.battle-log-layout` grid. */
+.duel-battle__board {
+  gap: var(--fb-space-3);
+  padding: 0 0 var(--fb-space-4);
 }
 
 .duel-setup__head {

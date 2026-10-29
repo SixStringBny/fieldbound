@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T18:09:11.750Z",
+  "lastUpdatedAt": "2026-10-29T18:15:09.943Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -2084,10 +2084,54 @@
     },
     "LOG-06": {
       "taskId": "LOG-06",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "frontend-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/ui/screens/BattleScreen.tsx",
+        "src/ui/screens/DuelBattleScreen.tsx",
+        "src/App.battle-log.test.tsx",
+        "src/App.tsx",
+        "src/battle-log/text.ts",
+        "src/styles/duel.css"
+      ],
+      "startedAt": "2026-10-29T18:09:12.237Z",
+      "usage": {
+        "inputTokens": 121765,
+        "outputTokens": 14253,
+        "reasoningTokens": 23582,
+        "cacheReadTokens": 7240320,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.06268671000000002,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/LOG-06.2026-10-29T18-15-09-926Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 121765,
+            "outputTokens": 14253,
+            "reasoningTokens": 23582,
+            "cacheReadTokens": 7240320,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.06268671000000002,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T18:15:09.937Z",
+      "agentOutput": "I'll start by reading the execution file and understanding the current state of the project.\r\nNow I'll implement the screen wiring.\r\n## Outcome\n\nWired the battle log into both battle screens and proved it through the real composition root.\n\n**What changed**\n\n- `BattleScreen` now renders `state.log` through `renderBattleLog` (enemy name, battle seed, enemy id for its dialogue voice) and passes the resulting lines to `BattleLog`. The board and log sit inside `.battle-log-layout`, with the log after the board so the sticky End Turn bar is never covered at 375px and the same history becomes the right-hand column at 1024px.\n- `DuelBattleScreen` renders `view.log` viewer-relative (`Player 1`/`Player 2`, `viewerSide` from the self panel, no enemy voice) and accepts the round seed from `App`. Its board column is wrapped so the shared log layout works; the privacy and result screens still mount no log at all.\n- `BattleLogCardCatalog` now accepts a missing id (type-only), matching the renderer's existing fallback and the presentation layer's `CardCatalogView`.\n- Added `src/App.battle-log.test.tsx` with two App-level journeys: solo (start, play, keyboard drawer, Escape focus return, end turn, enemy entry, one live summary) and duel (privacy has no log, public entry after play, privacy hides it again, return for the other seat).\n\n**Validation actually run**\n\n- `npm test -- src/App.battle-log.test.tsx` → 2 passed\n- `npm run typecheck` → exit 0\n- `npm test` (full suite) → 41 files, 1164 tests passed\n- `npm run build` → exit 0 (JS 108.24 kB gzip)\n\n**Files created or changed**\n\n- created `src/App.battle-log.test.tsx`\n- changed `src/ui/screens/BattleScreen.tsx`\n- changed `src/ui/screens/DuelBattleScreen.tsx`\n- changed `src/App.tsx` (threads `roundSeed` to the duel board)\n- changed `src/battle-log/text.ts` (catalog type widening only)\n- changed `src/styles/duel.css` (duel board column inside the log layout)\n\n```forge-result\n{\n  \"summary\": \"Both battle screens now render the shared log through src/battle-log/text.ts and BattleLog; App-level solo and duel journeys cover startup, card play, turn handoff, keyboard drawer/escape focus and the single live announcement.\",\n  \"decisions\": [\n    \"Board first, log second inside .battle-log-layout: at 375px the log is a sibling after the sticky End Turn bar, and at 1024px the same list becomes the right-hand column.\",\n    \"Screens build only the render context (seed, actor names, frozen catalog, dialogue catalog) and delegate every sentence to the text renderer; no rule or prose is computed in a screen.\",\n    \"Solo passes You plus the enemy name and the enemy id so authored enemy lines can speak; duel passes viewer-relative seat names, viewerSide from the self panel, a null enemy id and the round seed threaded from App.\",\n    \"DuelBattleView deliberately has no seed, so the composition root supplies duel.match.roundSeed as a prop; the privacy and result screens remain untouched and carry no log.\",\n    \"BattleLogCardCatalog was widened to allow a missing card id (type-only) because the renderer already falls back to the id and the duel screen receives CardCatalogView.\"\n  ],\n  \"interfaces\": [\n    \"src/ui/screens/DuelBattleScreen.tsx: DuelBattleScreenProps.seed: number added; the active-turn screen renders <BattleLog lines={renderBattleLog(view.log, { seed, names, catalog, dialogue, viewerSide, enemyId: null })} toggleLabel=\\\"Log\\\" />.\",\n    \"src/ui/screens/BattleScreen.tsx: renders <div className=\\\"battle-log-layout\\\"> containing BattleBoard and BattleLog with lines from state.log, seed state.battle.seed, names You/enemy name and enemyId state.enemy.id.\",\n    \"src/App.tsx: duelLogSeed derived from the live round and passed through DuelBattleRoute to DuelBattleScreen.\",\n    \"src/battle-log/text.ts: BattleLogCardCatalog = Readonly<Record<string, CardDefinition | undefined>>.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/App.battle-log.test.tsx: exit 0 (2 tests passed)\",\n    \"npm run typecheck: exit 0\",\n    \"npm test: exit 0 (41 files, 1164 tests passed)\",\n    \"npm run build: exit 0 (JS 108.24 kB gzip, CSS 7.52 kB gzip)\"\n  ],\n  \"validationLimitations\": [\n    \"jsdom cannot measure the 375px layout; the test asserts the structural contract (log is outside the board, End Turn remains enabled with the drawer open). LOG-08 owns the committed browser pixel proof.\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "validationLimitations": [
+        "jsdom cannot measure the 375px layout; the test asserts the structural contract (log is outside the board, End Turn remains enabled with the drawer open). LOG-08 owns the committed browser pixel proof."
+      ],
+      "artifactId": "work-log-06-001",
+      "inputArtifactIds": [
+        "work-log-03-001",
+        "work-log-04-001",
+        "work-log-05-001"
+      ]
     },
     "LOG-07": {
       "taskId": "LOG-07",
