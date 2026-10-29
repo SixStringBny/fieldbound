@@ -668,6 +668,105 @@ test.describe('menu', () => {
     await expect(page.locator('[role="status"]')).toHaveText('');
   });
 
+  test('AB-G3 no menu text or focusable control is clipped', async ({ page }) => {
+    await openApp(page, SEED);
+
+    const clipped = await page.evaluate(() => {
+      const main = document.getElementById('main-content');
+      const problems: string[] = [];
+
+      if (main === null) {
+        return ['the menu has no #main-content'];
+      }
+
+      for (const control of Array.from(main.querySelectorAll('button, a[href]'))) {
+        if (control.scrollWidth > control.clientWidth + 1) {
+          problems.push(
+            `${control.tagName}.${control.className}: scrollWidth ${control.scrollWidth} > clientWidth ${control.clientWidth}`,
+          );
+        }
+
+        if (control.scrollHeight > control.clientHeight + 1) {
+          problems.push(
+            `${control.tagName}.${control.className}: scrollHeight ${control.scrollHeight} > clientHeight ${control.clientHeight}`,
+          );
+        }
+      }
+
+      for (const text of Array.from(main.querySelectorAll('h1, p, span'))) {
+        const style = getComputedStyle(text);
+
+        if (style.display === 'none' || style.visibility === 'hidden') {
+          continue;
+        }
+
+        if (style.textOverflow === 'ellipsis') {
+          problems.push(
+            `${text.tagName}.${text.className}: ellipsis on menu text`,
+          );
+        }
+      }
+
+      return problems;
+    });
+
+    expect(clipped).toEqual([]);
+  });
+
+  test('AB-A7 the menu takes the forced-colors and high-contrast branches', async ({ page }) => {
+    await openApp(page, SEED);
+
+    await page.emulateMedia({ forcedColors: 'active' });
+
+    const forced = await page.evaluate(() => {
+      const card = document.querySelector('.menu__card');
+
+      if (card === null) {
+        return null;
+      }
+
+      const style = getComputedStyle(card);
+
+      return {
+        image: style.backgroundImage,
+        rule: Number.parseFloat(style.borderTopWidth),
+        text: style.color,
+      };
+    });
+
+    expect(forced, 'the menu must render a mode card').not.toBeNull();
+    expect(forced?.image, 'forced-colors must drop the material').toBe('none');
+    expect(forced?.rule, 'forced-colors must keep a visible rule').toBeGreaterThanOrEqual(1);
+
+    await page.emulateMedia({ forcedColors: 'none' });
+    await page.emulateMedia({ contrast: 'more' });
+
+    const more = await page.evaluate(() => {
+      const card = document.querySelector('.menu__card');
+
+      if (card === null) {
+        return null;
+      }
+
+      const style = getComputedStyle(card);
+
+      return {
+        image: style.backgroundImage,
+        rule: Number.parseFloat(style.borderTopWidth),
+        page: getComputedStyle(document.documentElement).getPropertyValue(
+          '--fb-surface-page',
+        ),
+      };
+    });
+
+    expect(more?.image, 'prefers-contrast must drop the material').toBe('none');
+    expect(more?.rule, 'prefers-contrast must harden the rule').toBeGreaterThanOrEqual(2);
+    expect(
+      more?.page.trim(),
+      'prefers-contrast must use the hardened page',
+    ).toMatch(/^#0{3}(0{3})?$/i);
+  });
+
   test('AB-C2 exactly one action seal and it is the Play Solo button', async ({ page }) => {
     await openApp(page, SEED);
 
