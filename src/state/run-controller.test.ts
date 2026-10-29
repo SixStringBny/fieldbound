@@ -251,6 +251,8 @@ describe('solo battle transitions', () => {
     expect(next.save.run.phase).toBe('battle');
     expect(next.save.battle?.turn).toBe(1);
     expect(next.save.pendingReward).toBeNull();
+    expect(next.save.battleLog).toEqual(next.state.battle?.log);
+    expect(next.save.battleLog).toHaveLength(2);
     expect(validateRunSave(next.save).ok).toBe(true);
   });
 
@@ -325,6 +327,7 @@ describe('solo victory and rewards', () => {
     expect(victory.cues).toContain('victory');
     expect(victory.save?.run.phase).toBe('reward');
     expect(victory.save?.battle).toBeNull();
+    expect(victory.save?.battleLog).toBeNull();
     expect(victory.save?.pendingReward).toHaveLength(3);
     expect(validateRunSave(victory.save).ok).toBe(true);
   });
@@ -538,6 +541,7 @@ describe('solo run save', () => {
     expect(save.rngState).toEqual(state.rngState);
     expect(save.run.seed).toBe(4242);
     expect(save.battle).not.toBeNull();
+    expect(save.battleLog).toEqual(state.battle?.log);
     expect(save.pendingReward).toBeNull();
 
     const storage = memoryStorage();
@@ -548,6 +552,7 @@ describe('solo run save', () => {
     expect(loaded.save?.seed).toBe(4242);
     expect(loaded.save?.rngState).toEqual(state.rngState);
     expect(loaded.save?.run.health).toBe(40);
+    expect(loaded.save?.battleLog).toEqual(save.battleLog);
     expect(loaded.battle?.sides.player.health).toBe(40);
     expect(loaded.battle?.sides.player.hand).toHaveLength(5);
   });
@@ -562,8 +567,44 @@ describe('solo run save', () => {
     const save = createRunSave(created.value);
     expect(save).not.toBeNull();
     expect(save?.battle).toBeNull();
+    expect(save?.battleLog).toBeNull();
     expect(save?.pendingReward).toBeNull();
     expect(validateRunSave(save).ok).toBe(true);
+  });
+
+  it('writes every settled action log entry and null outside the battle', () => {
+    const state = startedRun(11, {
+      opponentHealth: 30,
+      opponentCards: JAB_DECK,
+    });
+    const ended = endRunTurn(state);
+    const save = ended.save;
+
+    if (save === null || ended.state.battle === null) {
+      throw new Error('The fixture turn produced no save or battle');
+    }
+
+    // A battle start, the handoff and the enemy plan steps are all logged.
+    expect(ended.state.battle.log.length).toBeGreaterThanOrEqual(3);
+    expect(save.battleLog).toEqual(ended.state.battle.log);
+
+    const storage = memoryStorage();
+    expect(saveRunSave(storage, save).status).toBe('saved');
+
+    const loaded = loadRunSave(storage);
+
+    expect(loaded.status).toBe('ok');
+    expect(loaded.save?.battleLog).toEqual(save.battleLog);
+    expect(loaded.battle).toEqual(ended.state.battle.battle);
+
+    // Leaving the battle clears the field rather than carrying a stale log.
+    const victoryState = startedRun(11, { opponentHealth: 3 });
+    const victory = playRunCard(
+      victoryState,
+      instanceOf(victoryState, 'ember-cinder-jab'),
+    );
+
+    expect(victory.save?.battleLog).toBeNull();
   });
 
   it('reports the live battle health in the overview and carried health elsewhere', () => {

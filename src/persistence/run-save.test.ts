@@ -26,6 +26,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { byId as cardsById } from '../content/cards';
 import { deckByElement } from '../content/decks';
 import { ENEMIES } from '../content/enemies';
+import {
+  deriveBattleLogEntry,
+  deriveBattleStartEntry,
+} from '../battle-log/derive';
+import type { BattleLogEntry } from '../battle-log/types';
 import { canPlayCard, createBattle, playCard } from '../engine/battle';
 import { createRng, nextUint32 } from '../engine/rng';
 import { serializeSnapshot } from '../engine/snapshot';
@@ -112,9 +117,17 @@ function makeRun(overrides: Partial<RunState> = {}): RunState {
 /**
  * A genuine mid-battle engine state: the opening battle with one legal card
  * already played, so the hand, deck, discard, energy and PRNG state all differ
- * from a fresh setup.
+ * from a fresh setup. The derived log is the real bounded history the controller
+ * would hold at that point (LOG-01 owns derivation, so the save suite only
+ * carries it).
  */
-function makeBattle(): BattleState {
+interface PlayedBattle {
+  readonly before: BattleState;
+  readonly after: BattleState;
+  readonly log: readonly BattleLogEntry[];
+}
+
+function playOneCard(): PlayedBattle {
   const enemy = ENEMIES[0];
 
   if (enemy === undefined) {
@@ -157,10 +170,25 @@ function makeBattle(): BattleState {
       throw new Error(`playCard failed: ${played.error.code}`);
     }
 
-    return played.value;
+    return {
+      before: created.value,
+      after: played.value,
+      log: [
+        deriveBattleStartEntry(created.value, 0),
+        deriveBattleLogEntry(created.value, played.value, {
+          kind: 'card',
+          ordinal: 1,
+          cardId: held.cardId,
+        }),
+        deriveBattleLogEntry(played.value, played.value, {
+          kind: 'turn',
+          ordinal: 2,
+        }),
+      ],
+    };
   }
 
-  return created.value;
+  throw new Error('the opening hand held no playable card');
 }
 
 /** A save in the `overview` phase with no battle or pending reward. */
@@ -171,24 +199,31 @@ function overviewSave(overrides: Partial<RunSaveV1> = {}): RunSaveV1 {
     rngState: RUN_RNG,
     run: makeRun(),
     battle: null,
+    battleLog: null,
     pendingReward: null,
     ...overrides,
   };
 }
 
 /** A valid `battle`-phase save plus the engine state it came from. */
-function battleSave(): { save: RunSaveV1; battle: BattleState } {
-  const battle = makeBattle();
+function battleSave(): {
+  save: RunSaveV1;
+  battle: BattleState;
+  log: readonly BattleLogEntry[];
+} {
+  const played = playOneCard();
   const run = makeRun({ phase: 'battle', health: RUN_MAX_HEALTH });
 
   return {
-    battle,
+    battle: played.after,
+    log: played.log,
     save: {
       schemaVersion: RUN_SAVE_SCHEMA_VERSION,
       seed: SEED,
       rngState: RUN_RNG,
       run,
-      battle: serializeSnapshot(battle),
+      battle: serializeSnapshot(played.after),
+      battleLog: [...played.log],
       pendingReward: null,
     },
   };
@@ -219,6 +254,7 @@ function rewardSave(health = 30): RunSaveV1 {
     rngState: generated.value.rngState,
     run,
     battle: null,
+    battleLog: null,
     pendingReward: generated.value.offers,
   };
 }
@@ -346,6 +382,7 @@ describe('run save contract', () => {
       'rngState',
       'run',
       'battle',
+      'battleLog',
       'pendingReward',
     ]);
     expect(raw.seed).toBe(SEED);
@@ -509,6 +546,190 @@ describe('run save round trip', () => {
     expect(loaded.status).toBe('ok');
     expect(loaded.save).toEqual(save);
     expect(loaded.battle).toBeNull();
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Additive battle log (LOG-FR-06)                                            */
+/* -------------------------------------------------------------------------- */
+
+/** 81 structurally valid handoff entries, ordinals 0..80. */
+function longLog(): BattleLogEntry[] {
+  const played = playOneCard();
+
+  return Array.from({ length: 81 }, (_unused, ordinal) =>
+    deriveBattleLogEntry(played.after, played.after, {
+      kind: 'turn',
+      ordinal,
+    }),
+  );
+}
+
+function savedLog(save: RunSaveV1): readonly BattleLogEntry[] {
+  if (save.battleLog === null) {
+    throw new Error('expected a battle-phase save to carry a battle log');
+  }
+
+  return save.battleLog;
+}
+
+/** Mutates the serialized battle-log array in place. */
+function mutatedLog(
+  mutate: (entries: Record<string, unknown>[]) => void,
+): Record<string, unknown> {
+  return mutated(battleSave().save, (record) => {
+    mutate(asArray(record['battleLog']).map(asRecord));
+  });
+}
+
+describe('run save battle log', () => {
+  it('round-trips the three saved entries in order', () => {
+    const { save, log } = battleSave();
+
+    expect(log).toHaveLength(3);
+    expect(savedLog(save)).toEqual(log);
+
+    const parsed = parseStoredRunSave(serializeRunSave(save));
+
+    expect(parsed.ok).toBe(true);
+
+    if (!parsed.ok) {
+      return;
+    }
+
+    expect(parsed.value.save.battleLog).toEqual(log);
+    expect(parsed.value.save.battleLog?.map((entry) => entry.id)).toEqual(
+      log.map((entry) => entry.id),
+    );
+    expect(parsed.value.save.battleLog?.map((entry) => entry.ordinal)).toEqual([
+      0, 1, 2,
+    ]);
+  });
+
+  it('accepts a battle-phase save without battleLog and restores an empty log', () => {
+    const fixture = battleSave();
+    const raw = mutated(fixture.save, (record) => {
+      delete record['battleLog'];
+    });
+
+    const loaded = validate(raw);
+
+    expect(loaded.save.battleLog).toEqual([]);
+    expect(loaded.save.run).toEqual(fixture.save.run);
+    expect(loaded.battle).toEqual(fixture.battle);
+  });
+
+  const malformedLogs: readonly (readonly [
+    string,
+    (entries: Record<string, unknown>[]) => void,
+  ])[] = [
+    [
+      'an unknown effect',
+      (entries) => {
+        asRecord(entries[1])['effects'] = [{ kind: 'teleport' }];
+      },
+    ],
+    [
+      'a duplicate id',
+      (entries) => {
+        asRecord(entries[2])['id'] = asRecord(entries[1])['id'];
+      },
+    ],
+    [
+      'a non-increasing ordinal',
+      (entries) => {
+        asRecord(entries[2])['ordinal'] = asRecord(entries[1])['ordinal'];
+      },
+    ],
+    [
+      'a non-integer amount',
+      (entries) => {
+        asRecord(entries[1])['effects'] = [
+          {
+            kind: 'damage',
+            target: 'opponent',
+            amount: 2.5,
+            remaining: 26,
+            max: 30,
+          },
+        ];
+      },
+    ],
+  ];
+
+  it.each(malformedLogs)(
+    'drops %s without discarding the save',
+    (_label, mutate) => {
+      const fixture = battleSave();
+      const loaded = validate(mutatedLog(mutate));
+
+      expect(loaded.save.battleLog).toEqual([]);
+      expect(loaded.save.run).toEqual(fixture.save.run);
+      expect(loaded.save.seed).toBe(SEED);
+      expect(loaded.battle).toEqual(fixture.battle);
+    },
+  );
+
+  it('loads 81 entries as the last 80 with their ordinals intact', () => {
+    const entries = longLog();
+    const save = overviewSave({
+      run: makeRun({ phase: 'battle', health: RUN_MAX_HEALTH }),
+      battle: serializeSnapshot(playOneCard().after),
+      battleLog: entries,
+    });
+
+    const loaded = validate(save);
+    const restored = loaded.save.battleLog ?? [];
+
+    expect(restored).toHaveLength(80);
+    expect(restored[0]?.ordinal).toBe(1);
+    expect(restored[0]?.id).toBe('t1-e1');
+    expect(restored[79]?.ordinal).toBe(80);
+    expect(restored.map((entry) => entry.ordinal)).toEqual(
+      Array.from({ length: 80 }, (_unused, index) => index + 1),
+    );
+    expect(loaded.battle).not.toBeNull();
+  });
+
+  it('serializes battleLog as null outside the battle phase', () => {
+    const log = battleSave().log;
+
+    for (const save of [
+      overviewSave({ battleLog: log }),
+      rewardSave(30),
+      overviewSave({
+        run: makeRun({ phase: 'victory', encounterIndex: 3 }),
+        battleLog: log,
+      }),
+      overviewSave({
+        run: makeRun({ phase: 'defeat', health: 0 }),
+        battleLog: log,
+      }),
+    ]) {
+      const raw = rawOf(save);
+
+      expect(raw['battleLog']).toBeNull();
+    }
+  });
+
+  it('serializes the exact battle-phase log and normalizes it on read', () => {
+    const fixture = battleSave();
+    const raw = rawOf(fixture.save);
+
+    expect(raw['battleLog']).toEqual(fixture.log);
+
+    const withExtra = mutated(fixture.save, (record) => {
+      asArray(record['battleLog']).push({
+        id: 'future-entry',
+        ordinal: 3,
+        turn: 1,
+        kind: 'turn',
+        actor: 'player',
+        effects: [],
+      });
+    });
+
+    expect(validate(withExtra).save.battleLog).toHaveLength(4);
   });
 });
 

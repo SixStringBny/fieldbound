@@ -20,6 +20,10 @@
  * run lands on exactly the surface the save was written from: battle, reward,
  * overview or result.
  *
+ * The bounded battle log is restored, never re-derived: it travels inside the
+ * save as the additive `battleLog` field (LOG-FR-06), is validated before use
+ * and is adopted in saved order, so a resumed battle renders the same history.
+ *
  * Two fields are intentionally reconstructed rather than persisted, because the
  * save schema is frozen by RUN-03:
  *
@@ -33,6 +37,8 @@
 import { byId as cardCatalog } from '../content/cards';
 import type { CardCatalog } from '../engine/battle';
 import type { BattleState, EnemyDefinition } from '../engine/types';
+import { validateBattleLog } from '../battle-log/validate';
+import type { BattleLogEntry } from '../battle-log/types';
 import type {
   RunSaveLoadResult,
   RunSaveLoadStatus,
@@ -84,16 +90,17 @@ function controllerStateFrom(
   battle: BattleState,
   enemy: EnemyDefinition,
   cards: CardCatalog,
+  log: readonly BattleLogEntry[],
 ): BattleControllerState {
   return {
     battle,
     enemy,
     cards,
     fieldMatchup: fieldMatchupFor(battle.field),
-    // The bounded log is part of the controller state. A restored battle whose
-    // save carries no log (or a save written before the log existed) starts with
-    // an empty log rather than a re-derived battle-start entry.
-    log: [],
+    // The saved log is restored in order, exactly as it was written. A save
+    // without the field (or with a malformed one) yields an empty log rather
+    // than a re-derived battle-start entry, so nothing is invented on resume.
+    log: [...log],
     // A restored board has no un-played reduction: sequence 0 and a null report
     // stop the screen from replaying a cue or an announcement on mount.
     sequence: 0,
@@ -144,11 +151,22 @@ export function resumeRun(load: RunSaveLoadResult): RunResume {
     return { status: 'none', reason: 'inconsistent-save' };
   }
 
+  // Validate the additive log before it reaches the controller. The loader has
+  // already normalized it, but a hand-built load result must not smuggle a
+  // malformed entry onto the board; a rejected log becomes empty without
+  // affecting the run, phase or restored battle (LOG-FR-06).
+  const log =
+    phase === 'battle' && save.battleLog !== null
+      ? (validateBattleLog(save.battleLog) ?? [])
+      : [];
+
   const state: SoloRunState = {
     run: save.run,
     rngState: save.rngState,
     battle:
-      battle === null ? null : controllerStateFrom(battle, enemy, cardCatalog),
+      battle === null
+        ? null
+        : controllerStateFrom(battle, enemy, cardCatalog, log),
     offers,
     battleDamage: 0,
     stats: null,

@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T18:15:09.943Z",
+  "lastUpdatedAt": "2026-10-29T18:20:30.520Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "BATTLE-LOG-DYNAMIC-DIALOGUE-3",
+  "currentPhase": "BATTLE-LOG-DYNAMIC-DIALOGUE-4",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -2135,10 +2135,54 @@
     },
     "LOG-07": {
       "taskId": "LOG-07",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "solo-mode-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/persistence/run-save.ts",
+        "src/persistence/run-save.test.ts",
+        "src/state/run-controller.ts",
+        "src/state/run-controller.test.ts",
+        "src/state/resume-run.ts",
+        "src/state/resume-run.test.ts"
+      ],
+      "startedAt": "2026-10-29T18:15:10.467Z",
+      "usage": {
+        "inputTokens": 91657,
+        "outputTokens": 17642,
+        "reasoningTokens": 17457,
+        "cacheReadTokens": 5385088,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.05096321400000002,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/LOG-07.2026-10-29T18-20-30-502Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 91657,
+            "outputTokens": 17642,
+            "reasoningTokens": 17457,
+            "cacheReadTokens": 5385088,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.05096321400000002,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T18:20:30.515Z",
+      "agentOutput": "I'll start by reading the execution file and understanding the task scope.\r\nNow I'll implement the additive `battleLog` field in the save contract.\r\nNow serialization:\r\nNow update the existing save fixtures that build `RunSaveV1` literals.\r\nAll changes are implemented and verified. Here is the result report.\n\n```forge-result\n{\n  \"summary\": \"LOG-07 complete: the additive battleLog field now travels inside fieldbound.run.v1, is written from the battle controller's bounded log in the battle phase and as null outside it, is validated by the owning battle-log validator (missing resumes empty, malformed drops only the log), and is restored in saved order by Continue Run. Schema version stays 1 and no storage key was added.\",\n  \"decisions\": [\n    \"battleLog is a required-but-nullable field on the canonical RunSaveV1 type, symmetric with battle and pendingReward: serialization writes an array only in the battle phase and forces null in every other phase, so a stale log cannot reach reward, overview or result screens.\",\n    \"Reading is total and additive-only: a missing or null battleLog becomes an empty log for a battle save, and any value the battle-log validator refuses becomes [] while seed, PRNG state, run and restored battle keep loading. No new error code or discard path was introduced.\",\n    \"Run save validation delegates every log rule to validateBattleLog, so entry kinds, effect kinds, duplicate ids, ordinal ordering, the 80-entry cap and surviving ordinals are exactly the controller's, with no second parser.\",\n    \"createRunSave copies state.battle.log only while the run phase is battle and the controller has a battle; settleBattle already clears battle for reward and terminal phases, so those saves serialize null naturally.\",\n    \"serializeRunSave emits a canonical entry property order (id, ordinal, turn, kind, actor, cardId?, effects) so writing live derived entries and re-writing a validated payload produce identical bytes, which keeps the JSON round-trip byte-stable.\",\n    \"resume-run re-validates the optional log before building controller state (defence in depth for hand-built load results), caps at 80 on read, and adopts the entries in order with a copied array rather than re-deriving a battle-start entry.\",\n    \"No duel path, settings key or stats key is touched; log data exists only inside fieldbound.run.v1 and RUN_SAVE_SCHEMA_VERSION remains 1.\"\n  ],\n  \"interfaces\": [\n    \"src/persistence/run-save.ts: RunSaveV1.battleLog: readonly BattleLogEntry[] | null (serialized between battle and pendingReward).\",\n    \"src/persistence/run-save.ts: validateRunSave/parseStoredRunSave now normalize a missing battle log to [] and a malformed one to [] without rejecting the save; serializeRunSave writes canonical entries or null by phase.\",\n    \"src/state/run-controller.ts: createRunSave(state) now populates battleLog from state.battle.log in the battle phase and null otherwise.\",\n    \"src/state/resume-run.ts: controllerStateFrom accepts the validated log; RunResumeAvailable.state.battle.log carries the restored entries in saved order.\",\n    \"Consumers: frontend-engineer's Continue Run and BattleScreen render the restored log through LOG-06; qa-automation-engineer can assert reload resume, malformed-log tolerance and the 80-entry cap.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/persistence/run-save.test.ts src/state/run-controller.test.ts src/state/resume-run.test.ts: exit 0, 112 tests passed\",\n    \"npm test (full suite): exit 0, 1178 tests across 41 files passed\",\n    \"npm run typecheck: exit 0\"\n  ],\n  \"unresolved\": []\n}\n```\n\n**Files created or changed**\n\n- `src/persistence/run-save.ts`\n- `src/persistence/run-save.test.ts`\n- `src/state/run-controller.ts`\n- `src/state/run-controller.test.ts`\n- `src/state/resume-run.ts`\n- `src/state/resume-run.test.ts`\n\n`docs/artifacts/LOG-07.md`, `docs/EXECUTION-AUDIT.jsonl` and `docs/WORKFLOW-STATE.json` were not modified by this task (the two `docs/` JSON files already showed engine-owned changes before I started).\r\n",
+      "artifactId": "work-log-07-001",
+      "inputArtifactIds": [
+        "work-log-01-001",
+        "work-log-03-001",
+        "work-run-03-001",
+        "work-run-05-001",
+        "work-log-05-001",
+        "work-log-06-001"
+      ]
     },
     "LOG-08": {
       "taskId": "LOG-08",

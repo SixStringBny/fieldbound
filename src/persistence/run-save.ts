@@ -11,6 +11,7 @@
  *     "rngState": { "state": 987654321 },
  *     "run": { "schemaVersion": 1, "element": "ember", "health": 28, ... },
  *     "battle": { "schemaVersion": 1, ... } | null,
+ *     "battleLog": [ ...bounded entries... ] | null,
  *     "pendingReward": [ ...three offers... ] | null
  *   }
  *
@@ -29,6 +30,13 @@
  *   - `pendingReward` is required exactly when `run.phase` is `reward`: without
  *     the three offers the reward screen cannot be restored, and the run cannot
  *     advance because a choice is mandatory.
+ *   - `battleLog` is the battle controller's bounded log (LOG-FR-06). It is
+ *     written as an array only in the battle phase and as `null` outside it, so
+ *     a stale log cannot leak prose into a reward, overview or result screen.
+ *     The field is additive: a v1 payload written before it existed has no
+ *     `battleLog` and still validates, resuming with an empty log. A malformed
+ *     log is dropped to `[]` while the rest of the save keeps resuming, because
+ *     a presentation defect must never cost Continue Run.
  *   - an extra battle snapshot or offer list in another phase is ignored and
  *     normalized to null. The run phase is authoritative outside those two
  *     phases, and discarding an otherwise valid run for a redundant field would
@@ -38,7 +46,8 @@
  * ----------------
  *
  * JSON, object shape, top-level `schemaVersion`, seed, PRNG state, run state,
- * deck card ids, phase-specific battle/reward, and finally cross-field checks.
+ * deck card ids, phase-specific battle, phase-specific battle log and
+ * phase-specific reward, then cross-field checks.
  * Nothing is reconstructed until the whole chain passes. The battle snapshot is
  * validated by the engine's own `restoreSnapshot` and the offers by the reward
  * module's `validateRewardOffers`; this module never re-implements either
@@ -63,6 +72,8 @@ import { isValidRngState, serializeRng } from '../engine/rng';
 import type { RngState } from '../engine/rng';
 import { restoreSnapshot, serializeSnapshot } from '../engine/snapshot';
 import type { BattleSnapshot, BattleState } from '../engine/types';
+import { validateBattleLog } from '../battle-log/validate';
+import type { BattleLogEntry } from '../battle-log/types';
 import { validateRewardOffers } from '../run/rewards';
 import type { RewardOffer } from '../run/rewards';
 import { RUN_SCHEMA_VERSION, validateRunState } from '../run/run-model';
@@ -101,6 +112,12 @@ export interface RunSaveV1 {
   readonly run: RunState;
   /** Required for a `battle`-phase run, null otherwise. */
   readonly battle: BattleSnapshot | null;
+  /**
+   * The battle controller's bounded log (LOG-FR-06). Serialized as an array in
+   * the battle phase and as `null` everywhere else. A missing field on read is
+   * an empty log, and a malformed one is normalized to `[]`.
+   */
+  readonly battleLog: readonly BattleLogEntry[] | null;
   /** Required for a `reward`-phase run, null otherwise. */
   readonly pendingReward: readonly RewardOffer[] | null;
 }
@@ -254,6 +271,24 @@ function readRngState(value: unknown): RngState | null {
   return null;
 }
 
+/**
+ * Reads the additive battle log from an untrusted payload (LOG-FR-06).
+ *
+ * The log is optional and never rejects the save: a missing field is an empty
+ * log (the older-save path), and anything the battle-log validator refuses is
+ * dropped to an empty log while the run, seed, PRNG state and battle snapshot
+ * keep resuming. `validateBattleLog` is the owning validator, so this module
+ * does not restate an entry, effect or ordinal rule and the 80-entry cap with
+ * surviving ordinals is exactly the one the controller writes.
+ */
+function readBattleLog(value: unknown): readonly BattleLogEntry[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+
+  return validateBattleLog(value) ?? [];
+}
+
 /* -------------------------------------------------------------------------- */
 /* Validation                                                                  */
 /* -------------------------------------------------------------------------- */
@@ -373,6 +408,12 @@ export function validateRunSave(
     battleSnapshot = serializeSnapshot(restored.value);
   }
 
+  // The log is additive and phase-owned: the battle phase carries the saved
+  // entries (or an empty log when the field is missing/malformed), and every
+  // other phase normalizes to null so a stale log cannot be rendered there.
+  const battleLog =
+    run.phase === 'battle' ? readBattleLog(input['battleLog']) : null;
+
   let pendingReward: readonly RewardOffer[] | null = null;
 
   if (run.phase === 'reward') {
@@ -406,6 +447,7 @@ export function validateRunSave(
         rngState,
         run,
         battle: battleSnapshot,
+        battleLog,
         pendingReward,
       },
       battle: battleState,
@@ -431,6 +473,29 @@ export function parseStoredRunSave(
   }
 
   return validateRunSave(parsed, catalog);
+}
+
+/**
+ * Writes the canonical battle-log entry shape.
+ *
+ * The log is additive inside the payload, so its serialized property order is
+ * part of the byte-stable contract: id, ordinal, turn, kind, actor, optional
+ * cardId, effects (the same order the battle-log validator canonicalizes to).
+ * Reordering here means a save written from live derived entries and one
+ * rewritten from a validated payload produce identical bytes.
+ */
+function serializeBattleLog(
+  entries: readonly BattleLogEntry[],
+): readonly unknown[] {
+  return entries.map((entry) => ({
+    id: entry.id,
+    ordinal: entry.ordinal,
+    turn: entry.turn,
+    kind: entry.kind,
+    actor: entry.actor,
+    ...(entry.cardId === undefined ? {} : { cardId: entry.cardId }),
+    effects: entry.effects,
+  }));
 }
 
 /* -------------------------------------------------------------------------- */
@@ -464,6 +529,12 @@ export function serializeRunSave(save: RunSaveV1): string {
       phase: save.run.phase,
     },
     battle: save.battle === null ? null : serializeSnapshot(save.battle),
+    // Phase-owned: an array in a fight, always null outside one, so no stale
+    // log can reach a reward, overview or result screen.
+    battleLog:
+      save.run.phase === 'battle' && save.battleLog !== null
+        ? serializeBattleLog(save.battleLog)
+        : null,
     pendingReward:
       save.pendingReward === null
         ? null

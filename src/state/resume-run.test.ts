@@ -31,6 +31,7 @@ import {
   RUN_SAVE_STORAGE_KEY,
   loadRunSave,
   saveRunSave,
+  serializeRunSave,
 } from '../persistence/run-save';
 import type {
   RunSaveLoadResult,
@@ -129,17 +130,50 @@ interface BattleFixture {
 
 function battleFixture(): BattleFixture {
   const run = battleRun();
-  const battle = playedBattle(run).battle;
+  const controller = playedBattle(run);
 
   return {
     run,
-    battle,
+    battle: controller.battle,
     save: {
       schemaVersion: RUN_SAVE_SCHEMA_VERSION,
       seed: run.seed,
       rngState: rewardStreamState(SEED),
       run,
-      battle: serializeSnapshot(battle),
+      battle: serializeSnapshot(controller.battle),
+      battleLog: [...controller.log],
+      pendingReward: null,
+    },
+  };
+}
+
+/**
+ * A later mid-battle save: one card, then a completed turn, so the controller's
+ * log holds a battle start, a played card, the handoff and the enemy plan
+ * entries. That is the three-plus-entry shape Continue Run must restore.
+ */
+function endedBattleFixture(): {
+  readonly save: RunSaveV1;
+  readonly battle: BattleState;
+  readonly log: BattleControllerState['log'];
+} {
+  const run = battleRun();
+  const ended = battleReducer(playedBattle(run), { type: 'end-turn' });
+
+  if (ended.report?.ok !== true) {
+    throw new Error('the fixture end turn was rejected');
+  }
+
+  return {
+    battle: ended.battle,
+    log: ended.log,
+    save: {
+      schemaVersion: RUN_SAVE_SCHEMA_VERSION,
+      seed: run.seed,
+      rngState: rewardStreamState(SEED),
+      run,
+      battle: serializeSnapshot(ended.battle),
+      battleLog: [...ended.log],
       pendingReward: null,
     },
   };
@@ -180,6 +214,7 @@ function rewardFixture(): RewardFixture {
       rngState: generated.value.rngState,
       run: settled.value,
       battle: null,
+      battleLog: null,
       pendingReward: generated.value.offers,
     },
   };
@@ -285,8 +320,122 @@ describe('resumeRun', () => {
     expect(restored.fieldMatchup).toEqual(
       fieldMatchupFor(fixture.battle.field),
     );
+    // The bounded log travels inside the save and is adopted, not re-derived.
+    expect(restored.log).toEqual(fixture.save.battleLog);
     expect(restored.sequence).toBe(0);
     expect(restored.report).toBeNull();
+  });
+
+  it('restores three or more saved log entries in their saved order', () => {
+    const fixture = endedBattleFixture();
+
+    expect(fixture.log.length).toBeGreaterThanOrEqual(3);
+
+    const resume = available(resumeRun(loadSaved(fixture.save)));
+    const restored = resume.state.battle;
+
+    if (restored === null) {
+      throw new Error('a battle-phase resume must restore the battle');
+    }
+
+    expect(restored.log).toEqual(fixture.log);
+    expect(restored.log.map((entry) => entry.id)).toEqual(
+      fixture.log.map((entry) => entry.id),
+    );
+    expect(restored.log.map((entry) => entry.ordinal)).toEqual(
+      fixture.log.map((entry) => entry.ordinal),
+    );
+    expect(restored.battle).toEqual(fixture.battle);
+  });
+
+  it('restores an empty log when the saved payload has no battleLog', () => {
+    const fixture = battleFixture();
+    const raw = JSON.parse(serializeRunSave(fixture.save)) as Record<
+      string,
+      unknown
+    >;
+
+    // The pre-LOG-07 v1 payload: every other field is intact, no log field.
+    delete raw['battleLog'];
+
+    const storage = new MemoryStorage();
+    storage.setItem(RUN_SAVE_STORAGE_KEY, JSON.stringify(raw));
+
+    const load = loadRunSave(storage);
+
+    expect(load.status).toBe('ok');
+    expect(load.save?.battleLog).toEqual([]);
+
+    const resume = available(resumeRun(load));
+
+    expect(resume.screen).toBe('battle');
+    expect(resume.state.battle?.battle).toEqual(fixture.battle);
+    expect(resume.state.battle?.log).toEqual([]);
+  });
+
+  it('drops a malformed saved log without discarding the run or battle', () => {
+    const fixture = battleFixture();
+    const raw = JSON.parse(serializeRunSave(fixture.save)) as {
+      battleLog?: { effects: unknown[] }[];
+    };
+    const entry = raw.battleLog?.[1];
+
+    if (entry === undefined) {
+      throw new Error('the fixture battle log has no card entry');
+    }
+
+    entry.effects = [{ kind: 'teleport' }];
+
+    const storage = new MemoryStorage();
+    storage.setItem(RUN_SAVE_STORAGE_KEY, JSON.stringify(raw));
+
+    const load = loadRunSave(storage);
+
+    // The save is kept: only the presentation log is dropped.
+    expect(load.status).toBe('ok');
+    expect(load.save?.battleLog).toEqual([]);
+    expect(storage.getItem(RUN_SAVE_STORAGE_KEY)).not.toBeNull();
+
+    const resume = available(resumeRun(load));
+
+    expect(resume.screen).toBe('battle');
+    expect(resume.state.run).toEqual(fixture.run);
+    expect(resume.state.battle?.battle).toEqual(fixture.battle);
+    expect(resume.state.battle?.log).toEqual([]);
+  });
+
+  it('loads an 81-entry log as the last 80 with ordinals intact', () => {
+    const fixture = battleFixture();
+    const raw = JSON.parse(serializeRunSave(fixture.save)) as Record<
+      string,
+      unknown
+    >;
+
+    raw['battleLog'] = Array.from({ length: 81 }, (_unused, ordinal) => ({
+      id: `t1-e${String(ordinal)}`,
+      ordinal,
+      turn: 1,
+      kind: 'turn',
+      actor: 'player',
+      effects: [],
+    }));
+
+    const storage = new MemoryStorage();
+    storage.setItem(RUN_SAVE_STORAGE_KEY, JSON.stringify(raw));
+
+    const load = loadRunSave(storage);
+    const restored = load.save?.battleLog ?? [];
+
+    expect(load.status).toBe('ok');
+    expect(restored).toHaveLength(80);
+    expect(restored[0]?.ordinal).toBe(1);
+    expect(restored[0]?.id).toBe('t1-e1');
+    expect(restored[79]?.ordinal).toBe(80);
+
+    const resume = available(resumeRun(load));
+
+    expect(resume.state.battle?.log).toEqual(restored);
+    expect(resume.state.battle?.battle).toEqual(fixture.battle);
   });
 
   it('replays the same next draw for the persisted seed and PRNG state', () => {
@@ -344,6 +493,7 @@ describe('resumeRun', () => {
           rngState: createRng(0x1234_5678),
           run: overview,
           battle: null,
+          battleLog: null,
           pendingReward: null,
         }),
       ),
@@ -361,6 +511,7 @@ describe('resumeRun', () => {
             rngState: createRng(0x1234_5678),
             run,
             battle: null,
+            battleLog: null,
             pendingReward: null,
           }),
         ),
@@ -384,6 +535,8 @@ describe('resumeRun', () => {
         resume.state.battle === null
           ? null
           : serializeSnapshot(resume.state.battle.battle),
+      battleLog:
+        resume.state.battle === null ? null : [...resume.state.battle.log],
       pendingReward: resume.state.offers,
     });
 

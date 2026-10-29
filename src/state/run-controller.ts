@@ -304,7 +304,8 @@ export function runCurrentHealth(state: SoloRunState): number {
  * Returns null only for an inconsistent state (battle phase without a battle,
  * or reward phase without offers); a caller must never write such a payload.
  * The shape is exactly the `fieldbound.run.v1` contract: hoisted seed, PRNG
- * state, run, phase-specific battle snapshot and phase-specific offers.
+ * state, run, phase-specific battle snapshot, phase-specific battle log and
+ * phase-specific offers.
  */
 export function createRunSave(state: SoloRunState): RunSaveV1 | null {
   const battle =
@@ -315,6 +316,14 @@ export function createRunSave(state: SoloRunState): RunSaveV1 | null {
   if (state.run.phase === 'battle' && battle === null) {
     return null;
   }
+
+  // The bounded log is saved exactly while a battle is on screen (LOG-FR-06).
+  // Outside the fight it is null, so the reward and result screens cannot
+  // restore prose they never rendered.
+  const battleLog =
+    state.run.phase === 'battle' && state.battle !== null
+      ? [...state.battle.log]
+      : null;
 
   const pendingReward =
     state.run.phase === 'reward' ? state.offers : null;
@@ -329,6 +338,7 @@ export function createRunSave(state: SoloRunState): RunSaveV1 | null {
     rngState: state.rngState,
     run: state.run,
     battle,
+    battleLog,
     pendingReward,
   };
 }
