@@ -426,15 +426,19 @@ test.describe('battle states', () => {
 
     const expand = page.locator('.enemy-panel__expand');
     const steps = page.locator('.enemy-panel__steps');
+    const preview = page.locator('.enemy-panel__preview');
 
     await expect(expand).toBeVisible();
     await expect(expand).toHaveAttribute('aria-expanded', 'false');
     await expect(steps).toBeHidden();
+    await expect(preview).toBeVisible();
+    await expect(preview.locator('.enemy-panel__preview-step')).toHaveCount(3);
 
     await expand.click();
 
     await expect(expand).toHaveAttribute('aria-expanded', 'true');
     await expect(steps).toBeVisible();
+    await expect(preview).toBeHidden();
     await expect(page.locator('.enemy-panel__note')).toBeVisible();
 
     await page.locator('.enemy-panel__expand').click();

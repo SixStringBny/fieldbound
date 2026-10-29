@@ -134,6 +134,57 @@ export function EnemyPanel({
               </p>
             ) : null}
 
+            {/*
+             * Phone-only preview: the collapsed intent keeps the first three
+             * steps as compact chips (README §8.7), while the full list below
+             * is revealed by `Show all N steps`. The preview is display:none at
+             * table widths and when expanded, so it never duplicates the plan
+             * in the accessibility tree.
+             */}
+            {stepCount > 0 ? (
+              <ol
+                className="enemy-panel__preview"
+                aria-label="Enemy plan preview"
+              >
+                {plan.steps.slice(0, 3).map((step) => {
+                  const short: string[] = [];
+
+                  if (step.damage > 0) {
+                    short.push(`${step.damage} dmg`);
+                  }
+
+                  if (step.defense > 0) {
+                    short.push(`${step.defense} def`);
+                  }
+
+                  if (step.shiftTo !== null) {
+                    short.push(`→ ${elementLabel(step.shiftTo)}`);
+                  }
+
+                  if (short.length === 0) {
+                    short.push('no effect');
+                  }
+
+                  return (
+                    <li
+                      className="enemy-panel__preview-step"
+                      key={`preview-${step.instanceId}`}
+                    >
+                      <span className="enemy-panel__preview-name">
+                        {cardName(cards, step.cardId)}
+                      </span>
+                      <span className="enemy-panel__preview-detail">
+                        {short.join(' · ')}
+                      </span>
+                      <span className="enemy-panel__preview-cost">
+                        {step.cost}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            ) : null}
+
             {stepCount > 0 ? (
               <ol
                 className="enemy-panel__steps"

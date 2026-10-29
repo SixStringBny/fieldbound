@@ -457,6 +457,14 @@
   font-weight: 700;
 }
 
+/* The collapsed phone intent preview; hidden at table widths and when open. */
+.enemy-panel__preview {
+  display: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .enemy-panel__steps {
   display: grid;
   max-height: 96px;
@@ -1556,6 +1564,41 @@
   .enemy-panel__intent[data-expanded='false'] .enemy-panel__steps,
   .enemy-panel__intent[data-expanded='false'] .enemy-panel__note {
     display: none;
+  }
+
+  .enemy-panel__intent[data-expanded='false'] .enemy-panel__preview {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--fb-space-1);
+    margin-top: var(--fb-space-1);
+  }
+
+  .enemy-panel__preview-step {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--fb-space-1);
+    padding: 2px var(--fb-space-2);
+    border: var(--fb-rule-subtle);
+    border-radius: var(--fb-radius-xs);
+    background-color: var(--fb-surface-inset);
+    font-size: var(--fb-text-2xs);
+    line-height: var(--fb-leading-ui);
+  }
+
+  .enemy-panel__preview-name {
+    color: var(--fb-text);
+    font-weight: 700;
+  }
+
+  .enemy-panel__preview-detail {
+    color: var(--fb-text-soft);
+  }
+
+  .enemy-panel__preview-cost {
+    margin-left: auto;
+    color: var(--fb-text-muted);
+    font-variant-numeric: tabular-nums;
   }
 
   .enemy-panel__steps {
