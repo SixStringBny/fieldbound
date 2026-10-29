@@ -557,11 +557,20 @@ for (const [index, viewport] of VIEWPORTS.entries()) {
       await expectMinimumTargets(page, `${layoutContext} battle`);
 
       if (viewport.width >= 1080) {
+        // AB-T2: the interactive board content is capped at 1080px and centred
+        // as a whole. The log rail makes the arena deliberately asymmetric
+        // inside that cap, so measure the arena-plus-rail content box rather
+        // than centring the arena in the viewport (battle-screen §1.2). The
+        // rail's exact 240/288px width is AB-T3 and lands with the battle
+        // screen; here it must exist as the right-hand column.
         const board = await page.locator('.battle-board').boundingBox();
+        const rail = await page
+          .locator('[data-battle-log="true"]')
+          .boundingBox();
 
-        if (board === null) {
+        if (board === null || rail === null) {
           throw new Error(
-            `${layoutContext}: the battle board has no rendered box.`,
+            `${layoutContext}: the battle board or its log rail has no rendered box.`,
           );
         }
 
@@ -570,13 +579,37 @@ for (const [index, viewport] of VIEWPORTS.entries()) {
           `${layoutContext}: the battle board is ${board.width}px wide, above the ${BOARD_MAX_WIDTH_PX}px contract.`,
         ).toBeLessThanOrEqual(BOARD_MAX_WIDTH_PX + 1);
 
-        const leftGap = board.x;
-        const rightGap = viewport.width - (board.x + board.width);
+        const contentLeft = Math.min(board.x, rail.x);
+        const contentRight = Math.max(board.x + board.width, rail.x + rail.width);
+        const contentWidth = contentRight - contentLeft;
+
+        expect(
+          contentWidth,
+          `${layoutContext}: the board content is ${contentWidth}px wide, above the ${BOARD_MAX_WIDTH_PX}px contract.`,
+        ).toBeLessThanOrEqual(BOARD_MAX_WIDTH_PX + 1);
+
+        const leftGap = contentLeft;
+        const rightGap = viewport.width - contentRight;
 
         expect(
           Math.abs(leftGap - rightGap),
-          `${layoutContext}: the battle board is not centred (left gap ${leftGap}px, right gap ${rightGap}px).`,
+          `${layoutContext}: the board content is not centred (left gap ${leftGap}px, right gap ${rightGap}px).`,
         ).toBeLessThanOrEqual(2);
+
+        const gapBetween = rail.x - (board.x + board.width);
+
+        expect(
+          rail.x,
+          `${layoutContext}: the log rail is not the board's right-hand column (board ends at ${board.x + board.width}px, rail starts at ${rail.x}px).`,
+        ).toBeGreaterThanOrEqual(board.x + board.width - 1);
+        expect(
+          gapBetween,
+          `${layoutContext}: the empty gutter between the board and its rail is ${gapBetween}px, above the 240px limit.`,
+        ).toBeLessThanOrEqual(240);
+        expect(
+          rail.width,
+          `${layoutContext}: the log rail (${rail.width}px) must be the narrow column beside the board (${board.width}px).`,
+        ).toBeLessThan(board.width);
       }
 
       // Keyboard-only card play. The fifth card currently owns focus from the

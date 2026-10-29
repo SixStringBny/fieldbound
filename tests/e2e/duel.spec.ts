@@ -335,7 +335,25 @@ async function assertActiveTurn(
     allowed.add(name);
   }
 
-  const pageText = await page.evaluate(() => document.body.textContent ?? '');
+  /*
+   * The public battle log is part of the active-turn surface by contract
+   * (duel-flow §4.10, OVERHAUL §5.9): it names the cards that were *played in
+   * the open*, so those names are public facts, not hidden information. The
+   * scan therefore reads every surface except the log region; the log's own
+   * public-only guarantee is asserted separately in `battle-log.spec.ts`, which
+   * proves it can name only the card just played.
+   */
+  const pageText = await page.evaluate(() => {
+    const clone = document.body.cloneNode(true) as HTMLElement;
+
+    for (const log of Array.from(
+      clone.querySelectorAll('[data-battle-log="true"]'),
+    )) {
+      log.remove();
+    }
+
+    return clone.textContent ?? '';
+  });
   const appearing = CARD_NAMES.filter((name) => pageText.includes(name));
 
   // The active hand's names must be visible to the scan; otherwise the privacy
