@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T12:04:32.907Z",
+  "lastUpdatedAt": "2026-10-29T12:06:51.800Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -1758,10 +1758,63 @@
     },
     "REL-06": {
       "taskId": "REL-06",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "qa-automation-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 2,
+      "outputFiles": [
+        "scripts/check-budget.mjs"
+      ],
+      "startedAt": "2026-10-29T12:06:06.346Z",
+      "usage": {
+        "inputTokens": 53137,
+        "outputTokens": 7582,
+        "cacheReadTokens": 783616,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 6749,
+        "costUsd": 0.018919998,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "failed",
+          "reason": "forge-result.unresolved must be a string array; use [] when no blocking requirements remain.",
+          "resultPath": "docs/artifacts/REL-06.2026-10-29T12-06-01-328Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 30889,
+            "outputTokens": 5388,
+            "reasoningTokens": 5276,
+            "cacheReadTokens": 497792,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.012525126000000001,
+            "source": "harness"
+          }
+        },
+        {
+          "attempt": 2,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/REL-06.2026-10-29T12-06-51-791Z.attempt-2.result.json",
+          "usage": {
+            "inputTokens": 22248,
+            "outputTokens": 2194,
+            "reasoningTokens": 1473,
+            "cacheReadTokens": 285824,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.006394872000000001,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T12:06:51.797Z",
+      "agentOutput": "Validation complete. The budget audit passes on a clean production build, and both required failure paths were exercised with temporary fixtures that were then removed.\n\n**What I ran (this session)**\n\n1. `node scripts/check-budget.mjs` → exit 0\n   - Built with `VITE_BASE=/` via `npm run build` (tsc + vite, 79 modules).\n   - Per-file table: `assets/index-BIV8nMpw.css` 36,874 raw / 6,824 gzip; `assets/index-BL1olCqv.js` 357,541 raw / 101,968 gzip.\n   - Total 394,415 raw / **108,792 gzip** vs 307,200 ceiling → **198,408 B (193.8 KiB) headroom**.\n   - Manifest v1: **all 41 entries resolve** to emitted files under `dist/assets`.\n2. Failure probe A (missing manifest file) — temporarily moved `public/assets/cards/ember-inferno.svg`, ran the audit: exit 1, `asset manifest entry card:ember-inferno points at cards/ember-inferno.svg, which is missing from dist/assets` and `manifest coverage 40/41`. Restored the file.\n3. Failure probe B (over budget) — temporarily added a 400 KiB incompressible `public/assets/zz-budget-probe.js`, ran the audit: exit 1, total 518,538 gzip, `bundle budget exceeded by 211,338 B (206.4 KiB)`. Removed the probe.\n4. Re-ran the clean audit → exit 0, confirming `dist/` is back to the two real bundle files only and `git status` shows no stray fixture.\n\nNo application source, build config or CSS was touched; nothing is excluded from the total (only source-map extensions are not JS/CSS).\n\n```forge-result\n{\"summary\":\"Added scripts/check-budget.mjs: builds the production bundle, gzip-compresses every emitted JS/CSS file, prints a per-file raw/gzip table and the summed total, fails above 307200 bytes with the overage, and fails when any asset-manifest entry has no file in dist/assets. Clean run exits 0 with 108792 B gzip across 2 files and 198408 B headroom, all 41 manifest entries resolved. Both failure paths were demonstrated with temporary fixtures (missing SVG -> exit 1; 400 KiB extra file -> exit 1 with overage) and the fixtures were removed before the final clean pass.\",\"decisions\":[\"Every emitted .js/.mjs/.cjs/.css file under dist is counted with nothing excluded, so the total is the sum of all emitted JavaScript and CSS rather than a curated subset; the build is a real Vite production build with tsc, not the dev server.\",\"Gzip uses zlib level 9 per file and sums per-file compressed sizes, matching how the budget is stated (initial JS + CSS gzip), and the source maps are the only extension-ignored output.\",\"The 300 KB ceiling is treated as 307200 bytes inclusive (at most), and the overage and headroom are both printed in bytes and KiB so the pass/fail boundary is unambiguous.\",\"Manifest coverage resolves paths exactly as the runtime loader does: dist/assets/<path>, rejecting absolute, scheme-qualified or traversal paths before checking that a regular file exists, and reporting the offending id and path.\",\"The script accepts VITE_BASE so the exact deployable subpath artifact can be audited, but the byte total is base-independent so the default root build is measured.\",\"Build failure is a hard finding rather than an exception: the audit reports that no budget could be measured and exits non-zero.\"],\"interfaces\":[\"scripts/check-budget.mjs: BUDGET_BYTES 307200, normalizeBase(rawBase), build(), walk(dir), collectBundle() -> { rows, rawTotal, gzipTotal }, printTable(rows, rawTotal, gzipTotal), checkBudget(gzipTotal), isResolvableManifestPath(value), auditManifest() -> { resolved, total }, report(); honours VITE_BASE; exit code 1 on any finding.\",\"Reads dist/assets/assets.manifest.json expecting { version: number, assets: [{ id, path }] } with 41 entries; resolves each path relative to dist/assets.\"],\"tests\":[\"node scripts/check-budget.mjs: exit 0 (clean build; 108792 B gzip / 307200 B, 198408 B headroom, 41/41 manifest entries)\",\"Fault injection, missing manifest file: exit 1 with 'asset manifest entry card:ember-inferno ... missing from dist/assets' and 'manifest coverage 40/41' (fixture restored)\",\"Fault injection, oversized emitted JS: exit 1 with 'bundle budget exceeded by 211338 B (206.4 KiB)' at 518538 B gzip (fixture removed)\"],\"unresolved\":[]}\n```\n\n**Files created or changed**\n- `scripts/check-budget.mjs` (changed — the REL-06 deliverable; full audit implementation)\n\nTemporary probe fixtures (`public/assets/cards/ember-inferno.svg` move, `public/assets/zz-budget-probe.js`) were restored/removed; `dist/` was rebuilt clean and no other tracked files were modified.\r\n",
+      "artifactId": "work-rel-06-001",
+      "inputArtifactIds": [
+        "work-rel-05-001",
+        "work-rel-01-001",
+        "work-rel-02-001",
+        "work-rel-03-001",
+        "work-rel-04-001"
+      ]
     },
     "REL-HR-1": {
       "taskId": "REL-HR-1",

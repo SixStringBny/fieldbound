@@ -4,7 +4,7 @@
 **Phase**: RELEASE-VERIFICATION-2
 **Status**: In Progress
 **Validation Gaps**: 4 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T12:04:32.910Z
+**Last Updated**: 2026-10-29T12:06:51.804Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -74,12 +74,13 @@
   - Files: tests/e2e/responsive-a11y.spec.ts
 - [x] Phase RELEASE-VERIFICATION-2, Task REL-05: Audit the subpath static build and commit CI and Pages workflows (@qa-automation-engineer)
   - Files: scripts/check-build.mjs, .github/workflows/ci.yml, .github/workflows/pages.yml, README.md
+- [x] Phase RELEASE-VERIFICATION-2, Task REL-06: Enforce the production bundle budget (@qa-automation-engineer)
+  - Files: scripts/check-budget.mjs
 
 ## Current Task
 - None currently running
 
 ## Remaining
-- [ ] Phase RELEASE-VERIFICATION-2: Phase 2: Build, Deploy and Budget
 - [ ] Phase RELEASE-VERIFICATION-3: Phase 3: Human Review
 
 ## Blockers
