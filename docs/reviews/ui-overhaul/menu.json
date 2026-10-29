@@ -1,0 +1,190 @@
+{
+  "taskId": "UI-2-menu",
+  "reviewer": "Ben McCusker (@SixStringBny)",
+  "reviewedAt": "2026-10-29T23:12:03.555Z",
+  "decision": "approved",
+  "evidence": [
+    {
+      "path": "docs/reviews/ui-overhaul/menu.md",
+      "sha256": "03db787c4d8349e96e6c326f37572e8a27b1253ffb987c5305b90666775a0267"
+    }
+  ],
+  "route": "menu",
+  "commit": "23e9d89",
+  "viewports": [
+    "375x667",
+    "390x844",
+    "768x1024",
+    "1024x768",
+    "1280x800"
+  ],
+  "mechanical": {
+    "owner": "qa-automation-engineer",
+    "ranAt": "2026-10-29T23:12:03.555Z",
+    "checks": [
+      {
+        "id": "AB-C1",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-C1 named objects render on the menu",
+        "message": "Also covers the validated-save and corrupt-save variants."
+      },
+      {
+        "id": "AB-C2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-C2 exactly one action seal and it is the Play Solo button",
+        "message": ""
+      },
+      {
+        "id": "AB-C3",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-C3 no form furniture on play routes (menu at 375x667)",
+        "message": "All five viewports."
+      },
+      {
+        "id": "AB-P1",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-P1 the primary action sits inside the 288px thumb envelope at 375x667",
+        "message": "375x667 and 390x844."
+      },
+      {
+        "id": "AB-P4",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-P4 no ellipsis and the text floors hold at 375x667",
+        "message": "All five viewports."
+      },
+      {
+        "id": "AB-T1",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-T1 the hero and hub are side by side",
+        "message": "1024 and 1280."
+      },
+      {
+        "id": "AB-T2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-T2 the hub measures 512 inside a centred 1080 column",
+        "message": "Also 440 inside 976 at 1024."
+      },
+      {
+        "id": "AB-G3",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-G3 no menu text or focusable control is clipped",
+        "message": ""
+      },
+      {
+        "id": "AB-G4",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-G4 no horizontal page scroll on menu at 375x667",
+        "message": "All five viewports, no-save and saved."
+      },
+      {
+        "id": "AB-G5",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-G5 every target is at least 44px on menu at 375x667",
+        "message": "All five viewports, no-save and saved."
+      },
+      {
+        "id": "AB-G6",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-G6 route focus lands on the h1 with the two-tone ring",
+        "message": ""
+      },
+      {
+        "id": "AB-A1",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-A1 axe reports zero WCAG 2.1 A/AA violations on menu at 375x667",
+        "message": "375 and 1280, no-save and saved."
+      },
+      {
+        "id": "AB-A2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-A2 every stateful control is glyph plus word (menu at 375x667)",
+        "message": "All five viewports."
+      },
+      {
+        "id": "AB-A3",
+        "status": "pass",
+        "test": "src/styles/tokens.test.ts › AB-A3 token pairs meet the contrast floors",
+        "message": ""
+      },
+      {
+        "id": "AB-A4",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-A4 exactly one polite live region and no menu announcement",
+        "message": ""
+      },
+      {
+        "id": "AB-A7",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-A7 the menu takes the forced-colors and high-contrast branches",
+        "message": ""
+      },
+      {
+        "id": "AB-V1",
+        "status": "pass",
+        "test": "src/styles/tokens.test.ts › AB-V1 components consume semantic tokens",
+        "message": ""
+      },
+      {
+        "id": "AB-V2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-V2 one slate table and one parchment material on every route",
+        "message": ""
+      },
+      {
+        "id": "AB-V3",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-V3 the menu renders no art outside the manifest loader",
+        "message": ""
+      },
+      {
+        "id": "AB-V4",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-V4 self-hosted display face and system UI stack",
+        "message": ""
+      },
+      {
+        "id": "AB-V5",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-V5 no banned motif renders on the menu",
+        "message": ""
+      }
+    ],
+    "summary": {
+      "passed": 21,
+      "failed": 0
+    }
+  },
+  "human": {
+    "owner": "Ben McCusker (@SixStringBny)",
+    "reviewedAt": "2026-10-29T23:12:03.555Z",
+    "viewports": [
+      "390x844",
+      "768x1024",
+      "1280x800"
+    ],
+    "checks": [
+      {
+        "id": "H-C1",
+        "status": "pass",
+        "note": "Reads as a table hub in five seconds; the primary action is Play Solo."
+      },
+      {
+        "id": "H-C2",
+        "status": "pass",
+        "note": "Warm slate, parchment mode cards, brass rules and the wax seal; the placeholder art does not clash."
+      },
+      {
+        "id": "H-P1",
+        "status": "pass",
+        "note": "At 375/390 Play Solo sits inside the thumb envelope and the menu never scrolls sideways; the tall hero field is accepted."
+      },
+      {
+        "id": "H-T1",
+        "status": "pass",
+        "note": "At 1024/1280 the hero and hub sit side by side with the explicit 512/440 columns; nothing reads as a phone app in a frame."
+      }
+    ],
+    "decision": "approved"
+  },
+  "issues": []
+}
