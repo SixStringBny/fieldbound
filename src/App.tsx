@@ -7,17 +7,24 @@
  * without a matching route. Screens dispatch navigation intents; only this file
  * decides which screen is mounted.
  *
- * Surfaces that later tasks build (settings, solo, duel) resolve to a single
- * shared notice until then. That keeps the menu's entries alive and the router
- * exhaustive without creating empty screen files that a later task would have
- * to delete. The battle surface is built and owned by SHL-03.
+ * The menu, rules, settings and battle surfaces are built. Solo and duel
+ * surfaces owned by later tasks resolve to a single shared notice until then,
+ * which keeps the menu's entries alive and the router exhaustive without
+ * creating empty screen files that a later task would have to delete.
+ *
+ * The root also owns the cross-cutting runtime wiring: the versioned settings
+ * store, the resolved reduced-motion attribute, and the single subscription
+ * that turns cue-bus events into synthesized sound after the first gesture.
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { createSfxEngine } from './audio/sfx';
 import { byId as cardCatalog } from './content/cards';
 import { deckByElement } from './content/decks';
 import { enemyById } from './content/enemies';
+import type { Settings, SettingsStorage } from './persistence/settings';
+import { createSettingsStore } from './persistence/settings';
 import {
   createBattleControllerState,
   useBattleController,
@@ -27,10 +34,15 @@ import type {
   BattleControllerState,
 } from './state/battle-controller';
 import type { EngineResult } from './engine/types';
-import { emitCue } from './ui/events';
+import { emitCue, uiEvents } from './ui/events';
+import {
+  reducedMotionAttribute,
+  useReducedMotion,
+} from './ui/motion/useReducedMotion';
 import { BattleScreen } from './ui/screens/BattleScreen';
 import { HowToPlayScreen } from './ui/screens/HowToPlayScreen';
 import { MenuScreen } from './ui/screens/MenuScreen';
+import { SettingsScreen } from './ui/screens/SettingsScreen';
 
 export const SCREEN_KINDS = [
   'menu',
@@ -126,19 +138,111 @@ export interface AppProps {
    * supplies the run's own battle.
    */
   readonly battleConfig?: BattleControllerConfig;
+  /**
+   * Test-only: replace the browser's storage for settings, or pass `null` to
+   * simulate a browser where storage is unavailable. Production omits it.
+   */
+  readonly settingsStorage?: SettingsStorage | null;
 }
 
 export function App({
   initialScreen = INITIAL_SCREEN,
   hasSave = false,
   battleConfig,
+  settingsStorage,
 }: AppProps = {}) {
   const [screen, setScreen] = useState<Screen>(initialScreen);
+
+  // The store is created once per mount; `load` validates before use and only
+  // removes the settings key when the payload is unusable.
+  const [settingsStore] = useState(() => createSettingsStore(settingsStorage));
+  const [settings, setSettings] = useState<Settings>(() => settingsStore.load());
+  const [storageAvailable, setStorageAvailable] = useState<boolean>(
+    () => settingsStore.isPersistent,
+  );
+
+  // One engine per mount. It constructs no AudioContext until a gesture and
+  // starts muted when the saved choice says so, so a mute survives a reload
+  // without waking the audio hardware first.
+  const [sfx] = useState(() => createSfxEngine({ initialMuted: settings.muted }));
+
+  const reducedMotion = useReducedMotion(settings.reducedMotion);
+
+  // Keep the engine's mute state in step with the setting, including the
+  // initial load and any change made from another surface later.
+  useEffect(() => {
+    sfx.setMuted(settings.muted);
+  }, [sfx, settings.muted]);
+
+  // The cue bus is the only path from screens to sound. A subscriber cannot
+  // throw through the bus, and no screen imports the audio module.
+  useEffect(
+    () =>
+      uiEvents.subscribe((event) => {
+        if (event.type === 'cue') {
+          sfx.play(event.cue);
+        }
+      }),
+    [sfx],
+  );
+
+  // Browsers require a gesture before audio may start. The listeners stay for
+  // the session because unmuting after a muted boot needs a later gesture to
+  // perform the actual unlock; `unlock()` is idempotent.
+  useEffect(() => {
+    const unlock = () => {
+      sfx.unlock();
+    };
+
+    window.addEventListener('pointerdown', unlock, { passive: true });
+    window.addEventListener('keydown', unlock);
+
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, [sfx]);
+
+  useEffect(() => () => sfx.dispose(), [sfx]);
+
+  const applySettings = useCallback(
+    (next: Settings) => {
+      setSettings(next);
+      const persisted = settingsStore.save(next);
+
+      if (!persisted) {
+        setStorageAvailable(false);
+      }
+    },
+    [settingsStore],
+  );
 
   const navigate = useCallback((kind: ScreenKind) => {
     setScreen(SCREENS[kind]);
     emitCue('ui');
   }, []);
+
+  const handleSoundChange = useCallback(
+    (enabled: boolean) => {
+      const next: Settings = { ...settings, muted: !enabled };
+      applySettings(next);
+      sfx.setMuted(next.muted);
+
+      // Unmuting is itself a gesture: unlock now rather than making the player
+      // press a second control before the first cue can sound.
+      if (!next.muted) {
+        sfx.unlock();
+      }
+    },
+    [applySettings, settings, sfx],
+  );
+
+  const handleReducedMotionChange = useCallback(
+    (reduced: boolean) => {
+      applySettings({ ...settings, reducedMotion: reduced });
+    },
+    [applySettings, settings],
+  );
 
   const pending = (title: string): ReactNode => (
     <PendingSurface title={title} onBack={() => navigate('menu')} />
@@ -159,7 +263,19 @@ export function App({
       />
     ),
     'how-to-play': <HowToPlayScreen onBack={() => navigate('menu')} />,
-    settings: pending('Settings'),
+    settings: (
+      <SettingsScreen
+        muted={settings.muted}
+        reducedMotion={reducedMotion}
+        reducedMotionSource={
+          settings.reducedMotion === null ? 'system' : 'setting'
+        }
+        storageAvailable={storageAvailable}
+        onSoundChange={handleSoundChange}
+        onReducedMotionChange={handleReducedMotionChange}
+        onBack={() => navigate('menu')}
+      />
+    ),
     'solo-setup': pending('Solo setup'),
     'run-overview': pending('Run overview'),
     battle: <BattleRoute config={battle} onExit={() => navigate('menu')} />,
@@ -172,7 +288,11 @@ export function App({
   };
 
   return (
-    <div className="app-root" id="app-root">
+    <div
+      className="app-root"
+      id="app-root"
+      data-reduced-motion={reducedMotionAttribute(reducedMotion)}
+    >
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>

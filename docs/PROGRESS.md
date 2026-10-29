@@ -4,7 +4,7 @@
 **Phase**: GAME-SHELL-PRESENTATION-3
 **Status**: In Progress
 **Validation Gaps**: 1 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T04:51:10.175Z
+**Last Updated**: 2026-10-29T04:55:07.486Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -42,6 +42,8 @@
   - Files: src/ui/motion/useReducedMotion.ts, src/ui/motion/motion.css, src/ui/motion/useReducedMotion.test.tsx
 - [x] Phase GAME-SHELL-PRESENTATION-3, Task SHL-05: Implement synthesized WebAudio sound cues (@ux-engineer)
   - Files: src/audio/sfx.ts, src/audio/sfx.test.ts
+- [x] Phase GAME-SHELL-PRESENTATION-3, Task SHL-06: Add settings persistence and wire audio and motion (@frontend-engineer)
+  - Files: src/ui/screens/SettingsScreen.tsx, src/persistence/settings.ts, src/persistence/settings.test.ts, src/App.tsx, src/App.settings.test.tsx, src/styles/base.css
 
 ## Current Task
 - None currently running

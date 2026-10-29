@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T04:51:10.172Z",
+  "lastUpdatedAt": "2026-10-29T04:55:07.482Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -911,10 +911,52 @@
     },
     "SHL-06": {
       "taskId": "SHL-06",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "frontend-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/ui/screens/SettingsScreen.tsx",
+        "src/persistence/settings.ts",
+        "src/persistence/settings.test.ts",
+        "src/App.tsx",
+        "src/App.settings.test.tsx",
+        "src/styles/base.css"
+      ],
+      "startedAt": "2026-10-29T04:51:10.537Z",
+      "usage": {
+        "inputTokens": 67093,
+        "outputTokens": 15258,
+        "reasoningTokens": 17672,
+        "cacheReadTokens": 2291712,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.036697086,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/SHL-06.2026-10-29T04-55-07-469Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 67093,
+            "outputTokens": 15258,
+            "reasoningTokens": 17672,
+            "cacheReadTokens": 2291712,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.036697086,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T04:55:07.477Z",
+      "agentOutput": "I'll start by reading the task execution file and exploring the project state.\r\nNow I have the full picture. Let me create the settings persistence module.\r\nImplemented SHL-06. Settings persistence, the settings screen, audio/motion wiring and the full App-level verification are complete.\n\n## Files created or changed\n\n**Created**\n- `src/persistence/settings.ts` — versioned `fieldbound.settings.v1` store, validation, defaults, injectable storage and in-memory fallback\n- `src/persistence/settings.test.ts` — 22 persistence/validation/fallback tests\n- `src/ui/screens/SettingsScreen.tsx` — Sound and Reduce motion switches with immediate save and storage notice\n- `src/App.settings.test.tsx` — 11 App-level settings, reload, motion and audio-wiring tests\n\n**Changed**\n- `src/App.tsx` — settings store/load/save, resolved `data-reduced-motion` on the app root, cue-bus subscription, gesture unlock, mute sync, settings route\n- `src/styles/base.css` — settings row, 44px switch and notice styles, reduced-motion rule\n\n## Observed validation\n\n- `npm test -- src/App.settings.test.tsx src/persistence/settings.test.ts` — 2 files, 33 tests passed\n- `npm run typecheck` — exit 0\n- `npm test` — 21 files, 561 tests passed\n- `npm run build` — exit 0\n\n```forge-result\n{\n  \"summary\": \"Implemented SHL-06: a validated, versioned fieldbound.settings.v1 store with in-memory fallback; a settings screen with immediate Sound and Reduce motion switches; and App wiring that mirrors the resolved motion state into data-reduced-motion, subscribes to the cue bus, unlocks audio on the first gesture and persists both choices across remounts. Required tests, typecheck, the full suite and the production build pass.\",\n  \"decisions\": [\n    \"Settings are one schemaVersion-1 payload with muted:boolean and reducedMotion:boolean|null, where null means follow the OS preference; unknown versions and malformed fields discard only this key.\",\n    \"The settings store takes an injectable SettingsStorage adapter and null meaning unavailable; failed reads/writes keep the last value in memory and save() returns whether the write persisted so the UI can show a non-blocking notice.\",\n    \"The store loads once per App mount and the screen receives the resolved motion boolean plus a 'system'/'setting' source, so the first paint can honour prefers-reduced-motion while the hint tells the player whether the value is theirs or the device's.\",\n    \"The Settings screen uses two role=\\\"switch\\\" buttons labelled by their headings and reports On/Off visibly; each click writes the settings synchronously before any further interaction.\",\n    \"App owns one SfxEngine per mount, creates it with initialMuted from the loaded settings, subscribes once to uiEvents, and disposes it on unmount; screen modules still never import audio.\",\n    \"Window pointerdown and keydown listeners call the idempotent unlock for the session rather than being removed after the first gesture, because a player who booted muted needs a later gesture to unlock; unmuting also calls unlock inside the click handler so audio starts on that same gesture.\",\n    \"The only added App prop is a test-only settingsStorage override, matching the existing initialScreen and battleConfig test seams; production always resolves window.localStorage.\"\n  ],\n  \"interfaces\": [\n    \"src/persistence/settings.ts: SETTINGS_STORAGE_KEY = 'fieldbound.settings.v1', SETTINGS_SCHEMA_VERSION = 1, SettingsV1/Settings, DEFAULT_SETTINGS, SettingsStorage { getItem, setItem, removeItem }, parseStoredSettings(raw), serializeSettings(settings), SettingsStore { load(), save(settings): boolean, readonly isPersistent }, createSettingsStore(storage?: SettingsStorage | null).\",\n    \"src/ui/screens/SettingsScreen.tsx: SettingsScreenProps { muted, reducedMotion, reducedMotionSource: 'system' | 'setting', storageAvailable, onSoundChange(enabled), onReducedMotionChange(reduced), onBack }, SettingsScreen().\",\n    \"src/App.tsx: AppProps gains optional settingsStorage?: SettingsStorage | null (test-only); the app root now renders data-reduced-motion=\\\"true|false\\\"; the settings route mounts SettingsScreen with the resolved motion value.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/App.settings.test.tsx src/persistence/settings.test.ts: 2 files, 33 tests passed (run)\",\n    \"npm run typecheck: exit 0 (run)\",\n    \"npm test: 21 files, 561 tests passed (run)\",\n    \"npm run build: dist produced, exit 0 (run)\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-shl-06-001",
+      "inputArtifactIds": [
+        "work-shl-04-001",
+        "work-shl-05-001",
+        "work-shl-02-001",
+        "work-shl-03-001"
+      ]
     },
     "SHL-07": {
       "taskId": "SHL-07",
