@@ -122,6 +122,8 @@ Key: `fieldbound.run.v1`.
 
 Saves are written after every settled action: a card play that fully resolves, a completed turn, a reward choice, an encounter start and a run end. A reload offers Continue Run only when the payload validates. Continue restores the battle snapshot exactly; during a reward or result, it restores that screen.
 
+[Battle Log & Dynamic Dialogue](battle-log.md) adds one optional additive `battleLog` array to this payload (`LOG-FR-06`). It is written only in the battle phase, capped at 80 entries and restored in order by Continue Run. `RUN_SAVE_SCHEMA_VERSION` stays at `1`: saves without the field remain valid and resume with an empty log, and a malformed log is dropped without discarding the rest of the save.
+
 ### 4.4 Best-run record
 
 Key: `fieldbound.stats.v1`.

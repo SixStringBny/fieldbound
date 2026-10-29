@@ -96,7 +96,7 @@ Solo and duel screens are added by their own features; this feature owns the rou
 
 ### 4.2 Battle board layout
 
-**Portrait (375–639px):** single column. Enemy panel at the top with portrait, name, health, defense, statuses and the intent list. Field banner below it with glyph, name, "Empowers / Counters" text and the cycle strip. Player panel under the field with health, defense, statuses and energy pips. The hand sits in a horizontally scrollable snap row with at least 64px visible per card and a tap-to-inspect detail sheet. A sticky bottom bar holds the End Turn button and energy text. The event log collapses behind a "Log" toggle.
+**Portrait (375–639px):** single column. Enemy panel at the top with portrait, name, health, defense, statuses and the intent list. Field banner below it with glyph, name, "Empowers / Counters" text and the cycle strip. Player panel under the field with health, defense, statuses and energy pips. The hand sits in a horizontally scrollable snap row with at least 64px visible per card and a tap-to-inspect detail sheet. A sticky bottom bar holds the End Turn button and energy text. The event log collapses behind a "Log" toggle; the log surface is owned by `LOG-FR-04` in [Battle Log & Dynamic Dialogue](battle-log.md).
 
 **Tablet and desktop (640px+):** the same vertical order inside a centered 1080px container. Cards grow to about 120px wide; the event log becomes a right-hand column on widths of 1024px or more. No hover-only action exists.
 

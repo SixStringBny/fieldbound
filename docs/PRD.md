@@ -15,6 +15,7 @@
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-10-28 | Forge PRD authoring | Initial PRD and six canonical features derived from docs/IDEA.md |
+| 1.1 | 2026-10-29 | Forge PRD authoring | Add canonical feature 7, Battle Log & Dynamic Dialogue, and register it in the feature table and dependency graph |
 
 ---
 
@@ -357,6 +358,7 @@ No analytics are collected. Success is demonstrated by repository evidence and o
 | 4 | Solo Run | [docs/features/solo-run.md](features/solo-run.md) | Game Shell & Presentation | Must |
 | 5 | Local Duel | [docs/features/local-duel.md](features/local-duel.md) | Game Shell & Presentation | Must |
 | 6 | Release Verification | [docs/features/release-verification.md](features/release-verification.md) | Solo Run, Local Duel | Must |
+| 7 | Battle Log & Dynamic Dialogue | [docs/features/battle-log.md](features/battle-log.md) | Battle Engine & Rules, Card & Enemy Content, Game Shell & Presentation, Solo Run, Local Duel, Release Verification | Must |
 
 ### Feature Dependency Graph
 
@@ -365,8 +367,9 @@ Battle Engine & Rules (foundation)
 └── Card & Enemy Content
     └── Game Shell & Presentation
         ├── Solo Run
-        └── Local Duel
-            └── Release Verification (requires Solo Run + Local Duel)
+        ├── Local Duel
+        ├── Release Verification (requires Solo Run + Local Duel)
+        └── Battle Log & Dynamic Dialogue (requires Solo Run + Local Duel; Release Verification for the E2E harness)
 ```
 
 ---
