@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Fieldbound battle board layout (SHL-FR-02, SHL-FR-03, SHL-FR-08).
  *
  * Portrait-first: one column from 375px up, the hand in a horizontally
@@ -33,10 +33,10 @@
   min-width: 0;
   margin: 0 auto;
   padding: 0 0 var(--fb-space-4);
-  color: var(--fb-ink);
+  color: var(--fb-text);
   font-family: var(--fb-font-ui);
-  font-size: var(--fb-text-body);
-  line-height: var(--fb-line-body);
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-leading-body);
 }
 
 .battle-board > *,
@@ -116,7 +116,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3em;
-  color: var(--fb-element-shade);
+  color: var(--fb-element-accent);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -140,7 +140,7 @@
 }
 
 .battle-board__turn {
-  color: var(--fb-ink-soft);
+  color: var(--fb-text-soft);
   font-size: 0.9375rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -158,11 +158,13 @@
 .enemy-panel,
 .player-panel,
 .field-banner {
-  border: var(--fb-border);
-  border-radius: var(--fb-radius-lg);
-  background: linear-gradient(180deg, var(--fb-paper) 0%, #f8efdd 100%);
-  box-shadow: var(--fb-shadow);
+  border: var(--fb-rule);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-panel);
+  background-image: var(--fb-material-panel);
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
   padding: var(--fb-space-3);
+  color: var(--fb-text);
 }
 
 .enemy-panel {
@@ -176,9 +178,9 @@
 .enemy-panel__portrait {
   display: block;
   overflow: hidden;
-  border: 2px solid var(--fb-element-accent);
-  border-radius: var(--fb-radius-md);
-  background: var(--fb-parchment-deep);
+  border: var(--fb-rule-width-strong) solid var(--fb-element-accent);
+  border-radius: var(--fb-radius-sm);
+  background-color: var(--fb-surface-inset);
 }
 
 .enemy-panel__body {
@@ -187,7 +189,7 @@
 }
 
 .enemy-panel__title {
-  font-family: var(--fb-font-body);
+  font-family: var(--fb-font-display);
   font-size: 1.125rem;
   line-height: 1.2;
   overflow-wrap: anywhere;
@@ -198,14 +200,14 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--fb-space-2);
-  font-size: var(--fb-text-small);
+  font-size: var(--fb-text-sm);
 }
 
 .enemy-panel__intent {
   display: grid;
   gap: var(--fb-space-1);
   padding-top: var(--fb-space-2);
-  border-top: 1px dashed rgb(43 36 25 / 22%);
+  border-top: var(--fb-rule-width) dashed var(--fb-rule-subtle-color);
 }
 
 .enemy-panel__intent-title {
@@ -213,13 +215,13 @@
 }
 
 .enemy-panel__totals {
-  font-size: var(--fb-text-small);
+  font-size: var(--fb-text-sm);
   font-weight: 600;
 }
 
 .enemy-panel__lethal {
   color: var(--fb-danger);
-  font-size: var(--fb-text-small);
+  font-size: var(--fb-text-sm);
   font-weight: 700;
 }
 
@@ -237,10 +239,10 @@
   align-items: baseline;
   gap: 0.15rem 0.6rem;
   padding: 0.35rem 0.5rem;
-  border-left: 3px solid var(--fb-element-accent);
+  border-left: var(--fb-rule-width-strong) solid var(--fb-element-accent);
   border-radius: 0 var(--fb-radius-sm) var(--fb-radius-sm) 0;
-  background: rgb(43 36 25 / 5%);
-  font-size: var(--fb-text-small);
+  background-color: var(--fb-surface-inset);
+  font-size: var(--fb-text-sm);
 }
 
 .enemy-panel__step-name {
@@ -248,12 +250,12 @@
 }
 
 .enemy-panel__step-detail {
-  color: var(--fb-ink-soft);
+  color: var(--fb-text-soft);
 }
 
 .enemy-panel__empty {
-  color: var(--fb-ink-soft);
-  font-size: var(--fb-text-small);
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-sm);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -278,33 +280,41 @@
 }
 
 .stat-meter__value {
-  color: var(--fb-ink-soft);
+  color: var(--fb-text-soft);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .stat-meter__track {
   position: relative;
-  height: 0.75rem;
+  height: 0.5625rem;
   overflow: hidden;
-  border: 1px solid rgb(43 36 25 / 16%);
+  border: var(--fb-rule-subtle);
   border-radius: var(--fb-radius-pill);
-  background: rgb(43 36 25 / 12%);
+  background-color: var(--fb-surface-inset);
 }
 
 .stat-meter__fill {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--fb-accent);
+  background-color: var(--fb-stat-health);
 }
 
 .stat-meter--health .stat-meter__fill {
-  background: linear-gradient(90deg, #9f1d1d, #d97706);
+  background-image: linear-gradient(
+    90deg,
+    var(--fb-stat-health-deep),
+    var(--fb-stat-health)
+  );
 }
 
 .stat-meter--defense .stat-meter__fill {
-  background: linear-gradient(90deg, var(--fb-frost-bg), var(--fb-frost-accent));
+  background-image: linear-gradient(
+    90deg,
+    var(--fb-stat-defense-deep),
+    var(--fb-stat-defense)
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -318,7 +328,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: var(--fb-text-small);
+  font-size: var(--fb-text-sm);
 }
 
 .status-list__item {
@@ -326,9 +336,9 @@
   align-items: baseline;
   gap: 0.25rem;
   padding: 0.1rem 0.45rem;
-  border: 1px solid rgb(43 36 25 / 18%);
+  border: var(--fb-rule-subtle);
   border-radius: var(--fb-radius-pill);
-  background: rgb(255 253 247 / 85%);
+  background-color: var(--fb-surface-raised);
 }
 
 .status-list__glyph {
@@ -341,8 +351,8 @@
 }
 
 .status-list--empty {
-  color: var(--fb-ink-soft);
-  font-size: var(--fb-text-small);
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-sm);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -360,8 +370,8 @@
 .field-banner__art {
   display: block;
   overflow: hidden;
-  border: 2px solid var(--fb-element-accent);
-  border-radius: var(--fb-radius-md);
+  border: var(--fb-rule-width-strong) solid var(--fb-element-accent);
+  border-radius: var(--fb-radius-sm);
 }
 
 .field-banner__body {
@@ -374,7 +384,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem;
-  font-family: var(--fb-font-body);
+  font-family: var(--fb-font-display);
   font-size: 1.0625rem;
   line-height: 1.2;
 }
@@ -385,7 +395,7 @@
 }
 
 .field-banner__matchup strong {
-  color: var(--fb-element-shade);
+  color: var(--fb-element-accent);
 }
 
 .field-banner__cycle {
@@ -402,10 +412,10 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.1rem 0.45rem;
-  border: 1px solid rgb(43 36 25 / 18%);
+  border: var(--fb-rule-subtle);
   border-radius: var(--fb-radius-pill);
-  background: rgb(255 253 247 / 80%);
-  font-size: var(--fb-text-tiny);
+  background-color: var(--fb-surface-raised);
+  font-size: var(--fb-text-2xs);
 }
 
 .field-banner__cycle-step[aria-current='step'] {
@@ -436,7 +446,7 @@
 }
 
 .player-panel__title {
-  font-family: var(--fb-font-body);
+  font-family: var(--fb-font-display);
   font-size: 1.0625rem;
   line-height: 1.2;
 }
@@ -446,7 +456,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--fb-space-2);
-  font-size: var(--fb-text-small);
+  font-size: var(--fb-text-sm);
 }
 
 .player-panel__energy {
@@ -456,7 +466,7 @@
   justify-content: space-between;
   gap: var(--fb-space-2);
   padding-top: var(--fb-space-1);
-  border-top: 1px dashed rgb(43 36 25 / 18%);
+  border-top: var(--fb-rule-width) dashed var(--fb-rule-subtle-color);
 }
 
 .player-panel__energy-text {
@@ -477,7 +487,7 @@
   width: 0.9rem;
   height: 0.9rem;
   place-items: center;
-  border: 1px solid var(--fb-element-shade);
+  border: var(--fb-rule-width) solid var(--fb-element-accent);
   border-radius: 50%;
   color: transparent;
   font-size: 0.5rem;
@@ -507,14 +517,14 @@
 }
 
 .hand__title {
-  font-family: var(--fb-font-body);
+  font-family: var(--fb-font-display);
   font-size: 1rem;
   line-height: 1.2;
 }
 
 .hand__hint {
-  color: var(--fb-ink-soft);
-  font-size: var(--fb-text-small);
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-sm);
 }
 
 /* The only horizontal scroller in the product. `contain` stops a swipe from
@@ -543,7 +553,7 @@
 
 .hand__empty {
   padding: var(--fb-space-2);
-  color: var(--fb-ink-soft);
+  color: var(--fb-text-soft);
   font-size: 0.9375rem;
 }
 
@@ -556,22 +566,23 @@
   display: grid;
   grid-template-rows: auto auto auto auto auto;
   gap: 0.2rem;
-  width: var(--fb-card-width);
+  width: var(--fb-card-w-phone);
   min-width: var(--fb-target);
   min-height: var(--fb-target);
   padding: 0.45rem 0.45rem 0.55rem;
-  border: 2px solid var(--fb-element-accent);
-  border-radius: var(--fb-radius-md);
-  background: linear-gradient(180deg, var(--fb-paper) 0%, #f8efdd 100%);
-  color: var(--fb-ink);
+  border: var(--fb-rule-width-strong) solid var(--fb-element-accent);
+  border-radius: var(--fb-radius-sm);
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  color: var(--fb-text-on-paper);
   font: inherit;
   text-align: left;
   touch-action: manipulation;
   cursor: pointer;
   transition:
-    transform var(--fb-motion-lift) var(--fb-ease),
-    border-color var(--fb-motion-lift) var(--fb-ease),
-    box-shadow var(--fb-motion-lift) var(--fb-ease);
+    transform var(--fb-dur-lift) var(--fb-ease),
+    border-color var(--fb-dur-lift) var(--fb-ease),
+    box-shadow var(--fb-dur-lift) var(--fb-ease);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -582,20 +593,22 @@
 @media (hover: hover) {
   .card-view:hover {
     transform: translateY(-2px);
-    box-shadow: var(--fb-shadow-raised);
+    box-shadow: var(--fb-elev-3);
   }
 }
 
 .card-view[data-affordable='false'] {
-  border-color: var(--fb-ink-soft);
-  background: #efe6d3;
-  color: var(--fb-ink-soft);
+  border-color: var(--fb-rule-on-paper-color);
+  background-color: var(--fb-state-unaffordable-surface);
+  background-image: none;
+  color: var(--fb-state-unaffordable-ink);
   cursor: not-allowed;
 }
 
 .card-view:focus-visible {
-  outline: var(--fb-focus-ring) solid var(--fb-focus);
-  outline-offset: 3px;
+  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
+  outline-offset: var(--fb-focus-offset);
+  box-shadow: var(--fb-focus-shadow);
 }
 
 .card-view__cost {
@@ -607,9 +620,9 @@
   width: 1.75rem;
   height: 1.75rem;
   place-items: center;
-  border: 2px solid var(--fb-element-accent);
+  border: var(--fb-rule-width) solid var(--fb-element-accent);
   border-radius: 50%;
-  background: var(--fb-element-bg);
+  background-color: var(--fb-element-bg);
   color: var(--fb-element-ink);
   font-size: 0.9375rem;
   font-weight: 700;
@@ -626,7 +639,7 @@
   display: -webkit-box;
   min-height: 2.3em;
   overflow: hidden;
-  font-family: var(--fb-font-body);
+  font-family: var(--fb-font-display);
   font-size: 0.9375rem;
   font-weight: 700;
   line-height: 1.15;
@@ -636,7 +649,8 @@
 }
 
 .card-view .element-cue {
-  font-size: var(--fb-text-tiny);
+  color: var(--fb-element-shade);
+  font-size: var(--fb-text-2xs);
 }
 
 .card-view__primary {
@@ -653,7 +667,7 @@
 }
 
 .card-view__primary-label {
-  font-size: var(--fb-text-tiny);
+  font-size: var(--fb-text-2xs);
   font-weight: 600;
 }
 
@@ -668,10 +682,10 @@
   align-items: center;
   gap: 0.2rem;
   padding: 0.05rem 0.3rem;
-  border-radius: var(--fb-radius-sm);
-  background: var(--fb-element-accent);
+  border-radius: var(--fb-radius-xs);
+  background-color: var(--fb-element-accent);
   color: var(--fb-element-shade);
-  font-size: var(--fb-text-tiny);
+  font-size: var(--fb-text-2xs);
   font-weight: 700;
   line-height: 1.3;
 }
@@ -680,14 +694,14 @@
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
-  color: var(--fb-danger);
-  font-size: var(--fb-text-tiny);
+  color: var(--fb-text-on-paper-danger);
+  font-size: var(--fb-text-2xs);
   font-weight: 700;
   line-height: 1.3;
 }
 
 .card-view[data-affordable='false'] .card-view__state {
-  color: var(--fb-danger);
+  color: var(--fb-text-on-paper-danger);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -700,7 +714,7 @@
   width: 100%;
   overflow: hidden;
   border-radius: inherit;
-  background: var(--fb-parchment-deep);
+  background-color: var(--fb-surface-inset);
 }
 
 .asset-image__img {
@@ -719,10 +733,10 @@
   justify-content: center;
   gap: 0.15rem;
   padding: var(--fb-space-1);
-  border: 2px dashed var(--fb-ink-soft);
+  border: var(--fb-rule-width-strong) dashed var(--fb-rule-color);
   border-radius: inherit;
-  background: var(--fb-parchment);
-  color: var(--fb-ink);
+  background-color: var(--fb-surface-inset);
+  color: var(--fb-text);
   text-align: center;
 }
 
@@ -733,14 +747,14 @@
 }
 
 .asset-image__fallback-label {
-  font-size: var(--fb-text-tiny);
+  font-size: var(--fb-text-2xs);
   font-weight: 700;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
 .asset-image__fallback-note {
-  color: var(--fb-ink-soft);
+  color: var(--fb-text-soft);
   font-size: 0.625rem;
   line-height: 1.2;
 }
@@ -756,7 +770,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgb(20 15 10 / 58%);
+  background-color: var(--fb-surface-page);
 }
 
 .card-detail {
@@ -767,11 +781,12 @@
   overscroll-behavior: contain;
   padding: var(--fb-space-5) var(--fb-space-4)
     calc(var(--fb-space-5) + env(safe-area-inset-bottom));
-  border: 2px solid var(--fb-element-accent);
-  border-radius: var(--fb-radius-lg) var(--fb-radius-lg) 0 0;
-  background: var(--fb-paper);
-  box-shadow: var(--fb-shadow-raised);
-  color: var(--fb-ink);
+  border: var(--fb-rule-width-strong) solid var(--fb-element-accent);
+  border-radius: var(--fb-radius-sheet) var(--fb-radius-sheet) 0 0;
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  box-shadow: var(--fb-elev-4);
+  color: var(--fb-text-on-paper);
 }
 
 .card-detail__close {
@@ -782,10 +797,10 @@
   width: var(--fb-target);
   height: var(--fb-target);
   place-items: center;
-  border: 1px solid rgb(43 36 25 / 24%);
-  border-radius: 50%;
-  background: var(--fb-paper);
-  color: var(--fb-ink);
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-surface-document-raised);
+  color: var(--fb-text-on-paper);
   font: inherit;
   font-size: 1.125rem;
   cursor: pointer;
@@ -793,14 +808,15 @@
 
 .card-detail__close:focus-visible,
 .card-detail__play:focus-visible {
-  outline: var(--fb-focus-ring) solid var(--fb-focus);
-  outline-offset: 3px;
+  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
+  outline-offset: var(--fb-focus-offset);
+  box-shadow: var(--fb-focus-shadow);
 }
 
 .card-detail__kicker {
   padding-right: 3rem;
-  color: var(--fb-ink-soft);
-  font-size: var(--fb-text-small);
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-sm);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -808,7 +824,7 @@
 
 .card-detail__title {
   padding-right: 3rem;
-  font-family: var(--fb-font-body);
+  font-family: var(--fb-font-display);
   font-size: clamp(1.5rem, 6vw, 2rem);
   line-height: 1.1;
   overflow-wrap: anywhere;
@@ -829,8 +845,8 @@
 }
 
 .card-detail__primary-label {
-  color: var(--fb-ink-soft);
-  font-size: var(--fb-text-small);
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-sm);
   font-weight: 600;
 }
 
@@ -854,9 +870,10 @@
 .card-detail__matchup {
   margin-top: var(--fb-space-4);
   padding: var(--fb-space-2) var(--fb-space-3);
-  border-left: 4px solid var(--fb-element-accent);
-  background: rgb(43 36 25 / 6%);
-  font-weight: 600;
+  border-left: var(--fb-rule-width-strong) solid var(--fb-element-accent);
+  background-color: var(--fb-surface-document-raised);
+  color: var(--fb-text-on-paper);
+  font-weight: var(--fb-weight-ui);
 }
 
 .card-detail__badges {
@@ -870,27 +887,30 @@
   width: 100%;
   min-height: var(--fb-target);
   margin-top: var(--fb-space-4);
-  padding: 0.7rem 1.1rem;
-  border: 1px solid var(--fb-accent);
-  border-radius: 12px;
-  background: var(--fb-accent);
-  color: #fffaf0;
+  padding: var(--fb-space-2) var(--fb-space-4);
+  border: var(--fb-rule-width) solid var(--fb-action);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-action);
+  background-image: var(--fb-material-wax);
+  color: var(--fb-action-ink);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
 }
 
 .card-detail__play:disabled {
-  border-color: #b8a68a;
-  background: #d9cbb3;
-  color: #5b4f3d;
+  border-color: var(--fb-state-disabled-surface);
+  background-color: var(--fb-state-disabled-surface);
+  background-image: none;
+  color: var(--fb-state-disabled-ink);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
 .card-detail__note {
   margin-top: var(--fb-space-2);
-  color: var(--fb-ink-soft);
-  font-size: var(--fb-text-small);
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-sm);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -905,13 +925,14 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--fb-space-2);
-  padding: 0.6rem 0.75rem;
-  padding-bottom: max(0.6rem, env(safe-area-inset-bottom));
-  border: 1px solid rgb(43 36 25 / 18%);
+  padding: var(--fb-space-2) var(--fb-space-3);
+  padding-bottom: max(var(--fb-space-2), env(safe-area-inset-bottom));
+  border: var(--fb-rule);
   border-radius: var(--fb-radius-md);
-  background: rgb(255 253 247 / 96%);
-  box-shadow: 0 -8px 24px rgb(43 36 25 / 10%);
-  backdrop-filter: blur(6px);
+  background-color: var(--fb-surface-raised);
+  background-image: var(--fb-material-panel);
+  box-shadow: var(--fb-elev-3);
+  color: var(--fb-text);
 }
 
 .battle-controls__energy {
@@ -923,25 +944,30 @@
 .battle-controls__end {
   min-width: 8rem;
   min-height: var(--fb-target);
-  padding: 0.7rem 1.1rem;
-  border: 1px solid var(--fb-accent);
-  border-radius: 12px;
-  background: var(--fb-accent);
-  color: #fffaf0;
+  padding: var(--fb-space-2) var(--fb-space-4);
+  border: var(--fb-rule-width) solid var(--fb-action);
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-action);
+  background-image: var(--fb-material-wax);
+  color: var(--fb-action-ink);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
 }
 
 .battle-controls__end:focus-visible {
-  outline: var(--fb-focus-ring) solid var(--fb-focus);
-  outline-offset: 3px;
+  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
+  outline-offset: var(--fb-focus-offset);
+  box-shadow: var(--fb-focus-shadow);
 }
 
 .battle-controls__end:disabled {
-  border-color: #b8a68a;
-  background: #d9cbb3;
-  color: #5b4f3d;
+  border-color: var(--fb-state-disabled-surface);
+  background-color: var(--fb-state-disabled-surface);
+  background-image: none;
+  color: var(--fb-state-disabled-ink);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
@@ -967,6 +993,7 @@
 
   .card-detail {
     border-radius: var(--fb-radius-lg);
+    max-width: 28.75rem;
   }
 
   .card-detail-layer {
@@ -995,7 +1022,7 @@
   .card-detail__close,
   .card-detail__play,
   .battle-controls__end {
-    transition-duration: 1ms;
+    transition-duration: var(--fb-dur-instant);
   }
 
   .card-view,
@@ -1010,7 +1037,7 @@
 [data-reduced-motion='true'] .card-detail__close,
 [data-reduced-motion='true'] .card-detail__play,
 [data-reduced-motion='true'] .battle-controls__end {
-  transition-duration: 1ms;
+  transition-duration: var(--fb-dur-instant);
 }
 
 [data-reduced-motion='true'] .card-view,
@@ -1021,7 +1048,7 @@
 
 /* An explicit "motion on" choice wins over the OS media query. */
 [data-reduced-motion='false'] .card-view {
-  transition-duration: var(--fb-motion-lift);
+  transition-duration: var(--fb-dur-lift);
 }
 
 [data-reduced-motion='false'] .card-view:active {

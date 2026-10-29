@@ -267,24 +267,22 @@ function cssBlock(css: string, opener: string): string {
 }
 
 describe('motion.css', () => {
-  it('defines all five documented durations on the normal branch', () => {
+  /*
+   * Foundation ticket (README section 2.3): the event-named motion tokens are
+   * gone and the duration scale `--fb-dur-*` replaces them. Each duration is
+   * read from `tokens.css`; the stylesheet no longer restates the value as a
+   * `var()` fallback, because a fallback literal is exactly what AB-V1 bans.
+   */
+  it('uses the documented duration token for every event on the normal branch', () => {
     const css = readMotionCss();
     const reducedAt = css.indexOf('@media (prefers-reduced-motion: reduce)');
     expect(reducedAt).toBeGreaterThan(-1);
 
     const normal = css.slice(0, reducedAt);
-    const durations = [
-      ['--fb-motion-draw', '180ms'],
-      ['--fb-motion-play', '160ms'],
-      ['--fb-motion-damage', '400ms'],
-      ['--fb-motion-shift', '300ms'],
-      ['--fb-motion-lift', '120ms'],
-    ] as const;
+    const tokens = ['--fb-dur-draw', '--fb-dur-play', '--fb-dur-damage', '--fb-dur-shift', '--fb-dur-lift'] as const;
 
-    for (const [token, duration] of durations) {
-      expect(normal).toMatch(
-        new RegExp(`var\\(${token},\\s*${duration}\\)`),
-      );
+    for (const token of tokens) {
+      expect(normal).toMatch(new RegExp(`var\\(${token}\\)`));
     }
   });
 
@@ -308,7 +306,7 @@ describe('motion.css', () => {
     const css = readMotionCss();
     const reduced = cssBlock(css, '@media (prefers-reduced-motion: reduce)');
 
-    expect(reduced).toMatch(/transition-duration:\s*1ms/);
+    expect(reduced).toMatch(/transition-duration:\s*var\(--fb-dur-instant\)/);
     expect(reduced).toMatch(/transform:\s*none/);
     expect(reduced).toMatch(/animation:\s*none/);
     expect(reduced).toMatch(
@@ -325,7 +323,7 @@ describe('motion.css', () => {
     expect(falseAt).toBeGreaterThan(trueAt);
 
     const forcedReduced = css.slice(trueAt, falseAt);
-    expect(forcedReduced).toMatch(/transition-duration:\s*1ms/);
+    expect(forcedReduced).toMatch(/transition-duration:\s*var\(--fb-dur-instant\)/);
     expect(forcedReduced).toMatch(/transform:\s*none/);
     expect(forcedReduced).toMatch(/animation:\s*none/);
 
@@ -333,8 +331,6 @@ describe('motion.css', () => {
     expect(forcedMotion).toMatch(/animation:\s*fb-motion-draw/);
     expect(forcedMotion).toMatch(/animation:\s*fb-motion-play/);
     expect(forcedMotion).toMatch(/animation:\s*fb-motion-damage/);
-    expect(forcedMotion).toMatch(
-      /transition-duration:\s*var\(--fb-motion-shift,\s*300ms\)/,
-    );
+    expect(forcedMotion).toMatch(/transition-duration:\s*var\(--fb-dur-shift\)/);
   });
 });

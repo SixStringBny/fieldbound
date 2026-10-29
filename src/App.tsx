@@ -462,6 +462,47 @@ export function App({
     emitCue('ui');
   }, []);
 
+  /*
+   * Route focus, once for every route (reading-screens §8.1).
+   *
+   * On mount, and only on a route change, focus the route's `h1`. The heading
+   * receives `tabindex="-1"` here rather than in twelve screen files, so the
+   * rule cannot drift per screen and no screen has to know about it. `data-route-focus`
+   * gives the heading the same visible two-tone ring a control gets (AB-G6),
+   * even when the navigation came from a pointer.
+   *
+   * The rule must never fight focus a screen already owns: the privacy handoff
+   * focuses `I'm ready`, and the battle board owns its own focus path. If the
+   * mounted route has already moved focus inside the landmark, this leaves it
+   * alone. Re-renders and setting toggles do not re-run it, because the effect
+   * is keyed on the route.
+   */
+  useEffect(() => {
+    const main = document.getElementById('main-content');
+
+    if (main === null) {
+      return;
+    }
+
+    const focused = document.activeElement;
+
+    if (focused instanceof HTMLElement && focused !== main) {
+      if (main.contains(focused)) {
+        return;
+      }
+    }
+
+    const heading = main.querySelector('h1');
+
+    if (heading === null) {
+      return;
+    }
+
+    heading.setAttribute('tabindex', '-1');
+    heading.setAttribute('data-route-focus', '');
+    heading.focus();
+  }, [screen.kind]);
+
   /* ------------------------------------------------------------------------ */
   /* Duel intents                                                             */
   /* ------------------------------------------------------------------------ */

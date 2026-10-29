@@ -33,23 +33,19 @@
  */
 .hand__item,
 [data-motion='draw'] {
-  animation: fb-motion-draw var(--fb-motion-draw, 180ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+  animation: fb-motion-draw var(--fb-dur-draw) var(--fb-ease) both;
 }
 
 [data-motion='play'] {
-  animation: fb-motion-play var(--fb-motion-play, 160ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+  animation: fb-motion-play var(--fb-dur-play) var(--fb-ease) both;
 }
 
 [data-motion='damage'] {
-  animation: fb-motion-damage var(--fb-motion-damage, 400ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+  animation: fb-motion-damage var(--fb-dur-damage) var(--fb-ease) both;
 }
 
 [data-motion='shift'] {
-  animation: fb-motion-shift var(--fb-motion-shift, 300ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+  animation: fb-motion-shift var(--fb-dur-shift) var(--fb-ease) both;
 }
 
 /*
@@ -62,12 +58,9 @@
 .player-panel,
 .enemy-panel {
   transition:
-    border-color var(--fb-motion-shift, 300ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    background-color var(--fb-motion-shift, 300ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    color var(--fb-motion-shift, 300ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1));
+    border-color var(--fb-dur-shift) var(--fb-ease),
+    background-color var(--fb-dur-shift) var(--fb-ease),
+    color var(--fb-dur-shift) var(--fb-ease);
 }
 
 /* Hover/focus lift and the other short affordance transitions. */
@@ -77,16 +70,11 @@
 .card-detail__play,
 .battle-controls__end {
   transition:
-    transform var(--fb-motion-lift, 120ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    box-shadow var(--fb-motion-lift, 120ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    border-color var(--fb-motion-lift, 120ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    background-color var(--fb-motion-lift, 120ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    color var(--fb-motion-lift, 120ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1));
+    transform var(--fb-dur-lift) var(--fb-ease),
+    box-shadow var(--fb-dur-lift) var(--fb-ease),
+    border-color var(--fb-dur-lift) var(--fb-ease),
+    background-color var(--fb-dur-lift) var(--fb-ease),
+    color var(--fb-dur-lift) var(--fb-ease);
 }
 
 @keyframes fb-motion-draw {
@@ -172,7 +160,7 @@
   .field-banner__cycle-step,
   .player-panel,
   .enemy-panel {
-    transition-duration: 1ms;
+    transition-duration: var(--fb-dur-instant);
   }
 
   .card-view,
@@ -209,7 +197,7 @@
 [data-reduced-motion='true'] .field-banner__cycle-step,
 [data-reduced-motion='true'] .player-panel,
 [data-reduced-motion='true'] .enemy-panel {
-  transition-duration: 1ms;
+  transition-duration: var(--fb-dur-instant);
 }
 
 [data-reduced-motion='true'] .card-view,
@@ -224,30 +212,26 @@
 
 [data-reduced-motion='false'] .hand__item,
 [data-reduced-motion='false'] [data-motion='draw'] {
-  animation: fb-motion-draw var(--fb-motion-draw, 180ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+  animation: fb-motion-draw var(--fb-dur-draw) var(--fb-ease) both;
 }
 
 [data-reduced-motion='false'] [data-motion='play'] {
-  animation: fb-motion-play var(--fb-motion-play, 160ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+  animation: fb-motion-play var(--fb-dur-play) var(--fb-ease) both;
 }
 
 [data-reduced-motion='false'] [data-motion='damage'] {
-  animation: fb-motion-damage var(--fb-motion-damage, 400ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+  animation: fb-motion-damage var(--fb-dur-damage) var(--fb-ease) both;
 }
 
 [data-reduced-motion='false'] [data-motion='shift'] {
-  animation: fb-motion-shift var(--fb-motion-shift, 300ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+  animation: fb-motion-shift var(--fb-dur-shift) var(--fb-ease) both;
 }
 
 [data-reduced-motion='false'] .field-banner,
 [data-reduced-motion='false'] .field-banner__cycle-step,
 [data-reduced-motion='false'] .player-panel,
 [data-reduced-motion='false'] .enemy-panel {
-  transition-duration: var(--fb-motion-shift, 300ms);
+  transition-duration: var(--fb-dur-shift);
 }
 
 [data-reduced-motion='false'] .card-view,
@@ -255,7 +239,7 @@
 [data-reduced-motion='false'] .card-detail__close,
 [data-reduced-motion='false'] .card-detail__play,
 [data-reduced-motion='false'] .battle-controls__end {
-  transition-duration: var(--fb-motion-lift, 120ms);
+  transition-duration: var(--fb-dur-lift);
 }
 
 [data-reduced-motion='false'] .card-view:active {
