@@ -1,0 +1,1351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fieldbound UI directions — PROTOTYPE</title>
+<!--
+  THROWAWAY PROTOTYPE — not production code.
+  Question: which of three visual directions best makes the battle read as a
+  game, not a form, while staying legible one-handed at 390x844?
+  Switch with ?variant=A|B|C. Add ?chrome=0 to hide the prototype bar.
+  All battle data is hardcoded from the seeded Ember / Cinder Warden opening.
+-->
+<style>
+  :root {
+    color-scheme: light;
+    --proto-ink: #111;
+    --proto-paper: #fff7e6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; min-height: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #111;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; }
+  img { display: block; max-width: 100%; }
+  [hidden] { display: none !important; }
+  .variant { display: none; min-height: 100vh; min-height: 100svh; }
+  body[data-variant="A"] .variant[data-panel="A"],
+  body[data-variant="B"] .variant[data-panel="B"],
+  body[data-variant="C"] .variant[data-panel="C"] { display: block; }
+
+  /* ---------------------------------------------------------------- */
+  /* Prototype switcher — deliberately outside every visual language   */
+  /* ---------------------------------------------------------------- */
+  .proto-switcher {
+    position: fixed;
+    left: 50%;
+    bottom: 10px;
+    transform: translateX(-50%);
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border-radius: 999px;
+    background: #0b0b0b;
+    color: #fff;
+    border: 1px solid #5b5b5b;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .55);
+    font: 700 11px/1 system-ui, sans-serif;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+  .proto-switcher button {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid #4a4a4a;
+    background: #1d1d1d;
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .proto-switcher button:hover { background: #333; }
+  .proto-switcher__label { min-width: 190px; text-align: center; }
+  .proto-switcher__label b { color: #f5c451; }
+  .proto-switcher__flag {
+    padding: 4px 7px;
+    border-radius: 999px;
+    background: #f5c451;
+    color: #111;
+    font-size: 9px;
+    letter-spacing: .12em;
+  }
+  .proto-switcher__hide {
+    width: 24px !important;
+    height: 24px !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #9a9a9a !important;
+  }
+  body.proto-no-chrome .proto-switcher { display: none; }
+  body.detail-open { overflow: hidden; }
+  @media (max-width: 1023px) {
+    .proto-switcher { bottom: calc(76px + env(safe-area-inset-bottom)); gap: 5px; padding: 5px 7px; }
+    .proto-switcher__label { min-width: 0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+    .proto-switcher__flag { display: none; }
+  }
+
+  /* ================================================================ */
+  /* A — FIELD JOURNAL ON A TABLE                                      */
+  /* ================================================================ */
+  .a {
+    color: #f2e3c8;
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    background: #1b110a;
+  }
+  .a-table {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: 16px clamp(14px, 3vw, 34px) 12px;
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(255, 196, 112, .14), transparent 55%),
+      repeating-linear-gradient(92deg, rgba(0, 0, 0, .14) 0 2px, transparent 2px 9px),
+      repeating-linear-gradient(2deg, rgba(255, 215, 150, .025) 0 1px, transparent 1px 7px),
+      linear-gradient(180deg, #382415 0%, #24160d 55%, #150d07 100%);
+  }
+  .a-table::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 170px rgba(0, 0, 0, .72);
+    pointer-events: none;
+  }
+  .a-table::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(70vw, 560px);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(216, 180, 106, .12);
+    border-radius: 50%;
+    box-shadow: 0 0 0 26px rgba(216, 180, 106, .03), 0 0 0 27px rgba(216, 180, 106, .08), inset 0 0 100px rgba(0, 0, 0, .35);
+    pointer-events: none;
+  }
+  .a-top {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .a-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: #d8b46a;
+    font: 700 10px/1 system-ui, sans-serif;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+  }
+  .a-brand__mark {
+    display: grid;
+    place-items: center;
+    width: 21px;
+    height: 21px;
+    border: 1px solid #b08442;
+    border-radius: 50%;
+    font-size: 10px;
+  }
+  .a-brand__turn { color: #f2e3c8; opacity: .6; letter-spacing: .12em; }
+  .a-nav { display: flex; gap: 7px; }
+  .a-nav button {
+    padding: 6px 10px;
+    border: 1px solid #5c4423;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #c9a45e, #8b6a35);
+    color: #24170f;
+    font: 700 9px/1 system-ui, sans-serif;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 2px 0 #3d2a15;
+  }
+  .a-spread {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    gap: 14px;
+    flex: 1;
+  }
+  .a-panel {
+    position: relative;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(255, 255, 255, .45), transparent 45%),
+      linear-gradient(160deg, #f8eed8 0%, #efdcb9 58%, #e3c99c 100%);
+    color: #2b2013;
+    border: 1px solid #8a6a3f;
+    border-radius: 5px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(255, 255, 255, .38);
+  }
+  .a-seal {
+    position: absolute;
+    top: -6px;
+    left: 24px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #cf5a4f, #7a1414 65%, #4a0d0d);
+    border: 1px solid #3d0a0a;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .55);
+  }
+  .a-enemy {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px 18px;
+  }
+  .a-portrait {
+    width: 112px;
+    height: 134px;
+    overflow: hidden;
+    border: 3px double #8a6a3f;
+    border-radius: 4px;
+    background: #2a1b12;
+    box-shadow: inset 0 0 18px rgba(0, 0, 0, .55);
+  }
+  .a-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center 34%; }
+  .a-enemy__head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .a-enemy__head h2 { margin: 0; font-size: clamp(20px, 2.2vw, 30px); line-height: 1; letter-spacing: .01em; }
+  .a-tag {
+    padding: 3px 7px;
+    border: 1px solid rgba(122, 63, 29, .45);
+    border-radius: 999px;
+    color: #7a3f1d;
+    font: 700 9px/1 system-ui, sans-serif;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .a-bars { display: grid; gap: 5px; margin-top: 9px; max-width: 440px; }
+  .a-bar-row { display: grid; grid-template-columns: 58px 1fr 52px; align-items: center; gap: 8px; }
+  .a-bar-row > span { font: 700 9px/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #5b4f3d; }
+  .a-bar-row > b { font: 700 10px/1 system-ui, sans-serif; text-align: right; color: #3b2c1b; }
+  .a-bar { height: 10px; overflow: hidden; border: 1px solid #9b7a4b; border-radius: 2px; background: #d8c49b; }
+  .a-bar__fill { height: 100%; background: linear-gradient(90deg, #8f1d1d, #c2410c); }
+  .a-bar__fill--def { background: linear-gradient(90deg, #6b7280, #9ca3af); }
+  .a-note { margin: 7px 0 0; color: #6b5a42; font-size: 10px; font-style: italic; }
+  .a-intent { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #b09060; }
+  .a-intent__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: #7a3f1d;
+    font: 700 9px/1.3 system-ui, sans-serif;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+  }
+  .a-intent__head em { color: #4a3a25; font-style: normal; letter-spacing: .02em; }
+  .a-intent__slips { display: flex; gap: 8px; margin-top: 7px; }
+  .a-slip {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 6px;
+    padding: 6px 8px;
+    border: 1px solid #a98a5c;
+    border-left: 3px solid #8f1d1d;
+    border-radius: 2px;
+    background: #fbf3df;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, .12);
+  }
+  .a-slip b { font-size: 10px; line-height: 1.15; }
+  .a-slip span { font: 700 11px/1 system-ui, sans-serif; }
+  .a-slip i { grid-column: 1 / -1; color: #6b5a42; font: 600 8px/1 system-ui, sans-serif; letter-spacing: .04em; text-transform: uppercase; font-style: normal; }
+  .a-field {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 9px 15px;
+    border: 1px solid #5c4423;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #d8b46a, #a07a3d 62%, #8b6a35);
+    color: #24170f;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .48), 0 6px 14px rgba(0, 0, 0, .35);
+  }
+  .a-field__medallion {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    overflow: hidden;
+    border: 2px solid #5c4423;
+    border-radius: 50%;
+    background: #374151;
+  }
+  .a-field__medallion img { width: 100%; height: 100%; object-fit: cover; }
+  .a-field__text h3 { margin: 0; font-size: 17px; line-height: 1; }
+  .a-field__text p { margin: 4px 0 0; font-size: 10px; color: #3d2a15; }
+  .a-cycle { display: flex; gap: 5px; margin-left: auto; }
+  .a-cycle span {
+    padding: 4px 7px;
+    border: 1px solid rgba(36, 23, 15, .35);
+    border-radius: 999px;
+    font: 700 8px/1 system-ui, sans-serif;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .a-cycle span.is-neutral { background: #24170f; color: #f2e3c8; border-color: #24170f; }
+  .a-bottom {
+    display: grid;
+    grid-template-columns: minmax(210px, 258px) minmax(0, 1fr) minmax(210px, 258px);
+    gap: 14px;
+    align-items: end;
+  }
+  .a-player { padding: 12px 14px; align-self: end; display: flex; flex-direction: column; gap: 7px; }
+  .a-player__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .a-player__head h2 { margin: 0; font-size: 20px; }
+  .a-player__head span { color: #7a3f1d; font: 700 8px/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .a-energy { display: flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 6px; border-top: 1px dashed #b09060; }
+  .a-energy b { font: 700 12px/1 system-ui, sans-serif; }
+  .a-energy small { color: #6b5a42; font: 700 8px/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .a-pips { display: flex; gap: 4px; margin-left: auto; }
+  .a-pip { width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #cf5a4f, #7a1414 70%); border: 1px solid #4a0d0d; }
+  .a-hand { display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; min-width: 0; }
+  .a-hand__label { display: flex; justify-content: space-between; color: #d8b46a; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .13em; text-transform: uppercase; }
+  .a-hand__label span { color: #f2e3c8; opacity: .55; letter-spacing: .04em; text-transform: none; }
+  .a-fan { display: flex; align-items: flex-end; justify-content: center; height: min(232px, 28svh); padding-top: 22px; }
+  .a-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 0 0 auto;
+    width: clamp(112px, 11vw, 152px);
+    aspect-ratio: 300 / 420;
+    margin-left: -30px;
+    padding: 8px;
+    border: 1px solid #8a6a3f;
+    border-radius: 5px;
+    background: linear-gradient(160deg, #fbf3df 0%, #f1ddb8 58%, #e6cda2 100%);
+    color: #2b2013;
+    text-align: left;
+    cursor: pointer;
+    transform: rotate(var(--r, 0deg)) translateY(var(--y, 0px));
+    transform-origin: 50% 100%;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, .42), inset 0 0 0 1px rgba(255, 255, 255, .35);
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
+  .a-card:first-child { margin-left: 0; }
+  .a-card:hover, .a-card:focus-visible {
+    z-index: 5;
+    transform: rotate(0deg) translateY(-18px);
+    box-shadow: 0 18px 30px rgba(0, 0, 0, .52);
+    outline: 2px solid #f2c14e;
+    outline-offset: 2px;
+  }
+  .a-card__cost {
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid #4a0d0d;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #cf5a4f, #7a1414 68%);
+    color: #fff4e0;
+    font: 700 14px/1 Georgia, serif;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .45);
+  }
+  .a-card__art { height: 43%; overflow: hidden; border: 1px solid rgba(90, 60, 30, .35); border-radius: 3px; background: #2a1b12; }
+  .a-card__art img { width: 100%; height: 152%; object-fit: cover; object-position: center 42%; }
+  .a-card__name { font-size: 13px; font-weight: 700; line-height: 1.08; }
+  .a-card__meta { color: #7a3f1d; font: 700 7px/1 system-ui, sans-serif; letter-spacing: .07em; text-transform: uppercase; }
+  .a-card__value { margin-top: auto; font-size: 18px; font-weight: 700; line-height: 1; }
+  .a-card__value small { color: #5b4f3d; font: 700 7px/1 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .a-card__badge { align-self: flex-start; padding: 2px 4px; border-radius: 2px; background: #7a3f1d; color: #fff4e0; font: 700 6px/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .a-side { display: flex; flex-direction: column; gap: 9px; align-self: stretch; justify-content: flex-end; }
+  .a-log { padding: 10px 12px; }
+  .a-log__title { color: #7a3f1d; font: 700 8px/1 system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; }
+  .a-log p { margin: 6px 0 0; font-size: 10px; line-height: 1.35; }
+  .a-log em { display: block; margin-top: 6px; color: #5b4f3d; font-size: 10px; line-height: 1.3; }
+  .a-end {
+    padding: 14px 18px;
+    border: 1px solid #3d0a0a;
+    border-radius: 999px;
+    background: radial-gradient(circle at 35% 28%, #b33a3a, #6d1010 70%);
+    color: #fff4e0;
+    font: 700 12px/1 Georgia, serif;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #3d0a0a, 0 9px 18px rgba(0, 0, 0, .42);
+  }
+  .a-controls { display: none; }
+  .a-detail { position: fixed; inset: 0; z-index: 8000; display: grid; place-items: center; padding: 20px; background: rgba(10, 6, 3, .74); }
+  .a-detail__sheet {
+    position: relative;
+    width: min(460px, 94vw);
+    padding: 22px;
+    border: 1px solid #8a6a3f;
+    border-radius: 6px;
+    background: linear-gradient(160deg, #fbf3df, #e8d0a6);
+    color: #2b2013;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .6), inset 0 0 0 1px rgba(255, 255, 255, .45);
+  }
+  .a-detail__eyebrow { color: #7a3f1d; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+  .a-detail__sheet h2 { margin: 7px 0 0; font-size: 30px; line-height: 1; }
+  .a-detail__body { display: grid; grid-template-columns: 120px 1fr; gap: 16px; margin-top: 16px; align-items: start; }
+  .a-detail__body > img { width: 120px; aspect-ratio: 300 / 420; object-fit: cover; border: 1px solid #8a6a3f; border-radius: 4px; }
+  .a-detail__value { margin: 0; font-size: 34px; line-height: 1; font-weight: 700; }
+  .a-detail__value small { color: #5b4f3d; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .07em; text-transform: uppercase; }
+  .a-detail__sheet h3 { margin: 16px 0 4px; color: #7a3f1d; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .13em; text-transform: uppercase; }
+  .a-detail__sheet p { margin: 0; font-size: 13px; line-height: 1.45; }
+  .a-detail__note { margin-top: 12px !important; padding: 8px 10px; border-left: 3px solid #8f1d1d; background: rgba(143, 29, 29, .08); color: #5b4f3d; font-size: 11px !important; }
+  .a-detail__play { width: 100%; margin-top: 18px; padding: 14px; border: 1px solid #3d0a0a; border-radius: 999px; background: radial-gradient(circle at 35% 28%, #b33a3a, #6d1010 70%); color: #fff4e0; font: 700 12px/1 Georgia, serif; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+  .a-detail__close { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 1px solid #8a6a3f; border-radius: 50%; background: #f1ddb8; color: #5b4f3d; cursor: pointer; font-size: 16px; }
+  @media (max-width: 1023px) {
+    .a-table { gap: 9px; padding: 10px 10px 84px; }
+    .a-brand { font-size: 8px; gap: 6px; }
+    .a-brand__mark { width: 17px; height: 17px; font-size: 8px; }
+    .a-nav button { padding: 5px 7px; font-size: 8px; }
+    .a-spread { display: flex; flex-direction: column; gap: 9px; }
+    .a-enemy { grid-template-columns: 64px minmax(0, 1fr); gap: 10px; padding: 10px 12px; }
+    .a-portrait { width: 64px; height: 78px; }
+    .a-enemy__head h2 { font-size: 20px; }
+    .a-bars { margin-top: 6px; gap: 4px; }
+    .a-bar-row { grid-template-columns: 48px 1fr 44px; gap: 6px; }
+    .a-bar { height: 7px; }
+    .a-note { display: none; }
+    .a-intent { margin-top: 7px; padding-top: 6px; }
+    .a-intent__head { font-size: 8px; }
+    .a-intent__head em { display: none; }
+    .a-intent__slips { gap: 5px; margin-top: 5px; }
+    .a-slip { padding: 4px 5px; }
+    .a-slip b { font-size: 9px; }
+    .a-slip span { font-size: 10px; }
+    .a-slip i { font-size: 7px; }
+    .a-field { padding: 7px 9px; gap: 8px; }
+    .a-field__medallion { width: 36px; height: 36px; }
+    .a-field__text h3 { font-size: 15px; }
+    .a-field__text p { display: none; }
+    .a-cycle { gap: 3px; }
+    .a-cycle span { padding: 3px 5px; font-size: 7px; }
+    .a-bottom { display: flex; flex-direction: column; align-items: stretch; gap: 8px; margin-top: auto; }
+    .a-player { order: 1; padding: 9px 11px; }
+    .a-player__head h2 { font-size: 17px; }
+    .a-hand { order: 2; }
+    .a-hand__label { font-size: 8px; }
+    .a-fan { height: auto; padding: 4px 2px 2px; justify-content: flex-start; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; }
+    .a-card { width: 112px; margin-left: 0; transform: none; scroll-snap-align: start; }
+    .a-card:hover, .a-card:focus-visible { transform: translateY(-6px); }
+    .a-side { order: 3; }
+    .a-log { padding: 8px 10px; }
+    .a-log p { font-size: 9px; }
+    .a-log em { display: none; }
+    .a-end { display: none; }
+    .a-controls {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+      background: linear-gradient(180deg, rgba(21, 13, 7, .15), rgba(21, 13, 7, .98) 45%);
+    }
+    .a-controls__energy { display: flex; align-items: center; gap: 6px; color: #f2e3c8; }
+    .a-controls__energy b { font: 700 15px/1 system-ui, sans-serif; }
+    .a-controls__energy small { color: #d8b46a; font: 700 8px/1 system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+    .a-controls .a-end { display: block; flex: 1; margin: 0; }
+    .a-detail { place-items: end center; padding: 0; }
+    .a-detail__sheet { width: 100%; max-height: 88svh; overflow: auto; border-radius: 14px 14px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom)); }
+  }
+
+  /* ================================================================ */
+  /* B — ILLUMINATED BESTIARY                                          */
+  /* ================================================================ */
+  .b {
+    color: #3b2a1a;
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(255, 250, 230, .55), transparent 55%),
+      repeating-linear-gradient(0deg, rgba(120, 90, 40, .025) 0 1px, transparent 1px 6px),
+      #d9c49a;
+  }
+  .b-book {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(1180px, 100%);
+    min-height: 100vh;
+    min-height: 100svh;
+    margin: 0 auto;
+    padding: 0;
+    border: 1px solid #a98643;
+    background:
+      linear-gradient(90deg, #f4e6c8 0%, #fbf3df 48.6%, #e9d7b2 50%, #fbf3df 51.4%, #f4e6c8 100%);
+    box-shadow: 0 24px 60px rgba(60, 40, 15, .38), inset 0 0 0 6px #fbf3df, inset 0 0 0 7px #c9a45e;
+  }
+  .b-book::before, .b-book::after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    width: 14px;
+    border: 1px solid rgba(185, 140, 60, .55);
+    pointer-events: none;
+  }
+  .b-book::before { left: 10px; border-right: 0; }
+  .b-book::after { right: 10px; border-left: 0; }
+  .b-top {
+    position: relative;
+    padding: 18px 36px 10px;
+    text-align: center;
+    border-bottom: 1px solid rgba(120, 90, 40, .3);
+  }
+  .b-top h1 {
+    margin: 0;
+    color: #8a1f1f;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .42em;
+    text-transform: uppercase;
+  }
+  .b-top p { margin: 5px 0 0; color: #6b5a42; font-size: 10px; font-style: italic; }
+  .b-nav { position: absolute; top: 14px; right: 32px; display: flex; gap: 8px; }
+  .b-nav button { border: 0; background: transparent; color: #7a3f1d; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+  .b-spread {
+    display: grid;
+    flex: 1;
+    grid-template-columns: minmax(0, 1fr) 120px minmax(0, 1fr);
+    padding: 24px 32px 18px;
+    gap: 0;
+  }
+  .b-page { position: relative; display: flex; flex-direction: column; justify-content: center; padding: 0 28px; }
+  .b-page__inner { width: 100%; }
+  .b-page--left { border-right: 1px solid rgba(120, 90, 40, .22); }
+  .b-page--right { border-left: 1px solid rgba(120, 90, 40, .22); }
+  .b-dropcap {
+    float: left;
+    margin: 2px 8px 0 0;
+    color: #8a1f1f;
+    font-size: 58px;
+    line-height: .78;
+    font-weight: 700;
+    text-shadow: 1px 1px 0 #d4af37;
+  }
+  .b-page h2 {
+    margin: 0 0 8px;
+    color: #6b4a1f;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .b-page h2::after {
+    content: "";
+    display: block;
+    width: 64px;
+    height: 2px;
+    margin-top: 6px;
+    background: linear-gradient(90deg, #b8860b, transparent);
+  }
+  .b-portrait {
+    float: right;
+    width: 142px;
+    height: 172px;
+    margin: 2px 0 10px 14px;
+    padding: 4px;
+    border: 3px double #b8860b;
+    border-radius: 50% 50% 4px 4px;
+    background: #fbf3df;
+    box-shadow: 0 6px 18px rgba(90, 60, 20, .3);
+  }
+  .b-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center 34%; border-radius: 50% 50% 2px 2px; }
+  .b-enemy-name { margin: 2px 0 0; color: #3b2a1a; font-size: 30px; line-height: 1; }
+  .b-epithet { margin: 4px 0 12px; color: #8a1f1f; font-size: 11px; font-style: italic; }
+  .b-stat { display: grid; grid-template-columns: 58px 1fr 46px; align-items: center; gap: 8px; margin-top: 5px; }
+  .b-stat > span { color: #6b5a42; font: 700 8px/1 system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+  .b-stat > b { text-align: right; font: 700 9px/1 system-ui, sans-serif; }
+  .b-rule { height: 8px; border-top: 1px solid #b09060; border-bottom: 1px solid #b09060; background: repeating-linear-gradient(90deg, rgba(185, 140, 60, .35) 0 2px, transparent 2px 5px); }
+  .b-rule__fill { height: 100%; background: repeating-linear-gradient(90deg, #8a1f1f 0 3px, #a83232 3px 5px); }
+  .b-rule__fill--def { background: repeating-linear-gradient(90deg, #6b7280 0 3px, #9ca3af 3px 5px); }
+  .b-intent { margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(185, 140, 60, .5); }
+  .b-intent h3 { margin: 0 0 6px; color: #6b4a1f; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+  .b-intent ul { margin: 0; padding: 0; list-style: none; }
+  .b-intent li { display: grid; grid-template-columns: 14px 1fr auto; gap: 6px; align-items: baseline; padding: 4px 0; border-bottom: 1px dotted rgba(120, 90, 40, .3); font-size: 11px; }
+  .b-intent li i { color: #b8860b; font-style: normal; }
+  .b-intent li b { font-weight: 700; }
+  .b-intent li span { color: #6b5a42; font: 700 8px/1 system-ui, sans-serif; letter-spacing: .05em; text-transform: uppercase; }
+  .b-gutter { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 10px; padding-top: 26px; }
+  .b-field-medallion { width: 108px; height: 108px; padding: 4px; border: 3px double #b8860b; border-radius: 50%; background: #fbf3df; box-shadow: 0 0 0 5px rgba(184, 134, 11, .08); }
+  .b-field-medallion img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .b-gutter h3 { margin: 0; color: #6b4a1f; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+  .b-gutter p { margin: 0; color: #6b5a42; font-size: 9px; line-height: 1.35; text-align: center; }
+  .b-cycle { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; color: #6b5a42; font: 700 8px/1 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .b-cycle span.is-neutral { color: #8a1f1f; }
+  .b-hand-label { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 0 6px; }
+  .b-hand-label h3 { margin: 0; color: #6b4a1f; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+  .b-hand-label span { color: #6b5a42; font-size: 9px; font-style: italic; }
+  .b-hand { display: flex; justify-content: center; gap: 8px; }
+  .b-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 0 0 auto;
+    width: clamp(72px, 7vw, 88px);
+    aspect-ratio: 300 / 420;
+    padding: 5px;
+    border: 1px solid #b8860b;
+    border-radius: 2px;
+    background: #fbf3df;
+    color: #3b2a1a;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 0 0 2px #fbf3df, 0 0 0 3px #b8860b, 0 6px 12px rgba(90, 60, 20, .28);
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
+  .b-card:hover, .b-card:focus-visible { transform: translateY(-7px); box-shadow: 0 0 0 2px #fbf3df, 0 0 0 3px #b8860b, 0 14px 22px rgba(90, 60, 20, .4); outline: 0; }
+  .b-card__cost { position: absolute; top: -6px; left: -6px; display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid #b8860b; border-radius: 50%; background: #fbf3df; color: #8a1f1f; font: 700 11px/1 Georgia, serif; }
+  .b-card__art { height: 44%; overflow: hidden; border: 1px solid rgba(120, 90, 40, .4); border-radius: 50% 50% 2px 2px; background: #efe0bd; }
+  .b-card__art img { width: 100%; height: 150%; object-fit: cover; object-position: center 42%; }
+  .b-card__name { font-size: 8px; font-weight: 700; line-height: 1.1; letter-spacing: .02em; }
+  .b-card__meta { color: #8a1f1f; font: 700 6px/1 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .b-card__value { margin-top: auto; color: #8a1f1f; font-size: 16px; font-weight: 700; line-height: 1; }
+  .b-card__value small { color: #6b5a42; font: 700 6px/1 system-ui, sans-serif; letter-spacing: .05em; text-transform: uppercase; }
+  .b-card__badge { color: #8a1f1f; font: 700 6px/1 system-ui, sans-serif; letter-spacing: .05em; text-transform: uppercase; }
+  .b-player { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(185, 140, 60, .5); }
+  .b-player__head { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; }
+  .b-player__head h3 { margin: 0; color: #6b4a1f; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+  .b-player__head span { color: #8a1f1f; font-size: 9px; font-style: italic; }
+  .b-energy { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; }
+  .b-energy b { color: #8a1f1f; font-size: 15px; }
+  .b-energy small { color: #6b5a42; font: 700 8px/1 system-ui, sans-serif; letter-spacing: .09em; text-transform: uppercase; }
+  .b-pips { display: flex; gap: 5px; margin-left: auto; }
+  .b-pip { width: 13px; height: 13px; border: 1px solid #b8860b; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c94b4b, #8a1f1f); }
+  .b-end { width: 100%; margin-top: 12px; padding: 11px 18px; border: 2px solid #b8860b; border-radius: 2px; background: #8a1f1f; color: #fbf3df; font: 700 12px/1 Georgia, serif; font-variant: small-caps; letter-spacing: .16em; cursor: pointer; box-shadow: 0 3px 0 #5a1010; }
+  .b-log { display: flex; gap: 18px; margin-top: auto; padding: 10px 42px 14px; border-top: 1px solid rgba(120, 90, 40, .3); color: #6b5a42; font-size: 10px; font-style: italic; }
+  .b-log b { color: #8a1f1f; font: 700 8px/1.4 system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; font-style: normal; }
+  .b-log span + span { padding-left: 18px; border-left: 1px solid rgba(120, 90, 40, .3); }
+  .b-detail { position: fixed; inset: 0; z-index: 8000; display: grid; place-items: center; padding: 20px; background: rgba(40, 28, 12, .66); }
+  .b-detail__sheet { position: relative; width: min(470px, 94vw); padding: 26px; border: 3px double #b8860b; background: #fbf3df; color: #3b2a1a; box-shadow: 0 24px 60px rgba(40, 24, 8, .55), inset 0 0 0 5px #fbf3df, inset 0 0 0 6px #d4af37; }
+  .b-detail__eyebrow { color: #8a1f1f; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+  .b-detail__sheet h2 { margin: 7px 0 0; font-size: 32px; line-height: 1; }
+  .b-detail__body { display: grid; grid-template-columns: 118px 1fr; gap: 18px; margin-top: 16px; }
+  .b-detail__body > img { width: 118px; aspect-ratio: 300 / 420; object-fit: cover; border: 2px solid #b8860b; border-radius: 50% 50% 2px 2px; }
+  .b-detail__value { margin: 0; color: #8a1f1f; font-size: 34px; line-height: 1; font-weight: 700; }
+  .b-detail__value small { color: #6b5a42; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .07em; text-transform: uppercase; }
+  .b-detail__sheet h3 { margin: 16px 0 4px; color: #6b4a1f; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .13em; text-transform: uppercase; }
+  .b-detail__sheet p { margin: 0; font-size: 13px; line-height: 1.5; }
+  .b-detail__note { margin-top: 12px !important; padding: 8px 10px; border-left: 3px solid #8a1f1f; background: rgba(138, 31, 31, .06); color: #6b5a42; font-size: 11px !important; font-style: italic; }
+  .b-detail__play { width: 100%; margin-top: 18px; padding: 12px; border: 2px solid #b8860b; background: #8a1f1f; color: #fbf3df; font: 700 12px/1 Georgia, serif; font-variant: small-caps; letter-spacing: .16em; cursor: pointer; box-shadow: 0 3px 0 #5a1010; }
+  .b-detail__close { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 1px solid #b8860b; border-radius: 50%; background: #fbf3df; color: #8a1f1f; cursor: pointer; font-size: 16px; }
+  @media (max-width: 1023px) {
+    .b { padding: 0 8px 84px; }
+    .b-book { min-height: auto; box-shadow: 0 0 0 1px #a98643, inset 0 0 0 4px #fbf3df, inset 0 0 0 5px #c9a45e; }
+    .b-top { padding: 12px 12px 6px; }
+    .b-top h1 { font-size: 10px; letter-spacing: .3em; }
+    .b-nav { position: static; justify-content: center; margin-top: 5px; }
+    .b-spread { display: flex; flex-direction: column; padding: 8px 10px 8px; }
+    .b-page { padding: 0 4px; border: 0 !important; }
+    .b-page--right .b-page__inner > p,
+    .b-page--right .b-page__inner > h2 { display: none; }
+    .b-dropcap { font-size: 40px; }
+    .b-portrait { width: 80px; height: 98px; margin-left: 10px; }
+    .b-enemy-name { font-size: 20px; }
+    .b-intent { margin-top: 9px; padding-top: 7px; }
+    .b-gutter { flex-direction: row; justify-content: center; gap: 12px; padding: 9px 0; border-top: 1px solid rgba(120, 90, 40, .22); border-bottom: 1px solid rgba(120, 90, 40, .22); margin: 6px 0; }
+    .b-field-medallion { width: 62px; height: 62px; }
+    .b-gutter h3 { font-size: 10px; }
+    .b-gutter p { display: block; max-width: 150px; font-size: 8px; line-height: 1.3; }
+    .b-cycle { flex-direction: row; flex-wrap: wrap; gap: 3px; }
+    .b-cycle span { padding: 2px 4px; border: 1px solid rgba(120, 90, 40, .3); border-radius: 999px; }
+    .b-hand { justify-content: flex-start; overflow-x: auto; padding: 3px 2px 5px; gap: 8px; }
+    .b-card { width: 88px; }
+    .b-player { margin-top: 8px; padding-top: 8px; }
+    .b-end { display: none; }
+    .b-endbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: block; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, rgba(217, 196, 154, .1), rgba(217, 196, 154, .98) 40%); }
+    .b-endbar .b-end { display: block; }
+    .b-endbar button { width: 100%; margin: 0; }
+    .b-log { display: block; padding: 9px 16px 12px; }
+    .b-log b { display: block; margin-bottom: 3px; }
+    .b-log span + span { display: none; }
+    .b-detail { place-items: end center; padding: 0; }
+    .b-detail__sheet { width: 100%; max-height: 88svh; overflow: auto; padding: 22px 18px calc(22px + env(safe-area-inset-bottom)); }
+  }
+  @media (min-width: 1024px) { .b-endbar { display: none; } }
+
+  /* ================================================================ */
+  /* C — CARVED ELEMENTAL TABLE                                        */
+  /* ================================================================ */
+  .c {
+    color: #e8e2d4;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #14171b;
+  }
+  .c-arena {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: 14px clamp(14px, 3vw, 32px) 16px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 43%, rgba(120, 145, 170, .12), transparent 46%),
+      repeating-radial-gradient(circle at 50% 43%, rgba(255, 255, 255, .022) 0 1px, transparent 1px 5px),
+      #14171b;
+  }
+  .c-arena::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    width: min(78vw, 760px);
+    aspect-ratio: 1.35;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(140, 160, 180, .18);
+    border-radius: 50%;
+    box-shadow: 0 0 0 28px rgba(140, 160, 180, .035), 0 0 0 29px rgba(140, 160, 180, .12), inset 0 0 90px rgba(0, 0, 0, .55);
+    pointer-events: none;
+  }
+  .c-top { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .c-brand { color: #9aa6b2; font: 700 10px/1 system-ui, sans-serif; letter-spacing: .36em; text-transform: uppercase; }
+  .c-brand b { color: #e8e2d4; }
+  .c-turn { color: #6f7a86; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .2em; text-transform: uppercase; }
+  .c-nav { display: flex; gap: 7px; }
+  .c-nav button {
+    padding: 6px 10px;
+    border: 1px solid #3b424b;
+    background: linear-gradient(180deg, #232930, #171b20);
+    color: #c8d0d8;
+    font: 700 9px/1 system-ui, sans-serif;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  }
+  .c-ring {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 10px;
+    width: 100%;
+    max-width: 1040px;
+    margin: 0 auto;
+    flex: 1;
+    align-items: center;
+  }
+  .c-panel {
+    position: relative;
+    border: 1px solid #3b424b;
+    background: linear-gradient(180deg, #232930 0%, #171b20 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), inset 0 -2px 0 rgba(0, 0, 0, .6), 0 10px 30px rgba(0, 0, 0, .4);
+    clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  }
+  .c-enemy {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 18px;
+  }
+  .c-portrait {
+    width: 92px;
+    height: 92px;
+    padding: 3px;
+    background: linear-gradient(145deg, #4b5563, #1f242a);
+    clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  }
+  .c-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center 34%; clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); filter: saturate(.8) contrast(1.05); }
+  .c-enemy__head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .c-enemy__head h2 { margin: 0; color: #f0e6d2; font-size: clamp(19px, 2vw, 27px); line-height: 1; letter-spacing: .06em; text-transform: uppercase; }
+  .c-tag { padding: 3px 7px; border: 1px solid #7a4a2a; color: #f0a868; font: 700 8px/1 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+  .c-bars { display: grid; gap: 5px; margin-top: 8px; max-width: 440px; }
+  .c-bar-row { display: grid; grid-template-columns: 54px 1fr 48px; align-items: center; gap: 8px; }
+  .c-bar-row > span { color: #8b949e; font: 700 8px/1 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+  .c-bar-row > b { color: #c8d0d8; font: 700 9px/1 system-ui, sans-serif; text-align: right; }
+  .c-bar { height: 8px; overflow: hidden; border: 1px solid #3b424b; background: #0e1114; }
+  .c-bar__fill { height: 100%; background: linear-gradient(90deg, #7a2a12, #e06a2a); box-shadow: 0 0 12px rgba(224, 106, 42, .35); }
+  .c-bar__fill--def { background: linear-gradient(90deg, #3b424b, #8b949e); box-shadow: none; }
+  .c-intent { display: flex; gap: 7px; }
+  .c-rune {
+    display: grid;
+    grid-template-columns: 10px 1fr;
+    gap: 2px 7px;
+    min-width: 104px;
+    padding: 6px 8px;
+    border: 1px solid #3b424b;
+    background: #101317;
+    clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  }
+  .c-rune i { grid-row: 1 / 3; align-self: center; width: 8px; height: 8px; border-radius: 50%; background: #e06a2a; box-shadow: 0 0 8px rgba(224, 106, 42, .8); }
+  .c-rune b { color: #c8d0d8; font: 700 9px/1.1 system-ui, sans-serif; }
+  .c-rune span { color: #8b949e; font: 700 7px/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .c-rune small { grid-column: 1 / -1; color: #6f7a86; font: 700 7px/1 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .c-field { display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center; }
+  .c-sigil {
+    width: 124px;
+    height: 124px;
+    padding: 4px;
+    border: 1px solid #4b5563;
+    border-radius: 50%;
+    background: #0e1114;
+    box-shadow: 0 0 0 9px rgba(140, 160, 180, .04), 0 0 0 10px rgba(140, 160, 180, .12), 0 0 46px rgba(120, 160, 200, .14);
+  }
+  .c-sigil img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; filter: saturate(.75) contrast(1.05); }
+  .c-field h3 { margin: 0; color: #f0e6d2; font-size: 19px; font-weight: 700; letter-spacing: .3em; text-transform: uppercase; }
+  .c-field p { margin: 0; color: #8b949e; font-size: 10px; }
+  .c-cycle { display: flex; gap: 7px; }
+  .c-cycle span { padding: 4px 8px; border: 1px solid #3b424b; color: #8b949e; font: 700 8px/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .c-cycle span.is-neutral { border-color: #8b949e; color: #e8e2d4; background: #232930; }
+  .c-player { display: flex; align-items: center; justify-content: center; gap: 24px; padding: 10px 18px; }
+  .c-player__bars { display: grid; gap: 4px; width: min(320px, 44vw); }
+  .c-player__bars .c-bar-row { grid-template-columns: 48px 1fr 44px; }
+  .c-energy { display: flex; align-items: center; gap: 6px; }
+  .c-energy b { color: #f0e6d2; font-size: 17px; }
+  .c-energy small { color: #8b949e; font: 700 7px/1 system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+  .c-pips { display: flex; gap: 4px; }
+  .c-pip { width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffb066, #b3401f); box-shadow: 0 0 8px rgba(224, 106, 42, .55); }
+  .c-hand { display: flex; justify-content: center; gap: 9px; padding: 4px 0 0; }
+  .c-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 0 0 auto;
+    width: clamp(112px, 11vw, 140px);
+    aspect-ratio: 300 / 420;
+    padding: 8px;
+    border: 1px solid #4b5563;
+    background: linear-gradient(180deg, #2a3038 0%, #1a1e24 100%);
+    color: #e8e2d4;
+    text-align: left;
+    cursor: pointer;
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 8px 18px rgba(0, 0, 0, .5);
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  }
+  .c-card:hover, .c-card:focus-visible { transform: translateY(-9px); border-color: #8b949e; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 16px 26px rgba(0, 0, 0, .6), 0 0 18px rgba(224, 106, 42, .12); outline: 0; }
+  .c-card__cost { position: absolute; top: 5px; left: 5px; display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid #6f7a86; border-radius: 50%; background: #0e1114; color: #f0e6d2; font: 700 12px/1 Georgia, serif; }
+  .c-card__art { height: 43%; overflow: hidden; border: 1px solid #3b424b; background: #0e1114; }
+  .c-card__art img { width: 100%; height: 150%; object-fit: cover; object-position: center 42%; filter: saturate(.7) contrast(1.05) brightness(.92); }
+  .c-card__name { color: #e8e2d4; font: 700 9px/1.15 system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+  .c-card__meta { color: #8b949e; font: 700 7px/1 system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+  .c-card__value { margin-top: auto; color: #f0e6d2; font: 700 20px/1 Georgia, serif; }
+  .c-card__value small { color: #8b949e; font: 700 7px/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .c-card__badge { align-self: flex-start; padding: 2px 4px; border: 1px solid #7a4a2a; color: #f0a868; font: 700 6px/1 system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+  .c-controls { display: flex; justify-content: flex-end; padding-top: 8px; }
+  .c-end {
+    padding: 14px 28px;
+    border: 1px solid #7a4a2a;
+    background: linear-gradient(180deg, #3a2a22, #1c1512);
+    color: #f0c087;
+    font: 700 11px/1 system-ui, sans-serif;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    cursor: pointer;
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    box-shadow: 0 0 24px rgba(220, 120, 40, .15), inset 0 0 0 1px rgba(255, 180, 100, .1);
+  }
+  .c-log { position: absolute; left: clamp(14px, 3vw, 32px); top: 108px; width: 176px; border-left: 1px solid #3b424b; padding-left: 12px; color: #8b949e; z-index: 1; }
+  .c-log__title { color: #f0a868; font: 700 8px/1 system-ui, sans-serif; letter-spacing: .18em; text-transform: uppercase; }
+  .c-log p { margin: 7px 0 0; font-size: 9px; line-height: 1.45; }
+  .c-log em { display: block; margin-top: 7px; color: #6f7a86; font-size: 9px; line-height: 1.4; }
+  .c-detail { position: fixed; inset: 0; z-index: 8000; display: grid; place-items: center; padding: 20px; background: rgba(6, 8, 10, .8); }
+  .c-detail__sheet { position: relative; width: min(460px, 94vw); padding: 24px; border: 1px solid #4b5563; background: linear-gradient(180deg, #232930, #15181d); color: #e8e2d4; box-shadow: 0 24px 60px rgba(0, 0, 0, .65), inset 0 1px 0 rgba(255, 255, 255, .08); clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px); }
+  .c-detail__eyebrow { color: #8b949e; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; }
+  .c-detail__sheet h2 { margin: 8px 0 0; color: #f0e6d2; font-size: 30px; line-height: 1; letter-spacing: .06em; text-transform: uppercase; }
+  .c-detail__body { display: grid; grid-template-columns: 118px 1fr; gap: 18px; margin-top: 16px; }
+  .c-detail__body > img { width: 118px; aspect-ratio: 300 / 420; object-fit: cover; border: 1px solid #4b5563; filter: saturate(.75) contrast(1.05); }
+  .c-detail__value { margin: 0; color: #f0e6d2; font-size: 34px; line-height: 1; font-weight: 700; }
+  .c-detail__value small { color: #8b949e; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .c-detail__sheet h3 { margin: 16px 0 4px; color: #f0a868; font: 700 9px/1 system-ui, sans-serif; letter-spacing: .16em; text-transform: uppercase; }
+  .c-detail__sheet p { margin: 0; font-size: 13px; line-height: 1.5; color: #c8d0d8; }
+  .c-detail__note { margin-top: 12px !important; padding: 9px 10px; border-left: 3px solid #e06a2a; background: rgba(224, 106, 42, .07); color: #8b949e; font-size: 11px !important; }
+  .c-detail__play { width: 100%; margin-top: 18px; padding: 13px; border: 1px solid #7a4a2a; background: linear-gradient(180deg, #3a2a22, #1c1512); color: #f0c087; font: 700 11px/1 system-ui, sans-serif; letter-spacing: .2em; text-transform: uppercase; cursor: pointer; clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+  .c-detail__close { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border: 1px solid #4b5563; background: #101317; color: #c8d0d8; cursor: pointer; font-size: 16px; }
+  @media (max-width: 1023px) {
+    .c-arena { padding: 10px 10px 84px; gap: 8px; }
+    .c-arena::before { width: 120vw; top: 48%; }
+    .c-brand { font-size: 8px; letter-spacing: .24em; }
+    .c-turn { display: none; }
+    .c-nav button { padding: 5px 7px; font-size: 8px; }
+    .c-ring { display: flex; flex-direction: column; gap: 8px; }
+    .c-enemy { grid-template-columns: 62px minmax(0, 1fr); gap: 9px; padding: 9px 11px; }
+    .c-portrait { width: 62px; height: 62px; }
+    .c-enemy__head h2 { font-size: 18px; }
+    .c-intent { grid-column: 1 / -1; gap: 5px; }
+    .c-rune { min-width: 0; flex: 1; padding: 4px 5px; grid-template-columns: 7px 1fr; }
+    .c-rune i { width: 6px; height: 6px; }
+    .c-rune b { font-size: 8px; }
+    .c-rune span { font-size: 6px; }
+    .c-rune small { font-size: 6px; }
+    .c-sigil { width: 82px; height: 82px; box-shadow: 0 0 0 6px rgba(140, 160, 180, .04), 0 0 0 7px rgba(140, 160, 180, .12), 0 0 30px rgba(120, 160, 200, .14); }
+    .c-field h3 { font-size: 15px; }
+    .c-field p { display: none; }
+    .c-cycle { gap: 4px; }
+    .c-cycle span { padding: 3px 5px; font-size: 7px; }
+    .c-player { padding: 8px 11px; gap: 10px; }
+    .c-player__bars { width: 100%; }
+    .c-hand { justify-content: flex-start; overflow-x: auto; gap: 8px; padding: 2px 2px 4px; }
+    .c-card { width: 108px; }
+    .c-card:hover, .c-card:focus-visible { transform: translateY(-5px); }
+    .c-controls { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, rgba(20, 23, 27, .1), rgba(20, 23, 27, .98) 40%); }
+    .c-controls .c-end { width: 100%; }
+    .c-log { position: static; width: auto; border-left: 0; border-top: 1px solid #3b424b; padding: 7px 0 0; margin-top: 2px; }
+    .c-log p { font-size: 8px; margin-top: 4px; }
+    .c-log em { display: none; }
+    .c-detail { place-items: end center; padding: 0; }
+    .c-detail__sheet { width: 100%; max-height: 88svh; overflow: auto; padding: 22px 18px calc(22px + env(safe-area-inset-bottom)); }
+  }
+  /* Shared detail sheet, restyled per direction */
+  body[data-variant="B"] .a-detail { background: rgba(40, 28, 12, .66); }
+  body[data-variant="B"] .a-detail__sheet {
+    border: 3px double #b8860b;
+    border-radius: 0;
+    background: #fbf3df;
+    color: #3b2a1a;
+    box-shadow: 0 24px 60px rgba(40, 24, 8, .55), inset 0 0 0 5px #fbf3df, inset 0 0 0 6px #d4af37;
+  }
+  body[data-variant="B"] .a-detail__eyebrow { color: #8a1f1f; }
+  body[data-variant="B"] .a-detail__sheet h2 { font-size: 32px; }
+  body[data-variant="B"] .a-detail__body > img { border: 2px solid #b8860b; border-radius: 50% 50% 2px 2px; }
+  body[data-variant="B"] .a-detail__value { color: #8a1f1f; }
+  body[data-variant="B"] .a-detail__sheet h3 { color: #6b4a1f; }
+  body[data-variant="B"] .a-detail__note { border-left-color: #8a1f1f; background: rgba(138, 31, 31, .06); font-style: italic; }
+  body[data-variant="B"] .a-detail__play { border: 2px solid #b8860b; border-radius: 0; background: #8a1f1f; color: #fbf3df; font-variant: small-caps; box-shadow: 0 3px 0 #5a1010; }
+  body[data-variant="B"] .a-detail__close { border-color: #b8860b; background: #fbf3df; color: #8a1f1f; }
+
+  body[data-variant="C"] .a-detail { background: rgba(6, 8, 10, .8); }
+  body[data-variant="C"] .a-detail__sheet {
+    border: 1px solid #4b5563;
+    border-radius: 0;
+    background: linear-gradient(180deg, #232930, #15181d);
+    color: #e8e2d4;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .65), inset 0 1px 0 rgba(255, 255, 255, .08);
+    clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+  }
+  body[data-variant="C"] .a-detail__eyebrow { color: #8b949e; }
+  body[data-variant="C"] .a-detail__sheet h2 { color: #f0e6d2; letter-spacing: .06em; text-transform: uppercase; }
+  body[data-variant="C"] .a-detail__body > img { border: 1px solid #4b5563; border-radius: 0; filter: saturate(.75) contrast(1.05); }
+  body[data-variant="C"] .a-detail__value { color: #f0e6d2; }
+  body[data-variant="C"] .a-detail__sheet h3 { color: #f0a868; }
+  body[data-variant="C"] .a-detail__sheet p { color: #c8d0d8; }
+  body[data-variant="C"] .a-detail__note { border-left-color: #e06a2a; background: rgba(224, 106, 42, .07); color: #8b949e; }
+  body[data-variant="C"] .a-detail__play {
+    border: 1px solid #7a4a2a;
+    border-radius: 0;
+    background: linear-gradient(180deg, #3a2a22, #1c1512);
+    color: #f0c087;
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  }
+  body[data-variant="C"] .a-detail__close { border: 1px solid #4b5563; border-radius: 0; background: #101317; color: #c8d0d8; }
+  @media (max-width: 1023px) {
+    body[data-variant="C"] .a-detail__sheet { border-radius: 0; }
+  }
+</style>
+</head>
+<body data-variant="A">
+
+<!-- ================= A ================= -->
+<section class="variant a" data-panel="A" aria-label="Direction A: field journal on a table">
+  <div class="a-table">
+    <header class="a-top">
+      <div class="a-brand"><span class="a-brand__mark">✦</span> Field journal <span class="a-brand__turn">Turn 1</span></div>
+      <nav class="a-nav" aria-label="Battle actions">
+        <button type="button">Run overview</button>
+        <button type="button">Leave battle</button>
+      </nav>
+    </header>
+
+    <div class="a-spread">
+      <article class="a-panel a-enemy">
+        <span class="a-seal" aria-hidden="true"></span>
+        <div class="a-portrait"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+Q2luZGVyIFdhcmRlbiAtIEVtYmVyIGVuZW15LCAzMCBoZWFsdGg8L3RpdGxlPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iMjgiIGZpbGw9IiM3ZjFkMWQiLz4KICA8cmVjdCB4PSIxNCIgeT0iMTQiIHdpZHRoPSI0ODQiIGhlaWdodD0iNDg0IiByeD0iMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y1OWUwYiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPGNpcmNsZSBjeD0iMjU2IiBjeT0iMjI0IiByPSIxODgiIGZpbGw9IiM0NTBhMGEiIGZpbGwtb3BhY2l0eT0iMC4zNSIvPgogIDxwb2x5Z29uIHBvaW50cz0iMjU2LDk2IDM1NiwzMTYgMTU2LDMxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cG9seWdvbiBwb2ludHM9IjI1NiwxNzggMjk0LDI4MCAyMTgsMjgwIiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iNDQiIHk9IjU4IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgbGV0dGVyLXNwYWNpbmc9IjMiIGZpbGw9IiNmNTllMGIiPkVORU1ZPC90ZXh0PgogIDx0ZXh0IHg9IjQ0IiB5PSI4NCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiNmZmY3ZWQiPkVtYmVyPC90ZXh0PgogIDxjaXJjbGUgY3g9IjQzNiIgY3k9IjcyIiByPSI0MCIgZmlsbD0iI2Y1OWUwYiIvPgogIDx0ZXh0IHg9IjQzNiIgeT0iODIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjNDUwYTBhIj4zMDwvdGV4dD4KICA8dGV4dCB4PSI0MzYiIHk9IjEwMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGxldHRlci1zcGFjaW5nPSIyIiBmaWxsPSIjNDUwYTBhIj5IUDwvdGV4dD4KICA8cmVjdCB4PSIwIiB5PSI0MTYiIHdpZHRoPSI1MTIiIGhlaWdodD0iOTYiIGZpbGw9IiM0NTBhMGEiIGZpbGwtb3BhY2l0eT0iMC42Ii8+CiAgPHRleHQgeD0iMjU2IiB5PSIzOTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmN2VkIj5DaW5kZXIgV2FyZGVuPC90ZXh0Pgo8L3N2Zz4K" alt="Cinder Warden, Ember enemy"></div>
+        <div>
+          <div class="a-enemy__head"><h2>Cinder Warden</h2><span class="a-tag">▲ Ember</span></div>
+          <div class="a-bars">
+            <div class="a-bar-row"><span>Health</span><div class="a-bar"><div class="a-bar__fill" style="width:100%"></div></div><b>30 / 30</b></div>
+            <div class="a-bar-row"><span>Defense</span><div class="a-bar"><div class="a-bar__fill a-bar__fill--def" style="width:0%"></div></div><b>0 / 8</b></div>
+          </div>
+          <p class="a-note">No active statuses.</p>
+          <div class="a-intent">
+            <div class="a-intent__head"><span>Enemy intent</span><em>Incoming 6 damage · 2 defense</em></div>
+            <div class="a-intent__slips">
+              <div class="a-slip"><b>Cinder Jab</b><span>3 dmg</span><i>1 energy</i></div>
+              <div class="a-slip"><b>Cinder Jab</b><span>3 dmg</span><i>1 energy</i></div>
+              <div class="a-slip"><b>Ash Guard</b><span>2 def</span><i>1 energy</i></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <div class="a-field">
+        <div class="a-field__medallion"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgdmlld0JveD0iMCAwIDI1NiAyNTYiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+TmV1dHJhbCBGaWVsZDwvdGl0bGU+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHJ4PSIyNCIgZmlsbD0iIzM3NDE1MSIvPgogIDxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjIzNiIgaGVpZ2h0PSIyMzYiIHJ4PSIxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8dGV4dCB4PSIxMjgiIHk9IjQ4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgbGV0dGVyLXNwYWNpbmc9IjMiIGZpbGw9IiNlNWU3ZWIiPkZJRUxEPC90ZXh0PgogIDxjaXJjbGUgY3g9IjEyOCIgY3k9IjExMiIgcj0iNTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPGNpcmNsZSBjeD0iMTI4IiBjeT0iMTEyIiByPSIyOSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjQiLz4KICA8Y2lyY2xlIGN4PSIxMjgiIGN5PSIxMTIiIHI9IjgiIGZpbGw9IiNlNWU3ZWIiLz4KICA8dGV4dCB4PSIxMjgiIHk9IjIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiNmOWZhZmIiIGZvbnQtd2VpZ2h0PSI3MDAiPk5ldXRyYWw8L3RleHQ+Cjwvc3ZnPgo=" alt="Neutral field"></div>
+        <div class="a-field__text">
+          <h3>Neutral field</h3>
+          <p>No element is empowered; no card is countered.</p>
+        </div>
+        <div class="a-cycle" aria-label="Field cycle">
+          <span>▲ Ember</span><span>❄ Frost</span><span>✦ Gale</span><span>◆ Stone</span><span class="is-neutral">○ Neutral</span>
+        </div>
+      </div>
+
+      <div class="a-bottom">
+        <article class="a-panel a-player">
+          <span class="a-seal" aria-hidden="true"></span>
+          <div class="a-player__head"><h2>You</h2><span>▲ Ember starter</span></div>
+          <div class="a-bars">
+            <div class="a-bar-row"><span>Health</span><div class="a-bar"><div class="a-bar__fill" style="width:100%"></div></div><b>40 / 40</b></div>
+            <div class="a-bar-row"><span>Defense</span><div class="a-bar"><div class="a-bar__fill a-bar__fill--def" style="width:0%"></div></div><b>0 / 8</b></div>
+          </div>
+          <p class="a-note">No active statuses.</p>
+          <div class="a-energy"><b>3</b><small>energy</small><span class="a-pips"><i class="a-pip"></i><i class="a-pip"></i><i class="a-pip"></i></span></div>
+        </article>
+
+        <div class="a-hand">
+          <div class="a-hand__label">Your hand <span>5 cards · tap to inspect</span></div>
+          <div class="a-fan">
+            <button class="a-card" type="button" data-card="probe" style="--r:-7deg;--y:2px" aria-label="Probe, Neutral utility, cost 0, draw 1">
+              <span class="a-card__cost">0</span><span class="a-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+UHJvYmUgLSBOZXV0cmFsIFV0aWxpdHk8L3RpdGxlPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIzMDAiIGhlaWdodD0iNDIwIiByeD0iMjAiIGZpbGw9IiMzNzQxNTEiLz4KICA8cmVjdCB4PSIxMiIgeT0iMTIiIHdpZHRoPSIyNzYiIGhlaWdodD0iMzk2IiByeD0iMTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPGxpbmUgeDE9IjI0IiB5MT0iOTQiIHgyPSIyNzYiIHkyPSI5NCIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8Y2lyY2xlIGN4PSI0NiIgY3k9IjU4IiByPSIxOCIgZmlsbD0iI2U1ZTdlYiIvPgogIDx0ZXh0IHg9IjQ2IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMxMTE4MjciPjA8L3RleHQ+CiAgPHRleHQgeD0iMTc0IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmOWZhZmIiPlByb2JlPC90ZXh0PgogIDxyZWN0IHg9IjMwIiB5PSI5NiIgd2lkdGg9IjI0MCIgaGVpZ2h0PSIyMDAiIHJ4PSIxNCIgZmlsbD0iIzExMTgyNyIgZmlsbC1vcGFjaXR5PSIwLjQ1IiBzdHJva2U9IiNlNWU3ZWIiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxjaXJjbGUgY3g9IjE1MCIgY3k9IjE5NiIgcj0iNDYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTk2IiByPSIxNyIgZmlsbD0iI2U1ZTdlYiIvPgogIDx0ZXh0IHg9IjE1MCIgeT0iMzE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2Y5ZmFmYiI+RHJhdyAxPC90ZXh0PgogIDx0ZXh0IHg9IjE1MCIgeT0iMzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZmlsbD0iI2U1ZTdlYiIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+TkVVVFJBTCAvIFVUSUxJVFk8L3RleHQ+Cjwvc3ZnPgo=" alt=""></span>
+              <span class="a-card__name">Probe</span><span class="a-card__meta">○ Neutral · Utility</span><span class="a-card__value">1 <small>draw</small></span>
+            </button>
+            <button class="a-card" type="button" data-card="inferno" style="--r:-3.5deg;--y:1px" aria-label="Inferno, Ember attack, cost 3, 7 damage">
+              <span class="a-card__cost">3</span><span class="a-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+SW5mZXJubyAtIEVtYmVyIEF0dGFjazwvdGl0bGU+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0MjAiIHJ4PSIyMCIgZmlsbD0iIzdmMWQxZCIvPgogIDxyZWN0IHg9IjEyIiB5PSIxMiIgd2lkdGg9IjI3NiIgaGVpZ2h0PSIzOTYiIHJ4PSIxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8bGluZSB4MT0iMjQiIHkxPSI5NCIgeDI9IjI3NiIgeTI9Ijk0IiBzdHJva2U9IiNmNTllMGIiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxjaXJjbGUgY3g9IjQ2IiBjeT0iNTgiIHI9IjE4IiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iNDYiIHk9IjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzQ1MGEwYSI+MzwvdGV4dD4KICA8dGV4dCB4PSIxNzQiIHk9IjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZjdlZCI+SW5mZXJubzwvdGV4dD4KICA8cmVjdCB4PSIzMCIgeT0iOTYiIHdpZHRoPSIyNDAiIGhlaWdodD0iMjAwIiByeD0iMTQiIGZpbGw9IiM0NTBhMGEiIGZpbGwtb3BhY2l0eT0iMC40NSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cG9seWdvbiBwb2ludHM9IjE1MCwxMzIgMTk2LDE5NiAxNTAsMjYwIDEwNCwxOTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y1OWUwYiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIxNTAsMTcwIDE2OSwxOTYgMTUwLDIyMiAxMzEsMTk2IiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iMTUwIiB5PSIzMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmN2VkIj5EZWFsIDcgZGFtYWdlPC90ZXh0PgogIDx0ZXh0IHg9IjE1MCIgeT0iMzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZmlsbD0iI2Y1OWUwYiIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+RU1CRVIgLyBBVFRBQ0s8L3RleHQ+Cjwvc3ZnPgo=" alt=""></span>
+              <span class="a-card__name">Inferno</span><span class="a-card__meta">▲ Ember · Attack</span><span class="a-card__value">7 <small>damage</small></span>
+            </button>
+            <button class="a-card" type="button" data-card="ember-shift" style="--r:0deg;--y:0px" aria-label="Ember Shift, Neutral shift, cost 1, set field to Ember">
+              <span class="a-card__cost">1</span><span class="a-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+RW1iZXIgU2hpZnQgLSBOZXV0cmFsIFNoaWZ0PC90aXRsZT4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgcng9IjIwIiBmaWxsPSIjMzc0MTUxIi8+CiAgPHJlY3QgeD0iMTIiIHk9IjEyIiB3aWR0aD0iMjc2IiBoZWlnaHQ9IjM5NiIgcng9IjE2IiBmaWxsPSJub25lIiBzdHJva2U9IiNlNWU3ZWIiIHN0cm9rZS13aWR0aD0iMyIvPgogIDxsaW5lIHgxPSIyNCIgeTE9Ijk0IiB4Mj0iMjc2IiB5Mj0iOTQiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPGNpcmNsZSBjeD0iNDYiIGN5PSI1OCIgcj0iMTgiIGZpbGw9IiNlNWU3ZWIiLz4KICA8dGV4dCB4PSI0NiIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMTExODI3Ij4xPC90ZXh0PgogIDx0ZXh0IHg9IjE3NCIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjIyIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZjlmYWZiIj5FbWJlciBTaGlmdDwvdGV4dD4KICA8cmVjdCB4PSIzMCIgeT0iOTYiIHdpZHRoPSIyNDAiIGhlaWdodD0iMjAwIiByeD0iMTQiIGZpbGw9IiMxMTE4MjciIGZpbGwtb3BhY2l0eT0iMC40NSIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cG9seWdvbiBwb2ludHM9IjE1MCwxMzIgMTY4LDE3OCAyMTQsMTk2IDE2OCwyMTQgMTUwLDI2MCAxMzIsMjE0IDg2LDE5NiAxMzIsMTc4IiBmaWxsPSJub25lIiBzdHJva2U9IiNlNWU3ZWIiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxjaXJjbGUgY3g9IjE1MCIgY3k9IjE5NiIgcj0iMTMiIGZpbGw9IiNlNWU3ZWIiLz4KICA8dGV4dCB4PSIxNTAiIHk9IjMxOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNmOWZhZmIiPlNldCBmaWVsZCB0byBFbWJlcjwvdGV4dD4KICA8dGV4dCB4PSIxNTAiIHk9IjM4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiNlNWU3ZWIiIGxldHRlci1zcGFjaW5nPSIxLjIiPk5FVVRSQUwgLyBTSElGVDwvdGV4dD4KPC9zdmc+Cg==" alt=""></span>
+              <span class="a-card__name">Ember Shift</span><span class="a-card__meta">○ Neutral · Shift</span><span class="a-card__value">→ Ember</span>
+            </button>
+            <button class="a-card" type="button" data-card="cinder-jab" style="--r:3.5deg;--y:1px" aria-label="Cinder Jab, Ember attack, cost 1, 3 damage">
+              <span class="a-card__cost">1</span><span class="a-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+Q2luZGVyIEphYiAtIEVtYmVyIEF0dGFjazwvdGl0bGU+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0MjAiIHJ4PSIyMCIgZmlsbD0iIzdmMWQxZCIvPgogIDxyZWN0IHg9IjEyIiB5PSIxMiIgd2lkdGg9IjI3NiIgaGVpZ2h0PSIzOTYiIHJ4PSIxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8bGluZSB4MT0iMjQiIHkxPSI5NCIgeDI9IjI3NiIgeTI9Ijk0IiBzdHJva2U9IiNmNTllMGIiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxjaXJjbGUgY3g9IjQ2IiBjeT0iNTgiIHI9IjE4IiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iNDYiIHk9IjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzQ1MGEwYSI+MTwvdGV4dD4KICA8dGV4dCB4PSIxNzQiIHk9IjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZjdlZCI+Q2luZGVyIEphYjwvdGV4dD4KICA8cmVjdCB4PSIzMCIgeT0iOTYiIHdpZHRoPSIyNDAiIGhlaWdodD0iMjAwIiByeD0iMTQiIGZpbGw9IiM0NTBhMGEiIGZpbGwtb3BhY2l0eT0iMC40NSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cG9seWdvbiBwb2ludHM9IjE1MCwxMzIgMTk2LDE5NiAxNTAsMjYwIDEwNCwxOTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y1OWUwYiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIxNTAsMTcwIDE2OSwxOTYgMTUwLDIyMiAxMzEsMTk2IiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iMTUwIiB5PSIzMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmN2VkIj5EZWFsIDMgZGFtYWdlPC90ZXh0PgogIDx0ZXh0IHg9IjE1MCIgeT0iMzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZmlsbD0iI2Y1OWUwYiIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+RU1CRVIgLyBBVFRBQ0s8L3RleHQ+Cjwvc3ZnPgo=" alt=""></span>
+              <span class="a-card__name">Cinder Jab</span><span class="a-card__meta">▲ Ember · Attack</span><span class="a-card__value">3 <small>damage</small></span>
+            </button>
+            <button class="a-card" type="button" data-card="ember-lance" style="--r:7deg;--y:2px" aria-label="Ember Lance, Ember attack, cost 2, 4 damage, Pierce">
+              <span class="a-card__cost">2</span><span class="a-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+RW1iZXIgTGFuY2UgLSBFbWJlciBBdHRhY2s8L3RpdGxlPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIzMDAiIGhlaWdodD0iNDIwIiByeD0iMjAiIGZpbGw9IiM3ZjFkMWQiLz4KICA8cmVjdCB4PSIxMiIgeT0iMTIiIHdpZHRoPSIyNzYiIGhlaWdodD0iMzk2IiByeD0iMTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y1OWUwYiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPGxpbmUgeDE9IjI0IiB5MT0iOTQiIHgyPSIyNzYiIHkyPSI5NCIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8Y2lyY2xlIGN4PSI0NiIgY3k9IjU4IiByPSIxOCIgZmlsbD0iI2Y1OWUwYiIvPgogIDx0ZXh0IHg9IjQ2IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0NTBhMGEiPjI8L3RleHQ+CiAgPHRleHQgeD0iMTc0IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmY3ZWQiPkVtYmVyIExhbmNlPC90ZXh0PgogIDxyZWN0IHg9IjMwIiB5PSI5NiIgd2lkdGg9IjI0MCIgaGVpZ2h0PSIyMDAiIHJ4PSIxNCIgZmlsbD0iIzQ1MGEwYSIgZmlsbC1vcGFjaXR5PSIwLjQ1IiBzdHJva2U9IiNmNTllMGIiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxwb2x5Z29uIHBvaW50cz0iMTUwLDEzMiAxOTYsMTk2IDE1MCwyNjAgMTA0LDE5NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cG9seWdvbiBwb2ludHM9IjE1MCwxNzAgMTY5LDE5NiAxNTAsMjIyIDEzMSwxOTYiIGZpbGw9IiNmNTllMGIiLz4KICA8dGV4dCB4PSIxNTAiIHk9IjMxOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNmZmY3ZWQiPkRlYWwgNCBkYW1hZ2UgKHBpZXJjaW5nKTwvdGV4dD4KICA8dGV4dCB4PSIxNTAiIHk9IjM4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiNmNTllMGIiIGxldHRlci1zcGFjaW5nPSIxLjIiPkVNQkVSIC8gQVRUQUNLPC90ZXh0Pgo8L3N2Zz4K" alt=""></span>
+              <span class="a-card__name">Ember Lance</span><span class="a-card__meta">▲ Ember · Attack</span><span class="a-card__value">4 <small>damage</small></span>
+              <span class="a-card__badge">Pierce</span>
+            </button>
+          </div>
+        </div>
+
+        <aside class="a-side">
+          <div class="a-panel a-log">
+            <div class="a-log__title">Field notes</div>
+            <p><b>Turn 1.</b> The battle begins: Cinder Warden has 30 health; the field is Neutral.</p>
+            <em>“I am the Cinder Warden. Everything you bring, I will burn.”</em>
+          </div>
+          <button class="a-end" type="button">End turn</button>
+        </aside>
+      </div>
+    </div>
+
+    <div class="a-controls">
+      <div class="a-controls__energy"><b>3</b><small>energy</small></div>
+      <button class="a-end" type="button">End turn</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= B ================= -->
+<section class="variant b" data-panel="B" aria-label="Direction B: illuminated bestiary">
+  <div class="b-book">
+    <header class="b-top">
+      <h1>Fieldbound</h1>
+      <p>A bestiary of the shared field · Turn 1</p>
+      <nav class="b-nav" aria-label="Battle actions"><button type="button">Run overview</button><button type="button">Leave battle</button></nav>
+    </header>
+
+    <div class="b-spread">
+      <article class="b-page b-page--left">
+        <div class="b-page__inner">
+        <div class="b-dropcap">T</div>
+        <h2>The adversary</h2>
+        <div class="b-portrait"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+Q2luZGVyIFdhcmRlbiAtIEVtYmVyIGVuZW15LCAzMCBoZWFsdGg8L3RpdGxlPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iMjgiIGZpbGw9IiM3ZjFkMWQiLz4KICA8cmVjdCB4PSIxNCIgeT0iMTQiIHdpZHRoPSI0ODQiIGhlaWdodD0iNDg0IiByeD0iMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y1OWUwYiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPGNpcmNsZSBjeD0iMjU2IiBjeT0iMjI0IiByPSIxODgiIGZpbGw9IiM0NTBhMGEiIGZpbGwtb3BhY2l0eT0iMC4zNSIvPgogIDxwb2x5Z29uIHBvaW50cz0iMjU2LDk2IDM1NiwzMTYgMTU2LDMxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cG9seWdvbiBwb2ludHM9IjI1NiwxNzggMjk0LDI4MCAyMTgsMjgwIiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iNDQiIHk9IjU4IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgbGV0dGVyLXNwYWNpbmc9IjMiIGZpbGw9IiNmNTllMGIiPkVORU1ZPC90ZXh0PgogIDx0ZXh0IHg9IjQ0IiB5PSI4NCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiNmZmY3ZWQiPkVtYmVyPC90ZXh0PgogIDxjaXJjbGUgY3g9IjQzNiIgY3k9IjcyIiByPSI0MCIgZmlsbD0iI2Y1OWUwYiIvPgogIDx0ZXh0IHg9IjQzNiIgeT0iODIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjNDUwYTBhIj4zMDwvdGV4dD4KICA8dGV4dCB4PSI0MzYiIHk9IjEwMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGxldHRlci1zcGFjaW5nPSIyIiBmaWxsPSIjNDUwYTBhIj5IUDwvdGV4dD4KICA8cmVjdCB4PSIwIiB5PSI0MTYiIHdpZHRoPSI1MTIiIGhlaWdodD0iOTYiIGZpbGw9IiM0NTBhMGEiIGZpbGwtb3BhY2l0eT0iMC42Ii8+CiAgPHRleHQgeD0iMjU2IiB5PSIzOTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmN2VkIj5DaW5kZXIgV2FyZGVuPC90ZXh0Pgo8L3N2Zz4K" alt="Cinder Warden, Ember enemy"></div>
+        <p class="b-enemy-name">Cinder Warden</p>
+        <p class="b-epithet">Ember · the burning gate</p>
+        <div class="b-stat"><span>Health</span><div class="b-rule"><div class="b-rule__fill" style="width:100%"></div></div><b>30 / 30</b></div>
+        <div class="b-stat"><span>Defense</span><div class="b-rule"><div class="b-rule__fill b-rule__fill--def" style="width:0%"></div></div><b>0 / 8</b></div>
+        <div class="b-intent">
+          <h3>What it intends</h3>
+          <ul>
+            <li><i>✦</i><b>Cinder Jab</b><span>3 damage · 1 energy</span></li>
+            <li><i>✦</i><b>Cinder Jab</b><span>3 damage · 1 energy</span></li>
+            <li><i>✦</i><b>Ash Guard</b><span>2 defense · 1 energy</span></li>
+          </ul>
+          <p style="margin:7px 0 0;color:#6b5a42;font-size:10px;font-style:italic">Incoming: 6 damage and 2 defense.</p>
+        </div>
+        </div>
+      </article>
+
+      <div class="b-gutter">
+        <div class="b-field-medallion"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgdmlld0JveD0iMCAwIDI1NiAyNTYiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+TmV1dHJhbCBGaWVsZDwvdGl0bGU+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHJ4PSIyNCIgZmlsbD0iIzM3NDE1MSIvPgogIDxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjIzNiIgaGVpZ2h0PSIyMzYiIHJ4PSIxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8dGV4dCB4PSIxMjgiIHk9IjQ4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgbGV0dGVyLXNwYWNpbmc9IjMiIGZpbGw9IiNlNWU3ZWIiPkZJRUxEPC90ZXh0PgogIDxjaXJjbGUgY3g9IjEyOCIgY3k9IjExMiIgcj0iNTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPGNpcmNsZSBjeD0iMTI4IiBjeT0iMTEyIiByPSIyOSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjQiLz4KICA8Y2lyY2xlIGN4PSIxMjgiIGN5PSIxMTIiIHI9IjgiIGZpbGw9IiNlNWU3ZWIiLz4KICA8dGV4dCB4PSIxMjgiIHk9IjIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiNmOWZhZmIiIGZvbnQtd2VpZ2h0PSI3MDAiPk5ldXRyYWw8L3RleHQ+Cjwvc3ZnPgo=" alt="Neutral field"></div>
+        <h3>Neutral</h3>
+        <p>No element is empowered; no card is countered.</p>
+        <div class="b-cycle"><span class="is-neutral">○ Neutral</span><span>▲ Ember</span><span>❄ Frost</span><span>✦ Gale</span><span>◆ Stone</span></div>
+      </div>
+
+      <article class="b-page b-page--right">
+        <div class="b-page__inner">
+        <h2>The field</h2>
+        <p style="margin:0;color:#5b4a34;font-size:11px;line-height:1.45">One shared element decides what hits harder. A card matching the field is empowered and pierces; the element it beats is countered. Neutral sits outside the cycle.</p>
+
+        <div class="b-hand-label"><h3>Your hand</h3><span>five leaves, one turn</span></div>
+        <div class="b-hand">
+          <button class="b-card" type="button" data-card="probe" aria-label="Probe, Neutral utility, cost 0, draw 1">
+            <span class="b-card__cost">0</span><span class="b-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+UHJvYmUgLSBOZXV0cmFsIFV0aWxpdHk8L3RpdGxlPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIzMDAiIGhlaWdodD0iNDIwIiByeD0iMjAiIGZpbGw9IiMzNzQxNTEiLz4KICA8cmVjdCB4PSIxMiIgeT0iMTIiIHdpZHRoPSIyNzYiIGhlaWdodD0iMzk2IiByeD0iMTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPGxpbmUgeDE9IjI0IiB5MT0iOTQiIHgyPSIyNzYiIHkyPSI5NCIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8Y2lyY2xlIGN4PSI0NiIgY3k9IjU4IiByPSIxOCIgZmlsbD0iI2U1ZTdlYiIvPgogIDx0ZXh0IHg9IjQ2IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMxMTE4MjciPjA8L3RleHQ+CiAgPHRleHQgeD0iMTc0IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmOWZhZmIiPlByb2JlPC90ZXh0PgogIDxyZWN0IHg9IjMwIiB5PSI5NiIgd2lkdGg9IjI0MCIgaGVpZ2h0PSIyMDAiIHJ4PSIxNCIgZmlsbD0iIzExMTgyNyIgZmlsbC1vcGFjaXR5PSIwLjQ1IiBzdHJva2U9IiNlNWU3ZWIiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxjaXJjbGUgY3g9IjE1MCIgY3k9IjE5NiIgcj0iNDYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTk2IiByPSIxNyIgZmlsbD0iI2U1ZTdlYiIvPgogIDx0ZXh0IHg9IjE1MCIgeT0iMzE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2Y5ZmFmYiI+RHJhdyAxPC90ZXh0PgogIDx0ZXh0IHg9IjE1MCIgeT0iMzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZmlsbD0iI2U1ZTdlYiIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+TkVVVFJBTCAvIFVUSUxJVFk8L3RleHQ+Cjwvc3ZnPgo=" alt=""></span>
+            <span class="b-card__name">Probe</span><span class="b-card__meta">○ Neutral</span><span class="b-card__value">1 <small>draw</small></span>
+          </button>
+          <button class="b-card" type="button" data-card="inferno" aria-label="Inferno, Ember attack, cost 3, 7 damage">
+            <span class="b-card__cost">3</span><span class="b-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+SW5mZXJubyAtIEVtYmVyIEF0dGFjazwvdGl0bGU+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0MjAiIHJ4PSIyMCIgZmlsbD0iIzdmMWQxZCIvPgogIDxyZWN0IHg9IjEyIiB5PSIxMiIgd2lkdGg9IjI3NiIgaGVpZ2h0PSIzOTYiIHJ4PSIxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8bGluZSB4MT0iMjQiIHkxPSI5NCIgeDI9IjI3NiIgeTI9Ijk0IiBzdHJva2U9IiNmNTllMGIiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxjaXJjbGUgY3g9IjQ2IiBjeT0iNTgiIHI9IjE4IiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iNDYiIHk9IjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzQ1MGEwYSI+MzwvdGV4dD4KICA8dGV4dCB4PSIxNzQiIHk9IjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZjdlZCI+SW5mZXJubzwvdGV4dD4KICA8cmVjdCB4PSIzMCIgeT0iOTYiIHdpZHRoPSIyNDAiIGhlaWdodD0iMjAwIiByeD0iMTQiIGZpbGw9IiM0NTBhMGEiIGZpbGwtb3BhY2l0eT0iMC40NSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cG9seWdvbiBwb2ludHM9IjE1MCwxMzIgMTk2LDE5NiAxNTAsMjYwIDEwNCwxOTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y1OWUwYiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIxNTAsMTcwIDE2OSwxOTYgMTUwLDIyMiAxMzEsMTk2IiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iMTUwIiB5PSIzMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmN2VkIj5EZWFsIDcgZGFtYWdlPC90ZXh0PgogIDx0ZXh0IHg9IjE1MCIgeT0iMzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZmlsbD0iI2Y1OWUwYiIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+RU1CRVIgLyBBVFRBQ0s8L3RleHQ+Cjwvc3ZnPgo=" alt=""></span>
+            <span class="b-card__name">Inferno</span><span class="b-card__meta">▲ Ember</span><span class="b-card__value">7 <small>damage</small></span>
+          </button>
+          <button class="b-card" type="button" data-card="ember-shift" aria-label="Ember Shift, Neutral shift, cost 1, set field to Ember">
+            <span class="b-card__cost">1</span><span class="b-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+RW1iZXIgU2hpZnQgLSBOZXV0cmFsIFNoaWZ0PC90aXRsZT4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgcng9IjIwIiBmaWxsPSIjMzc0MTUxIi8+CiAgPHJlY3QgeD0iMTIiIHk9IjEyIiB3aWR0aD0iMjc2IiBoZWlnaHQ9IjM5NiIgcng9IjE2IiBmaWxsPSJub25lIiBzdHJva2U9IiNlNWU3ZWIiIHN0cm9rZS13aWR0aD0iMyIvPgogIDxsaW5lIHgxPSIyNCIgeTE9Ijk0IiB4Mj0iMjc2IiB5Mj0iOTQiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPGNpcmNsZSBjeD0iNDYiIGN5PSI1OCIgcj0iMTgiIGZpbGw9IiNlNWU3ZWIiLz4KICA8dGV4dCB4PSI0NiIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMTExODI3Ij4xPC90ZXh0PgogIDx0ZXh0IHg9IjE3NCIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjIyIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZjlmYWZiIj5FbWJlciBTaGlmdDwvdGV4dD4KICA8cmVjdCB4PSIzMCIgeT0iOTYiIHdpZHRoPSIyNDAiIGhlaWdodD0iMjAwIiByeD0iMTQiIGZpbGw9IiMxMTE4MjciIGZpbGwtb3BhY2l0eT0iMC40NSIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cG9seWdvbiBwb2ludHM9IjE1MCwxMzIgMTY4LDE3OCAyMTQsMTk2IDE2OCwyMTQgMTUwLDI2MCAxMzIsMjE0IDg2LDE5NiAxMzIsMTc4IiBmaWxsPSJub25lIiBzdHJva2U9IiNlNWU3ZWIiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxjaXJjbGUgY3g9IjE1MCIgY3k9IjE5NiIgcj0iMTMiIGZpbGw9IiNlNWU3ZWIiLz4KICA8dGV4dCB4PSIxNTAiIHk9IjMxOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNmOWZhZmIiPlNldCBmaWVsZCB0byBFbWJlcjwvdGV4dD4KICA8dGV4dCB4PSIxNTAiIHk9IjM4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiNlNWU3ZWIiIGxldHRlci1zcGFjaW5nPSIxLjIiPk5FVVRSQUwgLyBTSElGVDwvdGV4dD4KPC9zdmc+Cg==" alt=""></span>
+            <span class="b-card__name">Ember Shift</span><span class="b-card__meta">○ Neutral</span><span class="b-card__value">→ <small>Ember</small></span>
+          </button>
+          <button class="b-card" type="button" data-card="cinder-jab" aria-label="Cinder Jab, Ember attack, cost 1, 3 damage">
+            <span class="b-card__cost">1</span><span class="b-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+Q2luZGVyIEphYiAtIEVtYmVyIEF0dGFjazwvdGl0bGU+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0MjAiIHJ4PSIyMCIgZmlsbD0iIzdmMWQxZCIvPgogIDxyZWN0IHg9IjEyIiB5PSIxMiIgd2lkdGg9IjI3NiIgaGVpZ2h0PSIzOTYiIHJ4PSIxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8bGluZSB4MT0iMjQiIHkxPSI5NCIgeDI9IjI3NiIgeTI9Ijk0IiBzdHJva2U9IiNmNTllMGIiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxjaXJjbGUgY3g9IjQ2IiBjeT0iNTgiIHI9IjE4IiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iNDYiIHk9IjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzQ1MGEwYSI+MTwvdGV4dD4KICA8dGV4dCB4PSIxNzQiIHk9IjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZjdlZCI+Q2luZGVyIEphYjwvdGV4dD4KICA8cmVjdCB4PSIzMCIgeT0iOTYiIHdpZHRoPSIyNDAiIGhlaWdodD0iMjAwIiByeD0iMTQiIGZpbGw9IiM0NTBhMGEiIGZpbGwtb3BhY2l0eT0iMC40NSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cG9seWdvbiBwb2ludHM9IjE1MCwxMzIgMTk2LDE5NiAxNTAsMjYwIDEwNCwxOTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y1OWUwYiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIxNTAsMTcwIDE2OSwxOTYgMTUwLDIyMiAxMzEsMTk2IiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iMTUwIiB5PSIzMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmN2VkIj5EZWFsIDMgZGFtYWdlPC90ZXh0PgogIDx0ZXh0IHg9IjE1MCIgeT0iMzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZmlsbD0iI2Y1OWUwYiIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+RU1CRVIgLyBBVFRBQ0s8L3RleHQ+Cjwvc3ZnPgo=" alt=""></span>
+            <span class="b-card__name">Cinder Jab</span><span class="b-card__meta">▲ Ember</span><span class="b-card__value">3 <small>damage</small></span>
+          </button>
+          <button class="b-card" type="button" data-card="ember-lance" aria-label="Ember Lance, Ember attack, cost 2, 4 damage, Pierce">
+            <span class="b-card__cost">2</span><span class="b-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+RW1iZXIgTGFuY2UgLSBFbWJlciBBdHRhY2s8L3RpdGxlPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIzMDAiIGhlaWdodD0iNDIwIiByeD0iMjAiIGZpbGw9IiM3ZjFkMWQiLz4KICA8cmVjdCB4PSIxMiIgeT0iMTIiIHdpZHRoPSIyNzYiIGhlaWdodD0iMzk2IiByeD0iMTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y1OWUwYiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPGxpbmUgeDE9IjI0IiB5MT0iOTQiIHgyPSIyNzYiIHkyPSI5NCIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8Y2lyY2xlIGN4PSI0NiIgY3k9IjU4IiByPSIxOCIgZmlsbD0iI2Y1OWUwYiIvPgogIDx0ZXh0IHg9IjQ2IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0NTBhMGEiPjI8L3RleHQ+CiAgPHRleHQgeD0iMTc0IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmY3ZWQiPkVtYmVyIExhbmNlPC90ZXh0PgogIDxyZWN0IHg9IjMwIiB5PSI5NiIgd2lkdGg9IjI0MCIgaGVpZ2h0PSIyMDAiIHJ4PSIxNCIgZmlsbD0iIzQ1MGEwYSIgZmlsbC1vcGFjaXR5PSIwLjQ1IiBzdHJva2U9IiNmNTllMGIiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxwb2x5Z29uIHBvaW50cz0iMTUwLDEzMiAxOTYsMTk2IDE1MCwyNjAgMTA0LDE5NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cG9seWdvbiBwb2ludHM9IjE1MCwxNzAgMTY5LDE5NiAxNTAsMjIyIDEzMSwxOTYiIGZpbGw9IiNmNTllMGIiLz4KICA8dGV4dCB4PSIxNTAiIHk9IjMxOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNmZmY3ZWQiPkRlYWwgNCBkYW1hZ2UgKHBpZXJjaW5nKTwvdGV4dD4KICA8dGV4dCB4PSIxNTAiIHk9IjM4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiNmNTllMGIiIGxldHRlci1zcGFjaW5nPSIxLjIiPkVNQkVSIC8gQVRUQUNLPC90ZXh0Pgo8L3N2Zz4K" alt=""></span>
+            <span class="b-card__name">Ember Lance</span><span class="b-card__meta">▲ Ember</span><span class="b-card__value">4 <small>damage</small></span><span class="b-card__badge">Pierce</span>
+          </button>
+        </div>
+
+        <div class="b-player">
+          <div class="b-player__head"><h3>You</h3><span>Ember starter</span></div>
+          <div class="b-stat"><span>Health</span><div class="b-rule"><div class="b-rule__fill" style="width:100%"></div></div><b>40 / 40</b></div>
+          <div class="b-stat"><span>Defense</span><div class="b-rule"><div class="b-rule__fill b-rule__fill--def" style="width:0%"></div></div><b>0 / 8</b></div>
+          <div class="b-energy"><b>3</b><small>energy</small><span class="b-pips"><i class="b-pip"></i><i class="b-pip"></i><i class="b-pip"></i></span></div>
+        </div>
+
+        <button class="b-end" type="button">End turn</button>
+        </div>
+      </article>
+    </div>
+
+    <footer class="b-log">
+      <b>Turn 1</b>
+      <span>The battle begins: Cinder Warden has 30 health; the field is Neutral (nothing is empowered or countered).</span>
+      <span><i>“I am the Cinder Warden. Everything you bring, I will burn.”</i></span>
+    </footer>
+
+    <div class="b-endbar"><button class="b-end" type="button">End turn</button></div>
+  </div>
+</section>
+
+<!-- ================= C ================= -->
+<section class="variant c" data-panel="C" aria-label="Direction C: carved elemental table">
+  <div class="c-arena">
+    <header class="c-top">
+      <div class="c-brand"><b>Field</b> / Bound</div>
+      <div class="c-turn">Turn 1 · your move</div>
+      <nav class="c-nav" aria-label="Battle actions"><button type="button">Run overview</button><button type="button">Leave</button></nav>
+    </header>
+
+    <aside class="c-log">
+      <div class="c-log__title">Rune log</div>
+      <p><b>Turn 1.</b> The battle begins: Cinder Warden has 30 health; the field is Neutral.</p>
+      <em>“I am the Cinder Warden. Everything you bring, I will burn.”</em>
+    </aside>
+
+    <div class="c-ring">
+      <article class="c-panel c-enemy">
+        <div class="c-portrait"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+Q2luZGVyIFdhcmRlbiAtIEVtYmVyIGVuZW15LCAzMCBoZWFsdGg8L3RpdGxlPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iMjgiIGZpbGw9IiM3ZjFkMWQiLz4KICA8cmVjdCB4PSIxNCIgeT0iMTQiIHdpZHRoPSI0ODQiIGhlaWdodD0iNDg0IiByeD0iMjAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y1OWUwYiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPGNpcmNsZSBjeD0iMjU2IiBjeT0iMjI0IiByPSIxODgiIGZpbGw9IiM0NTBhMGEiIGZpbGwtb3BhY2l0eT0iMC4zNSIvPgogIDxwb2x5Z29uIHBvaW50cz0iMjU2LDk2IDM1NiwzMTYgMTU2LDMxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjkiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cG9seWdvbiBwb2ludHM9IjI1NiwxNzggMjk0LDI4MCAyMTgsMjgwIiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iNDQiIHk9IjU4IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgbGV0dGVyLXNwYWNpbmc9IjMiIGZpbGw9IiNmNTllMGIiPkVORU1ZPC90ZXh0PgogIDx0ZXh0IHg9IjQ0IiB5PSI4NCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiNmZmY3ZWQiPkVtYmVyPC90ZXh0PgogIDxjaXJjbGUgY3g9IjQzNiIgY3k9IjcyIiByPSI0MCIgZmlsbD0iI2Y1OWUwYiIvPgogIDx0ZXh0IHg9IjQzNiIgeT0iODIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjNDUwYTBhIj4zMDwvdGV4dD4KICA8dGV4dCB4PSI0MzYiIHk9IjEwMSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGxldHRlci1zcGFjaW5nPSIyIiBmaWxsPSIjNDUwYTBhIj5IUDwvdGV4dD4KICA8cmVjdCB4PSIwIiB5PSI0MTYiIHdpZHRoPSI1MTIiIGhlaWdodD0iOTYiIGZpbGw9IiM0NTBhMGEiIGZpbGwtb3BhY2l0eT0iMC42Ii8+CiAgPHRleHQgeD0iMjU2IiB5PSIzOTIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjM0IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZmZmN2VkIj5DaW5kZXIgV2FyZGVuPC90ZXh0Pgo8L3N2Zz4K" alt="Cinder Warden, Ember enemy"></div>
+        <div>
+          <div class="c-enemy__head"><h2>Cinder Warden</h2><span class="c-tag">▲ Ember</span></div>
+          <div class="c-bars">
+            <div class="c-bar-row"><span>Health</span><div class="c-bar"><div class="c-bar__fill" style="width:100%"></div></div><b>30 / 30</b></div>
+            <div class="c-bar-row"><span>Defense</span><div class="c-bar"><div class="c-bar__fill c-bar__fill--def" style="width:0%"></div></div><b>0 / 8</b></div>
+          </div>
+        </div>
+        <div class="c-intent" aria-label="Enemy intent">
+          <div class="c-rune"><i></i><b>Cinder Jab</b><span>3 dmg</span><small>1 energy</small></div>
+          <div class="c-rune"><i></i><b>Cinder Jab</b><span>3 dmg</span><small>1 energy</small></div>
+          <div class="c-rune"><i></i><b>Ash Guard</b><span>2 def</span><small>1 energy</small></div>
+        </div>
+      </article>
+
+      <div class="c-field">
+        <div class="c-sigil"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgdmlld0JveD0iMCAwIDI1NiAyNTYiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+TmV1dHJhbCBGaWVsZDwvdGl0bGU+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHJ4PSIyNCIgZmlsbD0iIzM3NDE1MSIvPgogIDxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjIzNiIgaGVpZ2h0PSIyMzYiIHJ4PSIxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8dGV4dCB4PSIxMjgiIHk9IjQ4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMiIgbGV0dGVyLXNwYWNpbmc9IjMiIGZpbGw9IiNlNWU3ZWIiPkZJRUxEPC90ZXh0PgogIDxjaXJjbGUgY3g9IjEyOCIgY3k9IjExMiIgcj0iNTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPGNpcmNsZSBjeD0iMTI4IiBjeT0iMTEyIiByPSIyOSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjQiLz4KICA8Y2lyY2xlIGN4PSIxMjgiIGN5PSIxMTIiIHI9IjgiIGZpbGw9IiNlNWU3ZWIiLz4KICA8dGV4dCB4PSIxMjgiIHk9IjIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiNmOWZhZmIiIGZvbnQtd2VpZ2h0PSI3MDAiPk5ldXRyYWw8L3RleHQ+Cjwvc3ZnPgo=" alt="Neutral field"></div>
+        <h3>Neutral</h3>
+        <p>Nothing is empowered. Nothing is countered.</p>
+        <div class="c-cycle"><span class="is-neutral">○ Neutral</span><span>▲ Ember</span><span>❄ Frost</span><span>✦ Gale</span><span>◆ Stone</span></div>
+      </div>
+
+      <article class="c-panel c-player">
+        <div class="c-player__bars">
+          <div class="c-bar-row"><span>Health</span><div class="c-bar"><div class="c-bar__fill" style="width:100%"></div></div><b>40 / 40</b></div>
+          <div class="c-bar-row"><span>Defense</span><div class="c-bar"><div class="c-bar__fill c-bar__fill--def" style="width:0%"></div></div><b>0 / 8</b></div>
+        </div>
+        <div class="c-energy"><b>3</b><small>energy</small><span class="c-pips"><i class="c-pip"></i><i class="c-pip"></i><i class="c-pip"></i></span></div>
+      </article>
+    </div>
+
+    <div class="c-hand">
+      <button class="c-card" type="button" data-card="probe" aria-label="Probe, Neutral utility, cost 0, draw 1">
+        <span class="c-card__cost">0</span><span class="c-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+UHJvYmUgLSBOZXV0cmFsIFV0aWxpdHk8L3RpdGxlPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIzMDAiIGhlaWdodD0iNDIwIiByeD0iMjAiIGZpbGw9IiMzNzQxNTEiLz4KICA8cmVjdCB4PSIxMiIgeT0iMTIiIHdpZHRoPSIyNzYiIGhlaWdodD0iMzk2IiByeD0iMTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPGxpbmUgeDE9IjI0IiB5MT0iOTQiIHgyPSIyNzYiIHkyPSI5NCIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8Y2lyY2xlIGN4PSI0NiIgY3k9IjU4IiByPSIxOCIgZmlsbD0iI2U1ZTdlYiIvPgogIDx0ZXh0IHg9IjQ2IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMxMTE4MjciPjA8L3RleHQ+CiAgPHRleHQgeD0iMTc0IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmOWZhZmIiPlByb2JlPC90ZXh0PgogIDxyZWN0IHg9IjMwIiB5PSI5NiIgd2lkdGg9IjI0MCIgaGVpZ2h0PSIyMDAiIHJ4PSIxNCIgZmlsbD0iIzExMTgyNyIgZmlsbC1vcGFjaXR5PSIwLjQ1IiBzdHJva2U9IiNlNWU3ZWIiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxjaXJjbGUgY3g9IjE1MCIgY3k9IjE5NiIgcj0iNDYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTk2IiByPSIxNyIgZmlsbD0iI2U1ZTdlYiIvPgogIDx0ZXh0IHg9IjE1MCIgeT0iMzE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2Y5ZmFmYiI+RHJhdyAxPC90ZXh0PgogIDx0ZXh0IHg9IjE1MCIgeT0iMzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZmlsbD0iI2U1ZTdlYiIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+TkVVVFJBTCAvIFVUSUxJVFk8L3RleHQ+Cjwvc3ZnPgo=" alt=""></span>
+        <span class="c-card__name">Probe</span><span class="c-card__meta">○ Neutral · Utility</span><span class="c-card__value">1 <small>draw</small></span>
+      </button>
+      <button class="c-card" type="button" data-card="inferno" aria-label="Inferno, Ember attack, cost 3, 7 damage">
+        <span class="c-card__cost">3</span><span class="c-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+SW5mZXJubyAtIEVtYmVyIEF0dGFjazwvdGl0bGU+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0MjAiIHJ4PSIyMCIgZmlsbD0iIzdmMWQxZCIvPgogIDxyZWN0IHg9IjEyIiB5PSIxMiIgd2lkdGg9IjI3NiIgaGVpZ2h0PSIzOTYiIHJ4PSIxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8bGluZSB4MT0iMjQiIHkxPSI5NCIgeDI9IjI3NiIgeTI9Ijk0IiBzdHJva2U9IiNmNTllMGIiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxjaXJjbGUgY3g9IjQ2IiBjeT0iNTgiIHI9IjE4IiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iNDYiIHk9IjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzQ1MGEwYSI+MzwvdGV4dD4KICA8dGV4dCB4PSIxNzQiIHk9IjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZjdlZCI+SW5mZXJubzwvdGV4dD4KICA8cmVjdCB4PSIzMCIgeT0iOTYiIHdpZHRoPSIyNDAiIGhlaWdodD0iMjAwIiByeD0iMTQiIGZpbGw9IiM0NTBhMGEiIGZpbGwtb3BhY2l0eT0iMC40NSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cG9seWdvbiBwb2ludHM9IjE1MCwxMzIgMTk2LDE5NiAxNTAsMjYwIDEwNCwxOTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y1OWUwYiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIxNTAsMTcwIDE2OSwxOTYgMTUwLDIyMiAxMzEsMTk2IiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iMTUwIiB5PSIzMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmN2VkIj5EZWFsIDcgZGFtYWdlPC90ZXh0PgogIDx0ZXh0IHg9IjE1MCIgeT0iMzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZmlsbD0iI2Y1OWUwYiIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+RU1CRVIgLyBBVFRBQ0s8L3RleHQ+Cjwvc3ZnPgo=" alt=""></span>
+        <span class="c-card__name">Inferno</span><span class="c-card__meta">▲ Ember · Attack</span><span class="c-card__value">7 <small>damage</small></span>
+      </button>
+      <button class="c-card" type="button" data-card="ember-shift" aria-label="Ember Shift, Neutral shift, cost 1, set field to Ember">
+        <span class="c-card__cost">1</span><span class="c-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+RW1iZXIgU2hpZnQgLSBOZXV0cmFsIFNoaWZ0PC90aXRsZT4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgcng9IjIwIiBmaWxsPSIjMzc0MTUxIi8+CiAgPHJlY3QgeD0iMTIiIHk9IjEyIiB3aWR0aD0iMjc2IiBoZWlnaHQ9IjM5NiIgcng9IjE2IiBmaWxsPSJub25lIiBzdHJva2U9IiNlNWU3ZWIiIHN0cm9rZS13aWR0aD0iMyIvPgogIDxsaW5lIHgxPSIyNCIgeTE9Ijk0IiB4Mj0iMjc2IiB5Mj0iOTQiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPGNpcmNsZSBjeD0iNDYiIGN5PSI1OCIgcj0iMTgiIGZpbGw9IiNlNWU3ZWIiLz4KICA8dGV4dCB4PSI0NiIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMTExODI3Ij4xPC90ZXh0PgogIDx0ZXh0IHg9IjE3NCIgeT0iNjUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjIyIiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjZjlmYWZiIj5FbWJlciBTaGlmdDwvdGV4dD4KICA8cmVjdCB4PSIzMCIgeT0iOTYiIHdpZHRoPSIyNDAiIGhlaWdodD0iMjAwIiByeD0iMTQiIGZpbGw9IiMxMTE4MjciIGZpbGwtb3BhY2l0eT0iMC40NSIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cG9seWdvbiBwb2ludHM9IjE1MCwxMzIgMTY4LDE3OCAyMTQsMTk2IDE2OCwyMTQgMTUwLDI2MCAxMzIsMjE0IDg2LDE5NiAxMzIsMTc4IiBmaWxsPSJub25lIiBzdHJva2U9IiNlNWU3ZWIiIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogIDxjaXJjbGUgY3g9IjE1MCIgY3k9IjE5NiIgcj0iMTMiIGZpbGw9IiNlNWU3ZWIiLz4KICA8dGV4dCB4PSIxNTAiIHk9IjMxOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNmOWZhZmIiPlNldCBmaWVsZCB0byBFbWJlcjwvdGV4dD4KICA8dGV4dCB4PSIxNTAiIHk9IjM4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiNlNWU3ZWIiIGxldHRlci1zcGFjaW5nPSIxLjIiPk5FVVRSQUwgLyBTSElGVDwvdGV4dD4KPC9zdmc+Cg==" alt=""></span>
+        <span class="c-card__name">Ember Shift</span><span class="c-card__meta">○ Neutral · Shift</span><span class="c-card__value">→ Ember</span>
+      </button>
+      <button class="c-card" type="button" data-card="cinder-jab" aria-label="Cinder Jab, Ember attack, cost 1, 3 damage">
+        <span class="c-card__cost">1</span><span class="c-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+Q2luZGVyIEphYiAtIEVtYmVyIEF0dGFjazwvdGl0bGU+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjMwMCIgaGVpZ2h0PSI0MjAiIHJ4PSIyMCIgZmlsbD0iIzdmMWQxZCIvPgogIDxyZWN0IHg9IjEyIiB5PSIxMiIgd2lkdGg9IjI3NiIgaGVpZ2h0PSIzOTYiIHJ4PSIxNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8bGluZSB4MT0iMjQiIHkxPSI5NCIgeDI9IjI3NiIgeTI9Ijk0IiBzdHJva2U9IiNmNTllMGIiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxjaXJjbGUgY3g9IjQ2IiBjeT0iNTgiIHI9IjE4IiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iNDYiIHk9IjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzQ1MGEwYSI+MTwvdGV4dD4KICA8dGV4dCB4PSIxNzQiIHk9IjY1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iI2ZmZjdlZCI+Q2luZGVyIEphYjwvdGV4dD4KICA8cmVjdCB4PSIzMCIgeT0iOTYiIHdpZHRoPSIyNDAiIGhlaWdodD0iMjAwIiByeD0iMTQiIGZpbGw9IiM0NTBhMGEiIGZpbGwtb3BhY2l0eT0iMC40NSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cG9seWdvbiBwb2ludHM9IjE1MCwxMzIgMTk2LDE5NiAxNTAsMjYwIDEwNCwxOTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y1OWUwYiIgc3Ryb2tlLXdpZHRoPSI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIxNTAsMTcwIDE2OSwxOTYgMTUwLDIyMiAxMzEsMTk2IiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHRleHQgeD0iMTUwIiB5PSIzMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmN2VkIj5EZWFsIDMgZGFtYWdlPC90ZXh0PgogIDx0ZXh0IHg9IjE1MCIgeT0iMzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZmlsbD0iI2Y1OWUwYiIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+RU1CRVIgLyBBVFRBQ0s8L3RleHQ+Cjwvc3ZnPgo=" alt=""></span>
+        <span class="c-card__name">Cinder Jab</span><span class="c-card__meta">▲ Ember · Attack</span><span class="c-card__value">3 <small>damage</small></span>
+      </button>
+      <button class="c-card" type="button" data-card="ember-lance" aria-label="Ember Lance, Ember attack, cost 2, 4 damage, Pierce">
+        <span class="c-card__cost">2</span><span class="c-card__art"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+RW1iZXIgTGFuY2UgLSBFbWJlciBBdHRhY2s8L3RpdGxlPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIzMDAiIGhlaWdodD0iNDIwIiByeD0iMjAiIGZpbGw9IiM3ZjFkMWQiLz4KICA8cmVjdCB4PSIxMiIgeT0iMTIiIHdpZHRoPSIyNzYiIGhlaWdodD0iMzk2IiByeD0iMTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Y1OWUwYiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPGxpbmUgeDE9IjI0IiB5MT0iOTQiIHgyPSIyNzYiIHkyPSI5NCIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8Y2lyY2xlIGN4PSI0NiIgY3k9IjU4IiByPSIxOCIgZmlsbD0iI2Y1OWUwYiIvPgogIDx0ZXh0IHg9IjQ2IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiM0NTBhMGEiPjI8L3RleHQ+CiAgPHRleHQgeD0iMTc0IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmY3ZWQiPkVtYmVyIExhbmNlPC90ZXh0PgogIDxyZWN0IHg9IjMwIiB5PSI5NiIgd2lkdGg9IjI0MCIgaGVpZ2h0PSIyMDAiIHJ4PSIxNCIgZmlsbD0iIzQ1MGEwYSIgZmlsbC1vcGFjaXR5PSIwLjQ1IiBzdHJva2U9IiNmNTllMGIiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxwb2x5Z29uIHBvaW50cz0iMTUwLDEzMiAxOTYsMTk2IDE1MCwyNjAgMTA0LDE5NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjYiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cG9seWdvbiBwb2ludHM9IjE1MCwxNzAgMTY5LDE5NiAxNTAsMjIyIDEzMSwxOTYiIGZpbGw9IiNmNTllMGIiLz4KICA8dGV4dCB4PSIxNTAiIHk9IjMxOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNmZmY3ZWQiPkRlYWwgNCBkYW1hZ2UgKHBpZXJjaW5nKTwvdGV4dD4KICA8dGV4dCB4PSIxNTAiIHk9IjM4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTMiIGZpbGw9IiNmNTllMGIiIGxldHRlci1zcGFjaW5nPSIxLjIiPkVNQkVSIC8gQVRUQUNLPC90ZXh0Pgo8L3N2Zz4K" alt=""></span>
+        <span class="c-card__name">Ember Lance</span><span class="c-card__meta">▲ Ember · Attack</span><span class="c-card__value">4 <small>damage</small></span><span class="c-card__badge">Pierce</span>
+      </button>
+    </div>
+
+    <div class="c-controls"><button class="c-end" type="button">End turn</button></div>
+  </div>
+</section>
+
+<!-- ================= SHARED DETAIL ================= -->
+<div class="a-detail proto-detail" id="detail" role="dialog" aria-modal="true" aria-labelledby="detail-name" hidden>
+  <div class="a-detail__sheet">
+    <button class="a-detail__close" type="button" data-close aria-label="Close card detail">×</button>
+    <div class="a-detail__eyebrow" id="detail-eyebrow">Neutral · cost 0 · utility</div>
+    <h2 id="detail-name">Probe</h2>
+    <div class="a-detail__body">
+      <img id="detail-art" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBHZW5lcmF0ZWQgYnkgc2NyaXB0cy9nZW5lcmF0ZS1wbGFjZWhvbGRlci1hc3NldHMubWpzLiBEbyBub3QgZWRpdCBieSBoYW5kOiByZXBsYWNlIHRoaXMgZmlsZSBhdCBpdHMgbWFuaWZlc3QgcGF0aC4gLS0+CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMzAwIiBoZWlnaHQ9IjQyMCIgdmlld0JveD0iMCAwIDMwMCA0MjAiIHJvbGU9ImltZyIgYXJpYS1sYWJlbGxlZGJ5PSJ0aXRsZSI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+UHJvYmUgLSBOZXV0cmFsIFV0aWxpdHk8L3RpdGxlPgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIzMDAiIGhlaWdodD0iNDIwIiByeD0iMjAiIGZpbGw9IiMzNzQxNTEiLz4KICA8cmVjdCB4PSIxMiIgeT0iMTIiIHdpZHRoPSIyNzYiIGhlaWdodD0iMzk2IiByeD0iMTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPGxpbmUgeDE9IjI0IiB5MT0iOTQiIHgyPSIyNzYiIHkyPSI5NCIgc3Ryb2tlPSIjZTVlN2ViIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8Y2lyY2xlIGN4PSI0NiIgY3k9IjU4IiByPSIxOCIgZmlsbD0iI2U1ZTdlYiIvPgogIDx0ZXh0IHg9IjQ2IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMxMTE4MjciPjA8L3RleHQ+CiAgPHRleHQgeD0iMTc0IiB5PSI2NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjIiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmOWZhZmIiPlByb2JlPC90ZXh0PgogIDxyZWN0IHg9IjMwIiB5PSI5NiIgd2lkdGg9IjI0MCIgaGVpZ2h0PSIyMDAiIHJ4PSIxNCIgZmlsbD0iIzExMTgyNyIgZmlsbC1vcGFjaXR5PSIwLjQ1IiBzdHJva2U9IiNlNWU3ZWIiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxjaXJjbGUgY3g9IjE1MCIgY3k9IjE5NiIgcj0iNDYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2U1ZTdlYiIgc3Ryb2tlLXdpZHRoPSI2Ii8+CiAgPGNpcmNsZSBjeD0iMTUwIiBjeT0iMTk2IiByPSIxNyIgZmlsbD0iI2U1ZTdlYiIvPgogIDx0ZXh0IHg9IjE1MCIgeT0iMzE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2Y5ZmFmYiI+RHJhdyAxPC90ZXh0PgogIDx0ZXh0IHg9IjE1MCIgeT0iMzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZmlsbD0iI2U1ZTdlYiIgbGV0dGVyLXNwYWNpbmc9IjEuMiI+TkVVVFJBTCAvIFVUSUxJVFk8L3RleHQ+Cjwvc3ZnPgo=" alt="">
+      <div>
+        <p class="a-detail__value"><span id="detail-value">1</span> <small id="detail-value-label">draw</small></p>
+        <h3>Full effect</h3>
+        <p id="detail-effect">Draws 1 card.</p>
+        <p class="a-detail__note" id="detail-note">Neutral cards gain no field bonus.</p>
+      </div>
+    </div>
+    <button class="a-detail__play" type="button" data-close>Play card</button>
+  </div>
+</div>
+
+<div class="proto-switcher" role="group" aria-label="Prototype variant switcher">
+  <button type="button" data-prev aria-label="Previous direction">←</button>
+  <span class="proto-switcher__label"><b id="proto-key">A</b> · <span id="proto-name">Field journal on a table</span></span>
+  <button type="button" data-next aria-label="Next direction">→</button>
+  <span class="proto-switcher__flag">Prototype</span>
+  <button type="button" class="proto-switcher__hide" data-hide aria-label="Hide prototype bar">×</button>
+</div>
+
+<script>
+  (function () {
+    var ORDER = ['A', 'B', 'C'];
+    var NAMES = {
+      A: 'Field journal on a table',
+      B: 'Illuminated bestiary',
+      C: 'Carved elemental table'
+    };
+    var CARDS = {
+      probe: {
+        name: 'Probe', eyebrow: 'Neutral · cost 0 · utility', value: '1', label: 'draw',
+        effect: 'Draws 1 card.', note: 'Neutral cards gain no field bonus.'
+      },
+      inferno: {
+        name: 'Inferno', eyebrow: 'Ember · cost 3 · attack', value: '7', label: 'damage',
+        effect: 'Deal 7 damage.', note: 'Field: Neutral — no bonus. Matching Ember would empower this and pierce defense.'
+      },
+      'ember-shift': {
+        name: 'Ember Shift', eyebrow: 'Neutral · cost 1 · shift', value: '→', label: 'Ember',
+        effect: 'Set the field to Ember.', note: 'Neutral cards gain no field bonus. The field then empowers Ember cards.'
+      },
+      'cinder-jab': {
+        name: 'Cinder Jab', eyebrow: 'Ember · cost 1 · attack', value: '3', label: 'damage',
+        effect: 'Deal 3 damage.', note: 'Field: Neutral — no bonus.'
+      },
+      'ember-lance': {
+        name: 'Ember Lance', eyebrow: 'Ember · cost 2 · attack', value: '4', label: 'damage',
+        effect: 'Deal 4 damage. Pierce ignores defense.', note: 'Field: Neutral — no bonus. Pierce still ignores defense.'
+      }
+    };
+
+    var params = new URLSearchParams(window.location.search);
+    var current = (params.get('variant') || 'A').toUpperCase();
+    if (ORDER.indexOf(current) === -1) current = 'A';
+
+    var detail = document.getElementById('detail');
+    var keyEl = document.getElementById('proto-key');
+    var nameEl = document.getElementById('proto-name');
+
+    function closeDetail() {
+      detail.hidden = true;
+      document.body.classList.remove('detail-open');
+    }
+
+    function setVariant(next) {
+      current = next;
+      document.body.dataset.variant = next;
+      keyEl.textContent = next;
+      nameEl.textContent = NAMES[next];
+      closeDetail();
+      var url = new URL(window.location.href);
+      url.searchParams.set('variant', next);
+      window.history.replaceState(null, '', url);
+    }
+
+    function openDetail(id) {
+      var card = CARDS[id];
+      if (!card) return;
+      var button = document.querySelector('[data-card="' + id + '"]');
+      var art = button ? button.querySelector('img') : null;
+      document.getElementById('detail-eyebrow').textContent = card.eyebrow;
+      document.getElementById('detail-name').textContent = card.name;
+      document.getElementById('detail-value').textContent = card.value;
+      document.getElementById('detail-value-label').textContent = card.label;
+      document.getElementById('detail-effect').textContent = card.effect;
+      document.getElementById('detail-note').textContent = card.note;
+      if (art) document.getElementById('detail-art').src = art.src;
+      detail.hidden = false;
+      document.body.classList.add('detail-open');
+    }
+
+    document.querySelectorAll('[data-card]').forEach(function (button) {
+      button.addEventListener('click', function () { openDetail(button.dataset.card); });
+    });
+    document.querySelectorAll('[data-close]').forEach(function (button) {
+      button.addEventListener('click', closeDetail);
+    });
+    document.querySelector('[data-prev]').addEventListener('click', function () {
+      setVariant(ORDER[(ORDER.indexOf(current) + ORDER.length - 1) % ORDER.length]);
+    });
+    document.querySelector('[data-next]').addEventListener('click', function () {
+      setVariant(ORDER[(ORDER.indexOf(current) + 1) % ORDER.length]);
+    });
+    document.querySelector('[data-hide]').addEventListener('click', function () {
+      document.body.classList.add('proto-no-chrome');
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') { closeDetail(); return; }
+      var tag = (event.target && event.target.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (event.target && event.target.isContentEditable)) return;
+      if (event.key === 'ArrowLeft') { setVariant(ORDER[(ORDER.indexOf(current) + ORDER.length - 1) % ORDER.length]); }
+      if (event.key === 'ArrowRight') { setVariant(ORDER[(ORDER.indexOf(current) + 1) % ORDER.length]); }
+    });
+
+    if (params.get('chrome') === '0') document.body.classList.add('proto-no-chrome');
+    setVariant(current);
+  })();
+</script>
+</body>
+</html>
