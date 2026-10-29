@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T07:16:18.900Z",
+  "lastUpdatedAt": "2026-10-29T07:20:36.880Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "LOCAL-DUEL-2",
+  "currentPhase": "LOCAL-DUEL-3",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -1116,10 +1116,64 @@
     },
     "RUN-06": {
       "taskId": "RUN-06",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "solo-mode-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 2,
+      "outputFiles": [
+        "src/persistence/stats.ts",
+        "src/persistence/stats.test.ts"
+      ],
+      "startedAt": "2026-10-29T07:19:54.264Z",
+      "usage": {
+        "inputTokens": 66327,
+        "outputTokens": 14117,
+        "cacheReadTokens": 1635328,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 18504,
+        "costUsd": 0.034427634,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "failed",
+          "reason": "forge-result.unresolved must be a string array; use [] when no blocking requirements remain.",
+          "resultPath": "docs/artifacts/RUN-06.2026-10-29T07-19-49-252Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 42350,
+            "outputTokens": 12322,
+            "reasoningTokens": 17383,
+            "cacheReadTokens": 1386368,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.028334604000000003,
+            "source": "harness"
+          }
+        },
+        {
+          "attempt": 2,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/RUN-06.2026-10-29T07-20-36-871Z.attempt-2.result.json",
+          "usage": {
+            "inputTokens": 23977,
+            "outputTokens": 1795,
+            "reasoningTokens": 1121,
+            "cacheReadTokens": 248960,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.006093029999999998,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T07:20:36.876Z",
+      "agentOutput": "I'll start by reading the execution file and the referenced documentation.\r\nVerification complete. The attempt-1 implementation files were preserved; I reviewed them against the authoritative docs, re-ran every required check, and no further edits were needed.\n\n**Checks run**\n- `npm test -- src/persistence/stats.test.ts` → 1 file, 35 tests passed\n- `npm run typecheck` → passed\n- `npm test` (full suite sanity) → 28 files, 848 tests passed\n\n**Files created or changed**\n- `src/persistence/stats.ts` (created; unchanged this attempt after review)\n- `src/persistence/stats.test.ts` (created; unchanged this attempt after review)\n\n```forge-result\n{\n  \"summary\": \"Implemented and re-verified RUN-06: a versioned fieldbound.stats.v1 best-run record with furthest encounter, boss clears and fewest completed turns, total validation/clamping on read, key-local discard for corrupt or unknown-version data, a pure run-end update, load/save helpers and an injectable stats store with in-memory fallback. 35 targeted tests, typecheck and the full 848-test suite pass.\",\n  \"decisions\": [\n    \"The record is exactly { schemaVersion, furthestEncounter, bossClears, bestCompletedTurns }, matching docs/features/solo-run.md section 4.4; empty means 0/0/null and nothing is written until a run ends.\",\n    \"applyRunToStats folds a RunSummary: a defeat contributes only its clamped furthest encounter, while a victory also increments bossClears and lowers bestCompletedTurns.\",\n    \"updateStatsForRun returns null for overview/battle/reward runs, so an abandoned run can never inflate the record; recordRun likewise writes nothing.\",\n    \"On read, structurally valid but out-of-range values are clamped (encounter 0..4, clears >= 0, turns floored to >= 1 or null); wrong types, missing fields, corrupt JSON or an unknown schemaVersion discard only the stats key.\",\n    \"The store accepts an injectable StatsStorage adapter; a null adapter, throwing read or quota-rejected write keeps the record in memory for the session, returns saved:false/isPersistent:false and never throws.\",\n    \"The stats module imports only the run model's RUN_ENCOUNTER_COUNT and runSummary, and never reads or writes fieldbound.run.v1 or fieldbound.settings.v1.\"\n  ],\n  \"interfaces\": [\n    \"src/persistence/stats.ts: STATS_STORAGE_KEY='fieldbound.stats.v1', STATS_SCHEMA_VERSION=1, STATS_MAX_ENCOUNTERS=4, STATS_MIN_COMPLETED_TURNS=1, EMPTY_STATS.\",\n    \"Types: StatsV1/Stats, StatsStorage, StatsLoadStatus ('ok'|'empty'|'discarded'|'unavailable'), StatsLoadResult, StatsUpdate { stats, isNewBest }, StatsRecordResult, StatsStore.\",\n    \"Functions: normalizeStats(input), parseStoredStats(raw), serializeStats(stats), applyRunToStats(stats, summary), updateStatsForRun(stats, run), loadStats(storage), saveStats(storage, stats), createStatsStore(storage?) with load/save/record/recordRun/isPersistent.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/persistence/stats.test.ts: exit 0 (35 passed)\",\n    \"npm run typecheck: exit 0\",\n    \"npm test: exit 0 (848 passed)\"\n  ],\n  \"unresolved\": []\n}\n```\r\n",
+      "artifactId": "work-run-06-001",
+      "inputArtifactIds": [
+        "work-run-01-001",
+        "work-shl-04-001",
+        "work-shl-05-001",
+        "work-shl-06-001",
+        "work-shl-07-001"
+      ]
     },
     "RUN-03": {
       "taskId": "RUN-03",

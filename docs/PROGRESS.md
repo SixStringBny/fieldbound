@@ -1,10 +1,10 @@
 # Project Progress
 
 ## Current State
-**Phase**: LOCAL-DUEL-2
+**Phase**: LOCAL-DUEL-3
 **Status**: In Progress
 **Validation Gaps**: 1 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T07:16:18.903Z
+**Last Updated**: 2026-10-29T07:20:36.882Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -50,6 +50,8 @@
   - Files: src/run/run-model.ts, src/run/run-model.test.ts
 - [x] Phase SOLO-RUN-1, Task RUN-02: Generate and apply seeded reward offers (@solo-mode-engineer)
   - Files: src/run/rewards.ts, src/run/rewards.test.ts
+- [x] Phase SOLO-RUN-1, Task RUN-06: Store and update the best-run record (@solo-mode-engineer)
+  - Files: src/persistence/stats.ts, src/persistence/stats.test.ts
 - [x] Phase LOCAL-DUEL-1, Task DUEL-01: Implement the best-of-three match model (@duel-mode-engineer)
   - Files: src/duel/match.ts, src/duel/match.test.ts
 - [x] Phase LOCAL-DUEL-2, Task DUEL-02: Gate duel turns behind privacy and hide the off-turn hand (@duel-mode-engineer)
@@ -59,7 +61,6 @@
 - None currently running
 
 ## Remaining
-- [ ] Phase SOLO-RUN-1: Phase 1: Run Model
 - [ ] Phase SOLO-RUN-2: Phase 2: Persistence
 - [ ] Phase SOLO-RUN-3: Phase 3: Solo Flow
 - [ ] Phase LOCAL-DUEL-3: Phase 3: Duel UI
