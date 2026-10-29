@@ -9,7 +9,7 @@
   "autoCommit": true,
   "logHarnessActivity": true,
   "subagents": "0",
-  "executionMode": "manual",
+  "executionMode": "auto",
   "selectionScope": "single",
   "selectedTaskIds": [
     "ENG-00"
