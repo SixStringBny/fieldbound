@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T07:02:50.882Z",
+  "lastUpdatedAt": "2026-10-29T07:06:52.003Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -1104,10 +1104,50 @@
     },
     "DUEL-01": {
       "taskId": "DUEL-01",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "duel-mode-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/duel/match.ts",
+        "src/duel/match.test.ts"
+      ],
+      "startedAt": "2026-10-29T07:02:51.269Z",
+      "usage": {
+        "inputTokens": 47751,
+        "outputTokens": 11581,
+        "reasoningTokens": 27862,
+        "cacheReadTokens": 924928,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.033603234,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/DUEL-01.2026-10-29T07-06-51-995Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 47751,
+            "outputTokens": 11581,
+            "reasoningTokens": 27862,
+            "cacheReadTokens": 924928,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.033603234,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T07:06:52.000Z",
+      "agentOutput": "I'll start by reading the execution file and the referenced documentation.\r\nNow I have the full picture. Let me write the pure match model.\r\nImplemented DUEL-01. The pure match model is in place and verified.\n\n## What was built\n\n**`src/duel/match.ts`** — a storage-free, React-free, screen-free best-of-three series model:\n\n- `createMatch({ player1DeckId, player2DeckId, seed })` resolves both ids against `src/content/decks` and returns a typed `unknown-deck` error for anything unresolvable; it opens round 1 with Player 1 first, 0–0, and a round seed already derived.\n- `deriveRoundSeed(matchSeed, round)` draws round seeds through the single engine PRNG (`createRng`/`nextUint32`), one draw per round in index order, with a deterministic collision guard against the match seed and earlier round seeds. Round 1–3 seeds are therefore reproducible yet mutually distinct.\n- `recordRoundWinner(match, winner)` scores the round, completes the match at two wins, or advances to the next round with the alternating first player (P1, P2, P1) and that round's derived seed. Every rejection is a typed result (`match-complete`, `invalid-player`, `invalid-phase`, `invalid-state`) and leaves the input untouched.\n- `rematch(match)` requires a completed series, keeps both locked deck ids, resets wins to 0–0, returns to round 1 with Player 1 first, and derives a new match seed (one PRNG draw, advanced only on an impossible collision) plus a fresh round seed.\n- `changeDecks()` returns the `setup` branch of `DuelState`, carrying no deck, seed, score or winner forward.\n- Helpers for the next task: `firstPlayerForRound`, `sideForDuelPlayer` / `duelPlayerForSide`, `duelOtherPlayer`, `matchWinner`.\n\n**`src/duel/match.test.ts`** — 33 tests covering every acceptance criterion, plus sweeps and purity checks (no storage, React, DOM, AI planner or host randomness; imports limited to the content catalog, PRNG and engine types).\n\n## Verification\n\n- `npm test -- src/duel/match.test.ts` → 33 passed\n- `npm run typecheck` → passed\n- `npm test` (full suite) → 25 files, 717 tests passed\n\n```forge-result\n{\"summary\":\"Implemented the pure best-of-three duel match model with content-validated locked decks, PRNG-derived distinct round seeds, alternating first player, two-win completion with typed third-win rejection, seed-changing rematch, setup reset, and 33 passing sibling tests.\",\"decisions\":[\"The match keeps one current roundSeed rather than a seed history; future rounds are re-derived from the immutable match seed and round index, so there is a single source of truth and no drift when the controller re-renders.\",\"Round seeds come from a fresh engine PRNG seeded with the match seed, drawing one value per round index and retrying only on a collision with the match seed or an earlier round seed, giving guaranteed distinct seeds that replay identically.\",\"Rematch derives its new match seed deterministically from the finished match seed via one PRNG draw (the documented rematch consumer), keeps both deck ids verbatim, and rejects any series still in progress.\",\"Player 1 is permanently mapped to the engine's 'player' side and Player 2 to 'opponent', with the match first player driving the round's startingSide, so both humans use the same symmetric engine actions.\",\"changeDecks() returns the DuelState setup branch carrying no match fields; the caller discards the match object, which keeps the model free of any teardown side effects.\",\"Unknown deck ids are validated through the content catalog's deckById at creation only; mirror matches with the same deck are legal because the PRD does not forbid them.\"],\"interfaces\":[\"src/duel/match.ts: DUEL_ROUNDS, DuelRound, DUEL_WINS_REQUIRED, DUEL_MAX_ROUNDS, DUEL_PLAYERS, DuelPlayer, DUEL_PHASES, DuelPhase, DuelDeckIds, DuelWins, DuelMatchSetup, DuelMatch { phase: 'round'|'complete'; deckIds; seed; round; firstPlayer; wins; roundSeed; roundWinners }, DuelSetupState, DuelState, DuelErrorCode, DuelResult.\",\"src/duel/match.ts: duelOtherPlayer(player), sideForDuelPlayer(player): Side, duelPlayerForSide(side): DuelPlayer, firstPlayerForRound(round), deriveRoundSeed(matchSeed, round), createMatch(setup): DuelResult<DuelMatch>, recordRoundWinner(match, winner): DuelResult<DuelMatch>, rematch(match): DuelResult<DuelMatch>, changeDecks(): DuelSetupState, matchWinner(match): DuelPlayer | null.\",\"src/duel/match.test.ts: node-environment Vitest suite over real starter deck ids, with ok/rejected helpers and a source-purity block asserting the module's exact import set and absence of storage, DOM, AI and host-randomness tokens.\"],\"tests\":[\"npm test -- src/duel/match.test.ts: exit 0 (33 tests)\",\"npm run typecheck: exit 0\",\"npm test: exit 0 (717 tests)\"],\"unresolved\":[]}\n```\n\n**Files created:**\n- `src/duel/match.ts`\n- `src/duel/match.test.ts`\n\nNo other files were changed by me; the modified `docs/EXECUTION-AUDIT.jsonl` and `docs/WORKFLOW-STATE.json` are engine-managed and were not touched or committed.\r\n",
+      "artifactId": "work-duel-01-001",
+      "inputArtifactIds": [
+        "work-eng-07-001",
+        "work-cnt-02-001",
+        "work-shl-04-001",
+        "work-shl-05-001",
+        "work-shl-06-001",
+        "work-shl-07-001"
+      ]
     },
     "DUEL-02": {
       "taskId": "DUEL-02",
