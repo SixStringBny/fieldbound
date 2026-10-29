@@ -1,8 +1,9 @@
 # Project Skill Stage Evidence
 
 **Stage:** `forge-build-project-skills`
-**Mode:** headless, incremental scope (authorized defaults, no prompts)
+**Mode:** headless, reconciliation scope (authorized defaults, no prompts)
 **Date:** 2026-10-29
+**Reconciliation:** the four planned packages already existed and were byte-for-byte valid against the handoff, so they were adopted rather than regenerated; the gate below was re-run against them in this session.
 **Handoff:** `docs/SKILL-CANDIDATES.json` (version 1, unchanged)
 **Handoff input fingerprint:** `dfa6dc82423d7e2b27b568596e17a84b2e4193b5ae799f186f113e8e149248eb`
 **Audit artifact:** `docs/SKILL-AUDIT.md` (`forge-skill-review`)
@@ -26,10 +27,10 @@ The three `extend` packages kept their names and the updated handoff description
 
 ## Review gate
 
-Command (run from `.opencode/skills/forge-skill-review`):
+Command (run from the repository root):
 
 ```bash
-npx tsx scripts/skill-review.ts \
+npx tsx .opencode/skills/forge-skill-review/scripts/skill-review.ts \
   --files .opencode/skills/seeded-determinism-and-replay/SKILL.md \
           .opencode/skills/versioned-local-persistence/SKILL.md \
           .opencode/skills/portrait-first-board-and-accessibility/SKILL.md \
@@ -38,7 +39,7 @@ npx tsx scripts/skill-review.ts \
   --min-axis 2 --fail-axis-below --fail-structural
 ```
 
-**Result:** exit code 0. No axis below 2, no skill below 2, zero structural issues.
+**Result:** exit code 0. No axis below 2, no skill below 2, zero structural issues. The command was run with `npx tsx .opencode/skills/forge-skill-review/scripts/skill-review.ts` from the repository root so the `--fail-*` flags reached the CLI; the npm-script form dropped the flags on this Windows shell and audited all 17 bootstrapped skills instead of the four candidates, which is why it is not recorded as the gate.
 
 ### Per-axis scores (heuristic)
 
