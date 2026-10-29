@@ -4,7 +4,7 @@
 **Phase**: GAME-SHELL-PRESENTATION-3
 **Status**: In Progress
 **Validation Gaps**: 1 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T04:55:07.486Z
+**Last Updated**: 2026-10-29T06:56:43.474Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -44,12 +44,13 @@
   - Files: src/audio/sfx.ts, src/audio/sfx.test.ts
 - [x] Phase GAME-SHELL-PRESENTATION-3, Task SHL-06: Add settings persistence and wire audio and motion (@frontend-engineer)
   - Files: src/ui/screens/SettingsScreen.tsx, src/persistence/settings.ts, src/persistence/settings.test.ts, src/App.tsx, src/App.settings.test.tsx, src/styles/base.css
+- [x] Phase GAME-SHELL-PRESENTATION-3, Task SHL-07: Add keyboard controls, live announcements and focus handling (@frontend-engineer)
+  - Files: src/ui/a11y/useKeyboardControls.ts, src/ui/components/LiveRegion.tsx, src/ui/a11y/useKeyboardControls.test.tsx, src/App.tsx, src/App.a11y.test.tsx
 
 ## Current Task
 - None currently running
 
 ## Remaining
-- [ ] Phase GAME-SHELL-PRESENTATION-3: Phase 3: Motion, Audio and Settings
 - [ ] Phase SOLO-RUN-1: Phase 1: Run Model
 - [ ] Phase SOLO-RUN-2: Phase 2: Persistence
 - [ ] Phase SOLO-RUN-3: Phase 3: Solo Flow

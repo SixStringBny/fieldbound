@@ -3,16 +3,17 @@
  *
  * A modal dialog that repeats the printed effect, the current-field sentence and
  * a Play button. It closes on a backdrop tap, the close button and Escape, moves
- * focus to the close button on open, locks background scrolling and returns
- * focus to the invoking card on close. The visible heading is the dialog's
- * accessible name.
+ * focus to the close button on open, traps Tab and Shift+Tab inside the sheet,
+ * locks background scrolling and returns focus to the invoking card on close
+ * (or the nearest surviving hand card when playing removed it).
  *
  * It reports intents only: `onPlay` and `onClose`. No engine mutator, controller
  * or storage module is imported.
  */
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { CardDefinition, Element } from '../../engine/types';
+import { useDialogFocusTrap } from '../a11y/useKeyboardControls';
 import { AssetImage } from './AssetImage';
 import {
   cardAltText,
@@ -46,31 +47,21 @@ export function CardDetail({
   onClose,
 }: CardDetailProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
-  const invokerRef = useRef<HTMLElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const active = document.activeElement;
-    invokerRef.current = active instanceof HTMLElement ? active : null;
+  useDialogFocusTrap({
+    containerRef,
+    onClose,
+    initialFocusRef: closeRef,
+    fallbackFocus: () =>
+      document.querySelector<HTMLElement>('.hand .card-view') ??
+      document.querySelector<HTMLElement>('.battle-controls__end'),
+  });
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    closeRef.current?.focus();
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-
-      const invoker = invokerRef.current;
-      if (invoker !== null && invoker.isConnected) {
-        invoker.focus();
-      }
-    };
-  }, []);
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
+  const handlePlayKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
       event.preventDefault();
-      event.stopPropagation();
-      onClose();
+      onPlay(instanceId);
     }
   };
 
@@ -87,12 +78,13 @@ export function CardDetail({
     >
       <div
         className="card-detail"
+        ref={containerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="card-detail-title"
+        tabIndex={-1}
         data-element={card.element}
         onClick={(event) => event.stopPropagation()}
-        onKeyDown={handleKeyDown}
       >
         <button
           type="button"
@@ -155,6 +147,7 @@ export function CardDetail({
           className="card-detail__play"
           disabled={!affordable}
           onClick={() => onPlay(instanceId)}
+          onKeyDown={handlePlayKeyDown}
         >
           Play card
         </button>

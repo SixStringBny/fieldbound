@@ -13,12 +13,14 @@
  * creating empty screen files that a later task would have to delete.
  *
  * The root also owns the cross-cutting runtime wiring: the versioned settings
- * store, the resolved reduced-motion attribute, and the single subscription
- * that turns cue-bus events into synthesized sound after the first gesture.
+ * store, the resolved reduced-motion attribute, the single subscription that
+ * turns cue-bus events into synthesized sound after the first gesture, the one
+ * polite live region every screen announces through, and the skip link that
+ * moves focus to the main landmark.
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { createSfxEngine } from './audio/sfx';
 import { byId as cardCatalog } from './content/cards';
 import { deckByElement } from './content/decks';
@@ -34,7 +36,9 @@ import type {
   BattleControllerState,
 } from './state/battle-controller';
 import type { EngineResult } from './engine/types';
+import { useKeyboardControls } from './ui/a11y/useKeyboardControls';
 import { emitCue, uiEvents } from './ui/events';
+import { LiveRegion } from './ui/components/LiveRegion';
 import {
   reducedMotionAttribute,
   useReducedMotion,
@@ -153,6 +157,42 @@ export function App({
 }: AppProps = {}) {
   const [screen, setScreen] = useState<Screen>(initialScreen);
 
+  // The one polite live region for the whole session. Screens publish a
+  // settled message; the region replaces its text rather than appending, so a
+  // transition is never read twice. An identical repeat is deduped.
+  const [announcement, setAnnouncement] = useState('');
+
+  const announce = useCallback((message: string) => {
+    const next = message.trim();
+
+    if (next === '') {
+      return;
+    }
+
+    setAnnouncement((current) => (current === next ? current : next));
+  }, []);
+
+  /**
+   * Move focus to the main landmark explicitly. A plain fragment link relies on
+   * the browser's focus fix-up, which jsdom and some embedded browsers do not
+   * perform; focusing the tabindex="-1" landmark makes the skip link work
+   * everywhere without adding a positive tab index.
+   */
+  const skipToMain = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
+    const main = document.getElementById('main-content');
+
+    if (main === null) {
+      return;
+    }
+
+    event.preventDefault();
+    main.focus();
+
+    if (typeof main.scrollIntoView === 'function') {
+      main.scrollIntoView({ block: 'start' });
+    }
+  }, []);
+
   // The store is created once per mount; `load` validates before use and only
   // removes the settings key when the payload is unusable.
   const [settingsStore] = useState(() => createSettingsStore(settingsStorage));
@@ -219,6 +259,9 @@ export function App({
 
   const navigate = useCallback((kind: ScreenKind) => {
     setScreen(SCREENS[kind]);
+    // A stale announcement from the previous surface must not linger as if it
+    // described the new one.
+    setAnnouncement('');
     emitCue('ui');
   }, []);
 
@@ -278,7 +321,13 @@ export function App({
     ),
     'solo-setup': pending('Solo setup'),
     'run-overview': pending('Run overview'),
-    battle: <BattleRoute config={battle} onExit={() => navigate('menu')} />,
+    battle: (
+      <BattleRoute
+        config={battle}
+        onAnnounce={announce}
+        onExit={() => navigate('menu')}
+      />
+    ),
     reward: pending('Reward'),
     'run-result': pending('Run result'),
     'duel-setup': pending('Duel setup'),
@@ -293,7 +342,9 @@ export function App({
       id="app-root"
       data-reduced-motion={reducedMotionAttribute(reducedMotion)}
     >
-      <a className="skip-link" href="#main-content">
+      <LiveRegion message={announcement} />
+
+      <a className="skip-link" href="#main-content" onClick={skipToMain}>
         Skip to main content
       </a>
 
@@ -315,9 +366,11 @@ export function App({
  */
 function BattleRoute({
   config,
+  onAnnounce,
   onExit,
 }: {
   readonly config: BattleControllerConfig | null;
+  readonly onAnnounce: (message: string) => void;
   readonly onExit: () => void;
 }) {
   const [initial] = useState<
@@ -339,18 +392,36 @@ function BattleRoute({
     return <BattleUnavailable message={initial.error.message} onExit={onExit} />;
   }
 
-  return <BattleSession initialState={initial.value} onExit={onExit} />;
+  return (
+    <BattleSession
+      initialState={initial.value}
+      onAnnounce={onAnnounce}
+      onExit={onExit}
+    />
+  );
 }
 
-/** Keeps the hook unconditional: mounted only once a battle exists. */
+/** Keeps the hooks unconditional: mounted only once a battle exists. */
 function BattleSession({
   initialState,
+  onAnnounce,
   onExit,
 }: {
   readonly initialState: BattleControllerState;
+  readonly onAnnounce: (message: string) => void;
   readonly onExit: () => void;
 }) {
   const controller = useBattleController(initialState);
+  const { battle } = controller.state;
+  const canEndTurn =
+    battle.outcome === 'ongoing' &&
+    battle.phase === 'action' &&
+    battle.activeSide === 'player';
+
+  // Keyboard-only play: E ends the turn unless a text field or a modal dialog
+  // owns focus. Disabled once the battle settles, so the shortcut cannot fire
+  // a rejection on the victory panel.
+  useKeyboardControls({ onEndTurn: controller.endTurn, enabled: canEndTurn });
 
   return (
     <BattleScreen
@@ -358,6 +429,7 @@ function BattleSession({
       baseUrl={import.meta.env.BASE_URL}
       onPlayCard={controller.playCard}
       onEndTurn={controller.endTurn}
+      onAnnounce={onAnnounce}
       onExit={onExit}
     />
   );

@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T04:55:07.482Z",
+  "lastUpdatedAt": "2026-10-29T06:56:43.471Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -960,10 +960,65 @@
     },
     "SHL-07": {
       "taskId": "SHL-07",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "frontend-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 2,
+      "outputFiles": [
+        "src/ui/a11y/useKeyboardControls.ts",
+        "src/ui/components/LiveRegion.tsx",
+        "src/ui/a11y/useKeyboardControls.test.tsx",
+        "src/App.tsx",
+        "src/App.a11y.test.tsx"
+      ],
+      "startedAt": "2026-10-29T06:54:32.349Z",
+      "usage": {
+        "inputTokens": 114089,
+        "outputTokens": 22066,
+        "cacheReadTokens": 5245824,
+        "cacheWriteTokens": 0,
+        "reasoningTokens": 42427,
+        "costUsd": 0.07154662199999999,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "failed",
+          "reason": "timed out after 3600000ms; process-tree cleanup failed: exceeded 1000ms; closing inherited output pipes",
+          "resultPath": "docs/artifacts/SHL-07.2026-10-29T06-53-54-939Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 64579,
+            "outputTokens": 18427,
+            "reasoningTokens": 33287,
+            "cacheReadTokens": 4330240,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.05370596999999999,
+            "source": "harness"
+          }
+        },
+        {
+          "attempt": 2,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/SHL-07.2026-10-29T06-56-43-463Z.attempt-2.result.json",
+          "usage": {
+            "inputTokens": 49510,
+            "outputTokens": 3639,
+            "reasoningTokens": 9140,
+            "cacheReadTokens": 915584,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.017840652,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T06:56:43.468Z",
+      "agentOutput": "I'll start by reading the execution file and understanding the current project state.\r\nNow let me examine the current project state.\r\nThe core files from the prior attempt exist. Let me verify them against the actual test suite now.\r\nThe task's own validation command passes. Now let me verify the full contract: typecheck, the broader suite, and check for regressions.\r\nLet me consult the project accessibility skill to confirm the contract details are fully satisfied.\r\nAll required checks pass. Here is the outcome.\n\n## Implementation summary\n\nSHL-07 is complete in the working tree and verified end to end:\n\n- **Global keyboard controls** — `useKeyboardControls` binds `E` at the document level, ignoring modifiers, key repeat, IME composition, text-entry targets, and any open `aria-modal` dialog. `useDialogFocusTrap` records the invoker, moves focus inside, wraps Tab/Shift+Tab, closes on Escape, locks background scroll, and restores focus to the invoker (falling back to a surviving hand card or End Turn when the invoker was removed by playing a card).\n- **Live announcements** — one `role=\"status\"` / `aria-live=\"polite\"` region mounted once in `App`, fed by `describeBattleUpdate` from settled state transitions only. Turn hand-back, damage totals, field shifts and victory/defeat are each announced once; the battle error paragraph no longer creates a second status region.\n- **Skip link** — moves focus to `main#main-content` explicitly (no positive `tabindex`; the only authored index is `-1`).\n- **Dialog contract** — the card detail keeps `role=\"dialog\"`, `aria-modal=\"true\"` and now traps focus and restores it on Escape, close button and play.\n- **Tests through the real `App`** — Tab order/focusability, Enter card play, `E` end turn with the text-field guard, Escape/focus trap/restore, single live region, turn/damage/field/victory announcements, and the skip link.\n\n## Files created or changed\n\n**Created**\n- `src/ui/a11y/useKeyboardControls.ts`\n- `src/ui/a11y/useKeyboardControls.test.tsx`\n- `src/ui/a11y/announcements.ts`\n- `src/ui/components/LiveRegion.tsx`\n- `src/App.a11y.test.tsx`\n\n**Modified**\n- `src/App.tsx`\n- `src/ui/screens/BattleScreen.tsx`\n- `src/ui/components/CardDetail.tsx`\n\n(Engine-owned `docs/` state files were left untouched; `docs/artifacts/` was not modified.)\n\n```forge-result\n{\n  \"summary\": \"Completed SHL-07: app-wide E-to-end-turn controls guarded against text fields, modifiers and open modals; a generic dialog focus trap with Escape close, scroll lock and invoker/focus restoration; a single polite live region fed from settled battle state transitions that announces turn changes, damage totals, field shifts and results once; and an explicit skip link to the main board. Wired through App and covered by App-level keyboard, announcement, dialog and skip-link tests; supported by announcements.ts and CardDetail reuse of the trap. Required validation, typecheck, the full 579-test suite, production build and build audit all pass.\",\n  \"decisions\": [\n    \"The E shortcut lives on the document and is enabled only while the player can end a turn; it refuses while focus is in a text-entry control or any role=dialog[aria-modal=true] is mounted, so a future input can never cost a turn and a dialog retains Escape.\",\n    \"Escape, Tab wrapping, scroll locking and focus restore are implemented once in useDialogFocusTrap and reused by CardDetail, whose markup owns role=dialog and aria-modal; the hook captures the invoker before moving focus and falls back to a surviving hand card or End Turn when playing the card removed the invoker.\",\n    \"Announcements are derived from a before/after BattleState diff in a pure describeBattleUpdate function and emitted only for a new controller sequence, so React renders and StrictMode effect re-runs cannot duplicate a message.\",\n    \"App owns the only live region. The battle error paragraph dropped its role=status so a refusal is announced through the one region rather than a second live node.\",\n    \"The skip link focuses main#main-content explicitly with tabindex=-1 because jsdom and some embedded browsers do not apply fragment focus fix-up; it is the only authored tab index and the trap's focusable walker excludes -1 and never produces positive values.\",\n    \"Enter/Space on a hand card activates the card and opens the full-effect dialog, consistent with SHL-FR-03; the card is then played with Enter on the focused Play control, so a complete turn remains keyboard-only.\"\n  ],\n  \"interfaces\": [\n    \"src/ui/a11y/useKeyboardControls.ts: isTextEntryTarget(target), hasOpenModalDialog(documentRoot?), useKeyboardControls({ onEndTurn, enabled? }), useDialogFocusTrap({ containerRef, onClose, initialFocusRef?, fallbackFocus?, active? }), focusableWithin(container), FOCUSABLE_SELECTOR.\",\n    \"src/ui/components/LiveRegion.tsx: LiveRegion({ message }) renders the sole role=status, aria-live=polite, aria-atomic=true region.\",\n    \"src/ui/a11y/announcements.ts: describeBattleUpdate({ previous, next, intent, fieldMatchup, enemyName }) -> one sentence covering enemy turn, damage/health totals, defense, field shift matchup and result.\",\n    \"src/ui/screens/BattleScreen.tsx: BattleScreenProps gains onAnnounce(message); the screen publishes cues once per sequence and announcements only for a new settled sequence.\",\n    \"src/ui/components/CardDetail.tsx: unchanged props; now traps focus via containerRef, opens on the close button, and restores focus to the invoking card or a surviving hand card.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/App.a11y.test.tsx src/ui/a11y/useKeyboardControls.test.tsx: exit 0, 2 files / 18 tests passed\",\n    \"npm test -- src/ui/components/BattleBoard.test.tsx src/App.a11y.test.tsx src/ui/motion/useReducedMotion.test.tsx: exit 0, 3 files / 39 tests passed\",\n    \"npm test: exit 0, 23 files / 579 tests passed\",\n    \"npm run typecheck: exit 0\",\n    \"npm run build: exit 0 (tsc --noEmit and vite build)\",\n    \"npm run check:build: exit 0, Build audit passed (CSP only in dist, base-path assets, no dangerous HTML/dynamic code)\",\n    \"git diff --check: exit 0\"\n  ],\n  \"unresolved\": [],\n  \"warnings\": [\n    \"This was attempt 2 after an engine timeout. The attempt-1 working-tree implementation was preserved, reviewed and fully reverified rather than rewritten; no required check failed.\",\n    \"The Tab/Shift+Tab order assertion is expressed as DOM focus order plus tabIndex=0 for every hand card and End Turn, because jsdom does not implement sequential focus navigation; focus trapping and wrapping are asserted directly. REL-04/Playwright owns the real-browser keyboard and viewport matrix.\"\n  ]\n}\n```\r\n",
+      "artifactId": "work-shl-07-001",
+      "inputArtifactIds": [
+        "work-shl-03-001",
+        "work-shl-06-001",
+        "work-shl-02-001"
+      ]
     },
     "RUN-01": {
       "taskId": "RUN-01",
