@@ -430,3 +430,347 @@ ul {
 [data-reduced-motion='true'] .menu__entry:active {
   transform: none;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Solo run surfaces                                                          */
+/* -------------------------------------------------------------------------- */
+
+.battle-screen__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.solo-setup,
+.run-overview,
+.reward,
+.run-result {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.solo-setup__head,
+.run-overview__head,
+.reward__head,
+.run-result__head {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.solo-setup__head .shell__eyebrow,
+.run-overview__head .shell__eyebrow,
+.reward__head .shell__eyebrow,
+.run-result__head .shell__eyebrow {
+  margin: 0;
+}
+
+.solo-decks {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.solo-deck {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 1rem;
+  border: 1px solid rgb(122 63 29 / 26%);
+  border-radius: var(--fb-radius);
+  background: rgb(255 252 244 / 82%);
+  color: var(--fb-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.solo-deck[aria-pressed='true'] {
+  border-color: var(--fb-accent);
+  box-shadow: inset 0 0 0 2px var(--fb-accent);
+}
+
+.solo-deck__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.solo-deck__name {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.solo-deck__identity {
+  color: var(--fb-ink);
+  font-weight: 600;
+}
+
+.solo-deck__section-label {
+  margin-top: 0.35rem;
+  color: var(--fb-ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.solo-deck__cards {
+  color: var(--fb-ink-soft);
+  font-size: 0.9375rem;
+}
+
+.solo-deck__state {
+  margin-top: 0.35rem;
+  font-weight: 700;
+  color: var(--fb-accent);
+}
+
+.solo-setup__actions,
+.run-overview__actions,
+.run-result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.solo-setup__hint {
+  color: var(--fb-ink-soft);
+  font-size: 0.9375rem;
+}
+
+.run-overview__progress {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.run-progress {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.run-progress__step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgb(122 63 29 / 18%);
+  border-radius: 12px;
+  background: rgb(255 253 247 / 60%);
+}
+
+.run-progress__step--current {
+  border-color: var(--fb-accent);
+  background: rgb(122 63 29 / 9%);
+  font-weight: 700;
+}
+
+.run-progress__step--cleared .run-progress__status {
+  color: #2f6b3a;
+}
+
+.run-progress__number {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgb(122 63 29 / 12%);
+  font-weight: 700;
+}
+
+.run-progress__name {
+  min-width: 0;
+}
+
+.run-progress__status {
+  color: var(--fb-ink-soft);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.run-overview__stats,
+.run-result__stats {
+  display: grid;
+  gap: 0.55rem;
+  margin: 1rem 0 0;
+}
+
+.run-overview__stat,
+.run-result__stat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgb(122 63 29 / 12%);
+}
+
+.run-overview__stat dt,
+.run-result__stat dt {
+  color: var(--fb-ink-soft);
+}
+
+.run-overview__stat dd,
+.run-result__stat dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.run-overview__enemy-body {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.run-overview__enemy-body .asset-image {
+  width: 6rem;
+  flex: 0 0 auto;
+}
+
+.run-overview__enemy-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.run-overview__enemy-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+  color: var(--fb-ink-soft);
+}
+
+.reward__health {
+  color: var(--fb-ink-soft);
+  font-weight: 600;
+}
+
+.reward__options {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reward-option {
+  display: grid;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 1rem;
+  border: 1px solid rgb(122 63 29 / 26%);
+  border-radius: var(--fb-radius);
+  background: rgb(255 252 244 / 82%);
+  color: var(--fb-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reward-option:hover {
+  border-color: var(--fb-accent);
+}
+
+.reward-option__art {
+  display: block;
+  max-width: 9rem;
+}
+
+.reward-option__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reward-option__cost {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--fb-ink);
+  color: var(--fb-parchment);
+  font-weight: 700;
+}
+
+.reward-option__kind {
+  color: var(--fb-ink-soft);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.reward-option__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.reward-option__primary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.reward-option__primary-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.reward-option__primary-label {
+  color: var(--fb-ink-soft);
+}
+
+.reward-option__effect {
+  color: var(--fb-ink-soft);
+  font-size: 0.9375rem;
+}
+
+.reward-option--heal {
+  border-color: rgb(47 107 58 / 45%);
+  background: rgb(47 107 58 / 8%);
+}
+
+.run-result__outcome {
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.run-result__best {
+  margin-top: 0.75rem;
+  font-weight: 700;
+  color: #2f6b3a;
+}
+
+.run-result__notice {
+  margin-top: 0.75rem;
+  color: var(--fb-ink-soft);
+  font-size: 0.9375rem;
+}
+
+@media (min-width: 720px) {
+  .solo-decks,
+  .reward__options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

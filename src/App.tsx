@@ -7,10 +7,12 @@
  * without a matching route. Screens dispatch navigation intents; only this file
  * decides which screen is mounted.
  *
- * The menu, rules, settings, battle and full local-duel flow are built. The solo
- * run surfaces owned by later tasks resolve to a single shared notice until
- * then, which keeps the menu's entries alive and the router exhaustive without
- * creating empty screen files that a later task would have to delete.
+ * The menu, rules, settings, solo run, battle and full local-duel flow are
+ * built. The solo run is an in-memory controller state held beside the screen
+ * union: setup, the first battle, the mandatory reward, the run overview and the
+ * result screen all read that state, and every settled action is autosaved to
+ * `fieldbound.run.v1` by the controller (RUN-FR-01, RUN-FR-02, RUN-FR-04,
+ * RUN-FR-08).
  *
  * The duel is an in-memory session held beside the screen union: the privacy,
  * battle, round-result and match-result routes read the live round controller's
@@ -42,6 +44,16 @@ import {
 import type { DuelRoundState } from './duel/round';
 import type { Settings, SettingsStorage } from './persistence/settings';
 import { createSettingsStore } from './persistence/settings';
+import type { RunSaveStorage } from './persistence/run-save';
+import type { StatsStorage } from './persistence/stats';
+import { resolveRunSeed } from './persistence/seed';
+import type { SeedSource } from './persistence/seed';
+import {
+  RUN_ENCOUNTER_COUNT,
+  RUN_MAX_HEALTH,
+  currentEnemy,
+  runSummary,
+} from './run/run-model';
 import {
   createBattleControllerState,
   fieldMatchupFor,
@@ -51,7 +63,17 @@ import type {
   BattleControllerConfig,
   BattleControllerState,
 } from './state/battle-controller';
-import type { EngineResult } from './engine/types';
+import {
+  runCurrentHealth,
+  runEncounterNumber,
+  runProgress,
+  useSoloRunController,
+} from './state/run-controller';
+import type {
+  SoloEncounterFactory,
+  SoloRunAttempt,
+} from './state/run-controller';
+import type { EngineResult, FieldElement } from './engine/types';
 import { useKeyboardControls } from './ui/a11y/useKeyboardControls';
 import { emitCue, uiEvents } from './ui/events';
 import { LiveRegion } from './ui/components/LiveRegion';
@@ -68,8 +90,12 @@ import { HowToPlayScreen } from './ui/screens/HowToPlayScreen';
 import { MatchResultScreen } from './ui/screens/MatchResultScreen';
 import { MenuScreen } from './ui/screens/MenuScreen';
 import { PrivacyScreen } from './ui/screens/PrivacyScreen';
+import { RewardScreen } from './ui/screens/RewardScreen';
 import { RoundResultScreen } from './ui/screens/RoundResultScreen';
+import { RunOverviewScreen } from './ui/screens/RunOverviewScreen';
+import { RunResultScreen } from './ui/screens/RunResultScreen';
 import { SettingsScreen } from './ui/screens/SettingsScreen';
+import { SoloSetupScreen } from './ui/screens/SoloSetupScreen';
 
 export const SCREEN_KINDS = [
   'menu',
@@ -248,6 +274,27 @@ export interface AppProps {
    * opens its privacy handoff. Production never passes it.
    */
   readonly duelMatch?: DuelMatch;
+  /**
+   * Test-only: replace the run save's storage, or pass `null` to simulate a
+   * browser where storage is unavailable. Production omits it.
+   */
+  readonly runSaveStorage?: RunSaveStorage | null;
+  /**
+   * Test-only: replace the best-run record's storage, or pass `null` for none.
+   * Production omits it.
+   */
+  readonly runStatsStorage?: StatsStorage | null;
+  /**
+   * Test-only: build a deterministic or weakened encounter instead of the real
+   * ladder enemy. The run controller still owns the battle and the autosave;
+   * production never passes it.
+   */
+  readonly soloEncounter?: SoloEncounterFactory;
+  /**
+   * Test-only: replace `crypto.getRandomValues` when a run is started without
+   * `?seed=`. Production omits it.
+   */
+  readonly seedSource?: SeedSource | null;
 }
 
 export function App({
@@ -256,6 +303,10 @@ export function App({
   battleConfig,
   settingsStorage,
   duelMatch,
+  runSaveStorage,
+  runStatsStorage,
+  soloEncounter,
+  seedSource,
 }: AppProps = {}) {
   const [screen, setScreen] = useState<Screen>(initialScreen);
 
@@ -577,6 +628,176 @@ export function App({
     );
   }, [announce, duel, openRound]);
 
+  /* ------------------------------------------------------------------------ */
+  /* Solo run intents                                                         */
+  /* ------------------------------------------------------------------------ */
+
+  // The run lives beside the screen union, like the duel: it is created on
+  // demand, autosaves through its own store and is discarded on New Run.
+  const runController = useSoloRunController({
+    ...(runSaveStorage === undefined ? {} : { saveStorage: runSaveStorage }),
+    ...(runStatsStorage === undefined ? {} : { statsStorage: runStatsStorage }),
+    ...(soloEncounter === undefined ? {} : { encounterSetup: soloEncounter }),
+  });
+  const runState = runController.state;
+  const {
+    start: startRun,
+    playCard: playRunCard,
+    endTurn: endRunTurn,
+    chooseReward: chooseRunReward,
+    nextBattle: nextRunBattle,
+    reset: resetRun,
+  } = runController;
+
+  /** Start Run resolves `?seed=` once, then hands the seed to the controller. */
+  const handleStartRun = useCallback(
+    (element: FieldElement) => {
+      const resolution = resolveRunSeed(window.location.search, seedSource);
+      const attempt = startRun(element, resolution.seed);
+
+      if (attempt.transition === null) {
+        announce(
+          `The run could not start: ${attempt.error?.message ?? 'unknown error'}`,
+        );
+        return;
+      }
+
+      navigate(attempt.transition.screen);
+
+      const enemy = currentEnemy(attempt.transition.state.run);
+
+      announce(
+        `${enemy?.name ?? 'The first enemy'}, encounter 1 of ${RUN_ENCOUNTER_COUNT}.`,
+      );
+    },
+    [announce, navigate, seedSource, startRun],
+  );
+
+  /**
+   * Turn one controller intent into navigation, cues and one announcement.
+   *
+   * The battle screen emits and announces its own non-terminal transitions.
+   * When an action settles the fight the board unmounts in the same commit, so
+   * this function emits the report's final cues and announces the new phase
+   * instead. A rejection during a fight is left to the board, which renders the
+   * engine's message next to the hand.
+   */
+  const applyRunAttempt = useCallback(
+    (attempt: SoloRunAttempt) => {
+      if (attempt.transition === null) {
+        if (attempt.error !== null) {
+          announce(
+            `That action could not be completed: ${attempt.error.message}`,
+          );
+        }
+
+        return;
+      }
+
+      const next = attempt.transition;
+      const previousScreen = screen.kind;
+
+      if (previousScreen === 'battle' && next.screen !== 'battle') {
+        for (const cue of next.cues) {
+          emitCue(cue);
+        }
+      }
+
+      if (next.screen !== previousScreen) {
+        navigate(next.screen);
+      }
+
+      if (next.error !== null) {
+        if (next.screen !== 'battle') {
+          announce(`That action was refused: ${next.error.message}`);
+        }
+
+        return;
+      }
+
+      if (next.endedRun !== null) {
+        announce(
+          next.endedRun.phase === 'victory'
+            ? 'Victory. The run is complete.'
+            : 'Defeat. The run is over.',
+        );
+        return;
+      }
+
+      if (next.screen === 'reward') {
+        announce('Victory. Choose one reward.');
+        return;
+      }
+
+      if (next.screen === 'battle' && previousScreen !== 'battle') {
+        const enemy = currentEnemy(next.state.run);
+
+        announce(
+          `${enemy?.name ?? 'The enemy'}, encounter ${runEncounterNumber(
+            next.state.run,
+          )} of ${RUN_ENCOUNTER_COUNT}.`,
+        );
+        return;
+      }
+
+      if (next.screen === 'run-overview' && previousScreen === 'reward') {
+        announce(
+          `Reward chosen. Encounter ${runEncounterNumber(
+            next.state.run,
+          )} of ${RUN_ENCOUNTER_COUNT} is ready.`,
+        );
+      }
+    },
+    [announce, navigate, screen],
+  );
+
+  const handleRunPlayCard = useCallback(
+    (instanceId: string) => {
+      applyRunAttempt(playRunCard(instanceId));
+    },
+    [applyRunAttempt, playRunCard],
+  );
+
+  const handleRunEndTurn = useCallback(() => {
+    applyRunAttempt(endRunTurn());
+  }, [applyRunAttempt, endRunTurn]);
+
+  const handleChooseReward = useCallback(
+    (index: number) => {
+      applyRunAttempt(chooseRunReward(index));
+    },
+    [applyRunAttempt, chooseRunReward],
+  );
+
+  const handleRunOverview = useCallback(() => {
+    navigate('run-overview');
+
+    if (runState !== null) {
+      const enemy = currentEnemy(runState.run);
+
+      announce(
+        `Run overview. Encounter ${runEncounterNumber(
+          runState.run,
+        )} of ${RUN_ENCOUNTER_COUNT}, ${enemy?.name ?? 'no enemy'}.`,
+      );
+    }
+  }, [announce, navigate, runState]);
+
+  /** Overview: start the shown encounter, or return to a live fight. */
+  const handleOverviewNext = useCallback(() => {
+    if (runState?.run.phase === 'battle') {
+      navigate('battle');
+      return;
+    }
+
+    applyRunAttempt(nextRunBattle());
+  }, [applyRunAttempt, navigate, nextRunBattle, runState]);
+
+  const handleNewRun = useCallback(() => {
+    resetRun();
+    navigate('solo-setup');
+  }, [navigate, resetRun]);
+
   const handleSoundChange = useCallback(
     (enabled: boolean) => {
       const next: Settings = { ...settings, muted: !enabled };
@@ -599,10 +820,6 @@ export function App({
     [applySettings, settings],
   );
 
-  const pending = (title: string): ReactNode => (
-    <PendingSurface title={title} onBack={() => navigate('menu')} />
-  );
-
   const battle = battleConfig ?? PRACTICE_BATTLE_CONFIG;
 
   // Redacted view of the live duel round. `null` whenever no round is running,
@@ -610,6 +827,14 @@ export function App({
   const duelView = duel?.phase === 'round' ? duelRoundView(duel.round) : null;
   const duelMatchWinner =
     duel?.phase === 'match-result' ? matchWinner(duel.match) : null;
+
+  // Solo facts derived from the run phase. Only a battle-phase run has a board,
+  // and only a terminal run has a result summary.
+  const soloBattle =
+    runState !== null && runState.run.phase === 'battle'
+      ? runState.battle
+      : null;
+  const soloSummary = runState === null ? null : runSummary(runState.run);
 
   const routes: { readonly [Kind in ScreenKind]: ReactNode } = {
     menu: (
@@ -637,8 +862,33 @@ export function App({
         onBack={() => navigate('menu')}
       />
     ),
-    'solo-setup': pending('Solo setup'),
-    'run-overview': pending('Run overview'),
+    'solo-setup': (
+      <SoloSetupScreen
+        decks={STARTER_DECKS}
+        cards={cardCatalog}
+        onStart={handleStartRun}
+        onBack={() => navigate('menu')}
+      />
+    ),
+    'run-overview':
+      runState === null ? (
+        <RunUnavailable title="Run overview" onBack={() => navigate('menu')} />
+      ) : (
+        <RunOverviewScreen
+          progress={runProgress(runState.run)}
+          encounterNumber={runEncounterNumber(runState.run)}
+          encounterTotal={RUN_ENCOUNTER_COUNT}
+          health={runCurrentHealth(runState)}
+          maxHealth={RUN_MAX_HEALTH}
+          deckSize={runState.run.deck.length}
+          turnsTotal={runState.run.turnsTotal}
+          nextEnemy={currentEnemy(runState.run)}
+          baseUrl={import.meta.env.BASE_URL}
+          mode={runState.run.phase === 'battle' ? 'battle' : 'between'}
+          onNextBattle={handleOverviewNext}
+          onMenu={() => navigate('menu')}
+        />
+      ),
     battle:
       duelView?.kind === 'battle' ? (
         <DuelBattleRoute
@@ -650,6 +900,15 @@ export function App({
           onEndTurn={handleDuelEndTurn}
           onExit={leaveDuel}
         />
+      ) : soloBattle !== null ? (
+        <SoloBattleRoute
+          state={soloBattle}
+          onPlayCard={handleRunPlayCard}
+          onEndTurn={handleRunEndTurn}
+          onAnnounce={announce}
+          onExit={() => navigate('menu')}
+          onOverview={handleRunOverview}
+        />
       ) : (
         <BattleRoute
           config={battle}
@@ -657,8 +916,32 @@ export function App({
           onExit={() => navigate('menu')}
         />
       ),
-    reward: pending('Reward'),
-    'run-result': pending('Run result'),
+    reward:
+      runState === null ||
+      runState.run.phase !== 'reward' ||
+      runState.offers === null ? (
+        <RunUnavailable title="Reward" onBack={() => navigate('menu')} />
+      ) : (
+        <RewardScreen
+          offers={runState.offers}
+          cards={cardCatalog}
+          baseUrl={import.meta.env.BASE_URL}
+          health={runState.run.health}
+          maxHealth={RUN_MAX_HEALTH}
+          onChoose={handleChooseReward}
+        />
+      ),
+    'run-result':
+      runState === null || soloSummary === null ? (
+        <RunUnavailable title="Run result" onBack={() => navigate('menu')} />
+      ) : (
+        <RunResultScreen
+          summary={soloSummary}
+          stats={runState.stats}
+          onNewRun={handleNewRun}
+          onMenu={() => navigate('menu')}
+        />
+      ),
     'duel-setup': (
       <DuelSetupScreen
         decks={STARTER_DECKS}
@@ -797,6 +1080,47 @@ function BattleSession({
 }
 
 /**
+ * The live solo board. Unlike the standalone practice battle, the reducer state
+ * comes from the run controller; this wrapper only adds the app-wide E shortcut
+ * and the optional route back to the run overview.
+ */
+function SoloBattleRoute({
+  state,
+  onPlayCard,
+  onEndTurn,
+  onAnnounce,
+  onExit,
+  onOverview,
+}: {
+  readonly state: BattleControllerState;
+  readonly onPlayCard: (instanceId: string) => void;
+  readonly onEndTurn: () => void;
+  readonly onAnnounce: (message: string) => void;
+  readonly onExit: () => void;
+  readonly onOverview: () => void;
+}) {
+  const { battle } = state;
+  const canEndTurn =
+    battle.outcome === 'ongoing' &&
+    battle.phase === 'action' &&
+    battle.activeSide === 'player';
+
+  useKeyboardControls({ onEndTurn, enabled: canEndTurn });
+
+  return (
+    <BattleScreen
+      state={state}
+      baseUrl={import.meta.env.BASE_URL}
+      onPlayCard={onPlayCard}
+      onEndTurn={onEndTurn}
+      onAnnounce={onAnnounce}
+      onExit={onExit}
+      onOverview={onOverview}
+    />
+  );
+}
+
+/**
  * The duel battle route adds the same app-wide E shortcut the solo board uses.
  * The privacy handoff is a separate screen with its own modal listener, so E
  * can never skip or settle a turn while the device is being passed.
@@ -863,17 +1187,25 @@ function DuelUnavailable({
 }
 
 /**
- * The router's exhaustive fallback for a surface a later task has not built
- * yet. It is deliberately one shared notice, not a screen file per feature.
+ * A solo surface mounted with no live run. This is reachable through the
+ * `initialScreen` test seam or a transient navigation mismatch; it never claims
+ * a run exists and offers the menu instead.
  */
-function PendingSurface({ title, onBack }: { title: string; onBack: () => void }) {
+function RunUnavailable({
+  title,
+  onBack,
+}: {
+  readonly title: string;
+  readonly onBack: () => void;
+}) {
   return (
-    <section className="shell__panel" aria-labelledby="pending-title">
-      <h1 className="shell__page-title" id="pending-title">
+    <section className="shell__panel" aria-labelledby="run-unavailable-title">
+      <h1 className="shell__page-title" id="run-unavailable-title">
         {title}
       </h1>
       <p className="shell__copy">
-        This surface is added by its own build step. Nothing here is mocked.
+        No solo run is in progress. Start one from the menu to reach this
+        surface.
       </p>
       <p>
         <button type="button" className="shell__button" onClick={onBack}>

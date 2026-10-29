@@ -1,12 +1,12 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T07:37:54.340Z",
+  "lastUpdatedAt": "2026-10-29T07:51:46.166Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
   "status": "running",
-  "currentPhase": "SOLO-RUN-2",
+  "currentPhase": "SOLO-RUN-3",
   "tasks": {
     "ENG-00": {
       "taskId": "ENG-00",
@@ -1222,10 +1222,61 @@
     },
     "RUN-04": {
       "taskId": "RUN-04",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "frontend-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/state/run-controller.ts",
+        "src/state/run-controller.test.ts",
+        "src/persistence/seed.ts",
+        "src/persistence/seed.test.ts",
+        "src/ui/screens/SoloSetupScreen.tsx",
+        "src/ui/screens/RunOverviewScreen.tsx",
+        "src/ui/screens/RewardScreen.tsx",
+        "src/ui/screens/RunResultScreen.tsx",
+        "src/App.tsx",
+        "src/App.solo.test.tsx",
+        "src/styles/base.css",
+        "src/ui/screens/BattleScreen.tsx"
+      ],
+      "startedAt": "2026-10-29T07:37:54.713Z",
+      "usage": {
+        "inputTokens": 151768,
+        "outputTokens": 43917,
+        "reasoningTokens": 73772,
+        "cacheReadTokens": 17049600,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.14452740000000003,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/RUN-04.2026-10-29T07-51-46-158Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 151768,
+            "outputTokens": 43917,
+            "reasoningTokens": 73772,
+            "cacheReadTokens": 17049600,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.14452740000000003,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T07:51:46.163Z",
+      "agentOutput": "I'll start by reading the execution file and understanding the task.\r\nNow I have a complete picture. Let me implement the seed module first.\r\nI've completed RUN-04. Here is the implementation summary and the required report.\n\n## What was built\n\n- **`src/persistence/seed.ts`** — `?seed=` parsing (plain non-negative 32-bit integers only), `crypto.getRandomValues` seed generation with an injectable source and a non-throwing fallback, and one-shot resolution at run creation.\n- **`src/state/run-controller.ts`** — pure run transitions (`startSoloRun`, `playRunCard`, `endRunTurn`, `resolveRunReward`, `startNextBattle`) plus the `useSoloRunController` React binding. The controller is the only caller of `battleReducer`, `applyBattleResult`, `generateRewardOffers` and `applyRewardChoice`. It builds the validated `fieldbound.run.v1` payload after every settled action, records the best-run record exactly once at run end, and exposes typed attempts, errors, cues and screens.\n- **Four new screens** — `SoloSetupScreen` (four deck cards with glyph, identity, ten card names and two Shift cards), `RunOverviewScreen` (four-step ladder, \"1 of 4\", health, deck size, turns, next/current enemy), `RewardScreen` (three mandatory options, full card faces and effects, wall-to-wall \"Heal 12\" below 20 health), `RunResultScreen` (victory/defeat totals, boss clears, best run, New Run/Menu).\n- **`App.tsx` wiring** — menu → setup → battle → reward → overview → next battle → result, with `?seed=` resolution, cue/announcement routing, and a \"Run overview\" link on the live solo board. No Continue Run or duel changes.\n- **`BattleScreen.tsx`** — optional `onOverview` action and a remount guard so returning from the overview cannot replay cues.\n- **`src/styles/base.css`** — portrait-first styles for all solo surfaces with 44px targets.\n\n## Files created or changed\n\nCreated:\n- `src/persistence/seed.ts`\n- `src/persistence/seed.test.ts`\n- `src/state/run-controller.ts`\n- `src/state/run-controller.test.ts`\n- `src/ui/screens/SoloSetupScreen.tsx`\n- `src/ui/screens/RunOverviewScreen.tsx`\n- `src/ui/screens/RewardScreen.tsx`\n- `src/ui/screens/RunResultScreen.tsx`\n- `src/App.solo.test.tsx`\n\nChanged:\n- `src/App.tsx`\n- `src/ui/screens/BattleScreen.tsx`\n- `src/styles/base.css`\n\nNot modified: `docs/artifacts/RUN-04.md` (the engine-owned `docs/EXECUTION-AUDIT.jsonl` and `docs/WORKFLOW-STATE.json` changed on their own; I did not edit them).\n\n## Verification actually run\n\n| Command | Result |\n|---|---|\n| `npm test -- src/App.solo.test.tsx src/state/run-controller.test.ts` | exit 0 — 28 tests passed |\n| `npm run typecheck` | exit 0 |\n| `npm run test` (full suite) | exit 0 — 969 tests passed |\n| `npm test -- src/persistence/seed.test.ts` | exit 0 — 11 tests passed |\n| `npm run build` | exit 0 |\n| `npm run check:budget` | passed — 108,474 B gzip of 307,200 B |\n| `npm run check:build` | base-path, CSP, same-origin and served-dist gates passed; the naive source-token scan flags two **pre-existing** duel test files that contain the literal `dangerouslySetInnerHTML` inside their own \"must not contain\" assertions (exit 1, unrelated to RUN-04) |\n\n```forge-result\n{\n  \"summary\": \"Implemented RUN-04: a pure solo-run controller over the battle engine with autosave after every settled action, ?seed= parsing, and setup, overview, reward and result screens wired through App. All required validation commands pass (28 targeted tests, typecheck), plus the full 969-test suite, the production build and the bundle budget.\",\n  \"unresolved\": [],\n  \"decisions\": [\n    \"Transitions are pure functions returning state, screen, save, cues, error and endedRun; the React binding writes the save inside the intent callback rather than an effect, so a settled action is durable before paint and a rejected action can never overwrite the last good save.\",\n    \"The controller reuses the existing fieldbound.run.v1 validator and the engine snapshot serializer: the battle snapshot is present exactly in the battle phase and pendingReward exactly in the reward phase, so every autosave is loadable by the same RUN-03 validator.\",\n    \"Start Run creates the run and opens Cinder Warden immediately, as the acceptance requires. After a normal victory the flow is reward -> run overview -> Next Battle, matching the documented run-overview design; the same overview is reachable from the live board so the 1 of 4 state is a real surface, and during a fight the primary action returns to the battle.\",\n    \"Damage taken is accumulated from observed before/after player health and floored at the net health loss; turns are the engine's battle.turn at settlement. This keeps damage/status/draw/affordability rules in the engine and run model.\",\n    \"The run seed is read once at Start Run from ?seed= and otherwise generated from crypto.getRandomValues. The battle is seeded with the run seed, and the reward stream starts at createRng(seed xor 0x9e3779b9); both the seed and the advanced reward state are persisted.\",\n    \"The battle screen emits and announces its own non-terminal transitions. App emits the final cues and phase announcement only when a settled action unmounts the board, and BattleScreen skips cue replay when remounted from the overview.\",\n    \"The best-run record is written exactly once by the transition carrying endedRun; a restored terminal screen never passes through that path, so it cannot inflate the record.\",\n    \"Test seams mirror the existing SHL-03/duel pattern: injectable run/stats storage, an encounter factory and a seed source. Production omits all of them.\"\n  ],\n  \"interfaces\": [\n    \"src/persistence/seed.ts: SEED_QUERY_PARAMETER, SEED_MAX, SeedSource, RunSeedSource, RunSeedResolution, parseSeedParam, readSeedFromSearch, createRandomSeed, resolveRunSeed.\",\n    \"src/state/run-controller.ts: RUN_SCREENS, RunScreen, RunProgressStep, SoloRunState, SoloRunErrorCode, SoloRunError, SoloRunResult, SoloRunTransition, SoloRunAttempt, SoloEncounterFactory, SoloRunControllerOptions, SoloRunController.\",\n    \"Pure transitions: createSoloRunState, beginEncounter, startSoloRun, playRunCard, endRunTurn, resolveRunReward, startNextBattle.\",\n    \"Derivations: screenForRun, runProgress, runEncounterNumber, runCurrentHealth, createRunSave, createEncounterConfig, rewardStreamState, useSoloRunController.\",\n    \"src/App.tsx: AppProps gains test-only runSaveStorage, runStatsStorage, soloEncounter and seedSource; the existing Screen union now routes solo-setup, run-overview, reward and run-result to real screens.\",\n    \"src/ui/screens/BattleScreen.tsx: BattleScreenProps gains optional onOverview, used only by the solo board.\"\n  ],\n  \"tests\": [\n    \"npm test -- src/App.solo.test.tsx src/state/run-controller.test.ts: exit 0, 28 tests passed\",\n    \"npm run typecheck: exit 0\",\n    \"npm run test (full suite): exit 0, 969 tests passed\",\n    \"npm test -- src/persistence/seed.test.ts: exit 0, 11 tests passed\",\n    \"npm run build: exit 0\",\n    \"npm run check:budget: passed, 108474 B gzip of 307200 B\"\n  ],\n  \"warnings\": [\n    \"npm run check:build exits 1 on two pre-existing duel test files (src/duel/match.test.ts and src/duel/round.test.ts): their source-guard tests contain the literal token 'dangerouslySetInnerHTML' inside a list of strings they assert are absent, and the audit's naive regex scan cannot tell that from real usage. RUN-04 added no dangerous HTML, eval or new Function; the CSP, base-path, same-origin and served-dist checks in that audit all passed.\",\n    \"The run overview is the between-battle interstitial after a reward, so the acceptance's 'choosing a reward ... opens the next battle' is satisfied by reward -> overview -> Next Battle; the 1 of 4 overview is reachable from the live board. This follows docs/features/solo-run.md section 4.2 rather than skipping the overview.\"\n  ],\n  \"validationLimitations\": [\n    \"check:build's source-token heuristic fails on pre-existing duel test string literals; it was not treated as a RUN-04 check and the duel tests were left untouched to avoid out-of-scope changes.\"\n  ]\n}\n```\r\n",
+      "validationLimitations": [
+        "check:build's source-token heuristic fails on pre-existing duel test string literals; it was not treated as a RUN-04 check and the duel tests were left untouched to avoid out-of-scope changes."
+      ],
+      "artifactId": "work-run-04-001",
+      "inputArtifactIds": [
+        "work-shl-03-001",
+        "work-run-02-001",
+        "work-run-03-001",
+        "work-run-06-001"
+      ]
     },
     "RUN-05": {
       "taskId": "RUN-05",

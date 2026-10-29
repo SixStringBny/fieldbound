@@ -31,6 +31,11 @@ export interface BattleScreenProps {
   readonly onAnnounce: (message: string) => void;
   /** Leave the battle for the menu. Solo and duel replace this with their own flow. */
   readonly onExit: () => void;
+  /**
+   * Solo only: open the run overview without leaving the fight. Omitted for a
+   * standalone practice battle and for a duel, where there is no run to show.
+   */
+  readonly onOverview?: () => void;
 }
 
 export function BattleScreen({
@@ -40,11 +45,21 @@ export function BattleScreen({
   onEndTurn,
   onAnnounce,
   onExit,
+  onOverview,
 }: BattleScreenProps) {
   const report = state.report;
   const previousRef = useRef<BattleControllerState>(state);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
+    // A board remounted from the run overview carries the last reduction in
+    // `state.report`. Replaying its cues here would sound the card a second
+    // time; only transitions after this mount are emitted.
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+
     if (report === null) {
       return;
     }
@@ -84,9 +99,16 @@ export function BattleScreen({
       <header className="battle-screen__head">
         <p className="shell__eyebrow">Fieldbound</p>
         <h1 className="shell__page-title">Battle</h1>
-        <button type="button" className="shell__back" onClick={onExit}>
-          Leave battle
-        </button>
+        <div className="battle-screen__actions">
+          {onOverview === undefined ? null : (
+            <button type="button" className="shell__back" onClick={onOverview}>
+              Run overview
+            </button>
+          )}
+          <button type="button" className="shell__back" onClick={onExit}>
+            Leave battle
+          </button>
+        </div>
       </header>
 
       {report !== null && !report.ok && report.error !== null ? (
