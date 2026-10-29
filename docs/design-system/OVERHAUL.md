@@ -1,6 +1,6 @@
 # Fieldbound UI overhaul — assembled build-ready spec
 
-**Status:** awaiting human sign-off (§11). Not implemented; [#15](https://github.com/SixStringBny/fieldbound/issues/15) executes it.
+**Status:** signed off by the project owner on 2026-10-29 (§11). Not implemented; [#15](https://github.com/SixStringBny/fieldbound/issues/15) executes it.
 **Assembly:** [Assemble the build-ready overhaul spec and get sign-off](https://github.com/SixStringBny/fieldbound/issues/14), from the decisions in [#5](https://github.com/SixStringBny/fieldbound/issues/5)–[#13](https://github.com/SixStringBny/fieldbound/issues/13) and [#16](https://github.com/SixStringBny/fieldbound/issues/16).
 **Prototype (evidence):** [refined battle screen](https://github.com/SixStringBny/fieldbound/tree/prototype/battle-refined/.prototype/battle-refined), commit `99c5291`.
 
@@ -660,12 +660,16 @@ itself.
 
 | Field | Value |
 | --- | --- |
-| Reviewer | _pending_ |
-| Date | _pending_ |
-| Prototype viewports reviewed | _pending_ — 390×844 and 1280×800 required |
-| Decision | _pending_ — approved / rejected with issues |
-| Issues raised | _pending_ |
-| Execution authorised | _pending_ |
+| Reviewer | Ben McCusker (@SixStringBny), project owner |
+| Date | 2026-10-29 |
+| Prototype viewports reviewed | 390×844 and 1280×800 |
+| Decision | **Approved** |
+| Issues raised | None |
+| Execution authorised | Yes — [#15](https://github.com/SixStringBny/fieldbound/issues/15) may create and work tickets 0–8 |
 
-A rejection names a check id or a spec section; the assembly is amended and
-re-presented. An approval unblocks [#15](https://github.com/SixStringBny/fieldbound/issues/15).
+Approval was recorded on [#14](https://github.com/SixStringBny/fieldbound/issues/14#issuecomment-6509097125)
+after reviewing the prototype at both required viewports and the assembled spec.
+A later rejection names a check id or a spec section; the assembly is amended and
+re-presented. This approval covers the spec only, not the per-screen human review
+(`H-*`) that each execution ticket still requires at 390×844, 768×1024 and
+1280×800.
