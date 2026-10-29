@@ -14,6 +14,13 @@
  * `fieldbound.run.v1` by the controller (RUN-FR-01, RUN-FR-02, RUN-FR-04,
  * RUN-FR-08).
  *
+ * At boot the same key is loaded and validated once, before any screen renders.
+ * A valid save seeds the run controller, which is what makes Continue Run
+ * restore the exact battle, reward, overview or result surface; an invalid or
+ * unknown-version payload is removed by the save module and simply leaves no
+ * Continue Run entry, with no error dialog and no raw storage exception
+ * (RUN-FR-05, RUN-FR-06, VIS-NFR-06).
+ *
  * The duel is an in-memory session held beside the screen union: the privacy,
  * battle, round-result and match-result routes read the live round controller's
  * redacted view, so an inactive hand cannot reach the DOM and a reload cannot
@@ -44,6 +51,7 @@ import {
 import type { DuelRoundState } from './duel/round';
 import type { Settings, SettingsStorage } from './persistence/settings';
 import { createSettingsStore } from './persistence/settings';
+import { createRunSaveStore } from './persistence/run-save';
 import type { RunSaveStorage } from './persistence/run-save';
 import type { StatsStorage } from './persistence/stats';
 import { resolveRunSeed } from './persistence/seed';
@@ -67,12 +75,16 @@ import {
   runCurrentHealth,
   runEncounterNumber,
   runProgress,
+  screenForRun,
   useSoloRunController,
 } from './state/run-controller';
 import type {
   SoloEncounterFactory,
   SoloRunAttempt,
+  SoloRunState,
 } from './state/run-controller';
+import { resumeRun } from './state/resume-run';
+import type { RunResume } from './state/resume-run';
 import type { EngineResult, FieldElement } from './engine/types';
 import { useKeyboardControls } from './ui/a11y/useKeyboardControls';
 import { emitCue, uiEvents } from './ui/events';
@@ -175,6 +187,30 @@ const PRACTICE_BATTLE_CONFIG: BattleControllerConfig | null =
   buildPracticeBattleConfig();
 
 /* -------------------------------------------------------------------------- */
+/* Continue Run                                                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * One line describing where Continue Run will land, so the menu promises the
+ * right surface before it opens. Derived only from the restored or live run
+ * state; the menu screen itself stays presentational.
+ */
+function continueRunHint(state: SoloRunState): string {
+  switch (state.run.phase) {
+    case 'victory':
+      return 'Run complete. Review the result.';
+    case 'defeat':
+      return 'Run over. Review the result.';
+    case 'battle':
+    case 'reward':
+    case 'overview':
+      return `Encounter ${runEncounterNumber(state.run)} of ${
+        RUN_ENCOUNTER_COUNT
+      } · ${runCurrentHealth(state)} of ${RUN_MAX_HEALTH} health`;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* Local duel session                                                         */
 /* -------------------------------------------------------------------------- */
 
@@ -253,8 +289,10 @@ export interface AppProps {
    */
   readonly initialScreen?: Screen;
   /**
-   * True only when the boot-time save check validated a run. Continue Run is
-   * absent otherwise; the menu never offers a resume that cannot be restored.
+   * Test-only override for the Continue Run gate. Production omits it, so the
+   * entry follows the boot-time save check and the live run state. `true` forces
+   * the entry to render (the navigation suite uses it without a saved run);
+   * `false` hides it even when a restored run exists.
    */
   readonly hasSave?: boolean;
   /**
@@ -299,7 +337,7 @@ export interface AppProps {
 
 export function App({
   initialScreen = INITIAL_SCREEN,
-  hasSave = false,
+  hasSave,
   battleConfig,
   settingsStorage,
   duelMatch,
@@ -632,9 +670,20 @@ export function App({
   /* Solo run intents                                                         */
   /* ------------------------------------------------------------------------ */
 
+  // Boot-time resume (RUN-05). The store validates the payload before it is
+  // used and removes only the run key when it is corrupt or foreign; a valid
+  // save becomes the controller's starting state, so Continue Run can reopen
+  // the exact screen the run was saved from. `useState` reads it once, mirroring
+  // a browser reload rather than an in-app navigation.
+  const [bootResume] = useState<RunResume>(() =>
+    resumeRun(createRunSaveStore(runSaveStorage).load()),
+  );
+
   // The run lives beside the screen union, like the duel: it is created on
-  // demand, autosaves through its own store and is discarded on New Run.
+  // demand or restored from a validated save, autosaves through its own store
+  // and is discarded on New Run.
   const runController = useSoloRunController({
+    initialState: bootResume.status === 'available' ? bootResume.state : null,
     ...(runSaveStorage === undefined ? {} : { saveStorage: runSaveStorage }),
     ...(runStatsStorage === undefined ? {} : { statsStorage: runStatsStorage }),
     ...(soloEncounter === undefined ? {} : { encounterSetup: soloEncounter }),
@@ -798,6 +847,48 @@ export function App({
     navigate('solo-setup');
   }, [navigate, resetRun]);
 
+  /**
+   * Continue Run. The run is already restored at boot, so this intent only has
+   * to reopen the screen the save was written from: battle, reward, overview or
+   * result (RUN-05). A restored result screen reads the saved totals and never
+   * re-records the best run.
+   */
+  const handleContinueRun = useCallback(() => {
+    if (runState === null) {
+      return;
+    }
+
+    navigate(screenForRun(runState));
+
+    switch (runState.run.phase) {
+      case 'battle': {
+        const enemy = currentEnemy(runState.run);
+        announce(
+          `${enemy?.name ?? 'The enemy'}, encounter ${runEncounterNumber(
+            runState.run,
+          )} of ${RUN_ENCOUNTER_COUNT}.`,
+        );
+        return;
+      }
+      case 'reward':
+        announce('Choose one reward.');
+        return;
+      case 'overview':
+        announce(
+          `Run overview. Encounter ${runEncounterNumber(
+            runState.run,
+          )} of ${RUN_ENCOUNTER_COUNT}.`,
+        );
+        return;
+      case 'victory':
+        announce('Run complete.');
+        return;
+      case 'defeat':
+        announce('Run over.');
+        return;
+    }
+  }, [announce, navigate, runState]);
+
   const handleSoundChange = useCallback(
     (enabled: boolean) => {
       const next: Settings = { ...settings, muted: !enabled };
@@ -836,14 +927,19 @@ export function App({
       : null;
   const soloSummary = runState === null ? null : runSummary(runState.run);
 
+  // Continue Run is offered only when a run actually exists: either restored
+  // from a validated boot save or still live in this session (RUN-05). The
+  // test-only `hasSave` prop can force the gate for the navigation suite.
+  const showContinueRun = hasSave ?? (runState !== null);
+
   const routes: { readonly [Kind in ScreenKind]: ReactNode } = {
     menu: (
       <MenuScreen
-        hasSave={hasSave}
+        hasSave={showContinueRun}
+        {...(runState === null ? {} : { resumeHint: continueRunHint(runState) })}
         onPlaySolo={() => navigate('solo-setup')}
         onLocalDuel={beginDuelSetup}
-        // RUN-05 replaces this with the screen stored in the validated save.
-        onContinueRun={() => navigate('battle')}
+        onContinueRun={handleContinueRun}
         onHowToPlay={() => navigate('how-to-play')}
         onSettings={() => navigate('settings')}
       />

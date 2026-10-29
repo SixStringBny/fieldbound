@@ -788,6 +788,12 @@ export function startNextBattle(
 /* -------------------------------------------------------------------------- */
 
 export interface SoloRunControllerOptions {
+  /**
+   * A run restored from a validated save (RUN-05). Read once at mount, exactly
+   * like a browser reload: the boot check has already validated the payload, so
+   * the controller adopts it and every later change flows through the intents.
+   */
+  readonly initialState?: SoloRunState | null;
   /** Test seam: replace the run save's storage, or pass null for none. */
   readonly saveStorage?: RunSaveStorage | null;
   /** Test seam: replace the best-run record's storage, or pass null for none. */
@@ -815,6 +821,10 @@ export interface SoloRunController {
  * durable before the next paint, and a rejected action can never overwrite the
  * last good save. Every transition also updates the in-memory state so the
  * board can render the engine's report.
+ *
+ * `initialState` is the Continue Run seam: a run restored from a validated save
+ * starts life here, so the first action after a reload saves the full resumed
+ * state rather than a blank one.
  */
 export function useSoloRunController(
   options: SoloRunControllerOptions = {},
@@ -826,8 +836,10 @@ export function useSoloRunController(
   const [encounterSetup] = useState<SoloEncounterFactory | undefined>(
     () => options.encounterSetup,
   );
-  const [state, setState] = useState<SoloRunState | null>(null);
-  const stateRef = useRef<SoloRunState | null>(null);
+  const [state, setState] = useState<SoloRunState | null>(
+    () => options.initialState ?? null,
+  );
+  const stateRef = useRef<SoloRunState | null>(state);
 
   const apply = useCallback(
     (next: SoloRunTransition) => {

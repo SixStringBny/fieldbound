@@ -1,7 +1,7 @@
 {
   "runId": "8d8c7086-35b8-4e1f-ab83-08fc940bcf62",
   "startedAt": "2026-10-28T19:16:00.642Z",
-  "lastUpdatedAt": "2026-10-29T07:51:46.166Z",
+  "lastUpdatedAt": "2026-10-29T08:00:29.141Z",
   "manifestPath": "c:\\dev-work\\Card-Game-Project\\docs\\EXECUTION-MANIFEST.json",
   "manifestVersion": "1.0",
   "harness": "opencode",
@@ -1280,10 +1280,53 @@
     },
     "RUN-05": {
       "taskId": "RUN-05",
-      "status": "pending",
+      "status": "complete",
       "ownerAgent": "frontend-engineer",
-      "attempt": 0,
-      "outputFiles": []
+      "attempt": 1,
+      "outputFiles": [
+        "src/state/resume-run.ts",
+        "src/state/resume-run.test.ts",
+        "src/ui/screens/MenuScreen.tsx",
+        "src/App.tsx",
+        "src/App.continue.test.tsx",
+        "src/state/run-controller.ts"
+      ],
+      "startedAt": "2026-10-29T07:51:46.567Z",
+      "usage": {
+        "inputTokens": 116339,
+        "outputTokens": 20037,
+        "reasoningTokens": 38256,
+        "cacheReadTokens": 9298816,
+        "cacheWriteTokens": 0,
+        "costUsd": 0.08032309799999998,
+        "source": "harness"
+      },
+      "attemptHistory": [
+        {
+          "attempt": 1,
+          "outcome": "passed",
+          "resultPath": "docs/artifacts/RUN-05.2026-10-29T08-00-29-133Z.attempt-1.result.json",
+          "usage": {
+            "inputTokens": 116339,
+            "outputTokens": 20037,
+            "reasoningTokens": 38256,
+            "cacheReadTokens": 9298816,
+            "cacheWriteTokens": 0,
+            "costUsd": 0.08032309799999998,
+            "source": "harness"
+          }
+        }
+      ],
+      "completedAt": "2026-10-29T08:00:29.138Z",
+      "agentOutput": "I'll start by reading the execution file and the referenced documentation.\r\nNow I have the full picture. Let me implement the resume module.\r\nNow the imports:\r\nAll work is complete and verified. Here is the final report.\n\n**Files created**\n\n- `src/state/resume-run.ts` — pure boot-resume translation from a validated `RunSaveLoadResult` to a `SoloRunState` + screen\n- `src/state/resume-run.test.ts` — 8 unit tests over real saves (battle, reward, overview, victory, defeat, corrupt, unavailable, inconsistent, PRNG replay)\n- `src/App.continue.test.tsx` — 9 App-level tests (gate, corrupt keys, unavailable storage, mid-battle restore, reward restore, result restore, overview restore, seeded reload)\n\n**Files changed**\n\n- `src/App.tsx` — boot load through `createRunSaveStore(...).load()`, restored state seeds the controller, real Continue Run intent + hint, `hasSave` demoted to a test-only override\n- `src/state/run-controller.ts` — additive `initialState` option on `useSoloRunController` (adopt a validated restored run; no rule change)\n- `src/ui/screens/MenuScreen.tsx` — optional `resumeHint` prop for the Continue Run description\n\n`docs/EXECUTION-AUDIT.jsonl` and `docs/WORKFLOW-STATE.json` were touched by the engine, not by this task.\n\n**Validation actually run**\n\n- `npm test -- src/App.continue.test.tsx src/state/resume-run.test.ts` → 17/17 passed\n- `npm run typecheck` → exit 0\n- `npm test` (full) → 35 files, 986/986 passed\n- `npm run build` → exit 0, CSP meta present in `dist/index.html`, absent from source `index.html`\n- `npm run check:budget` → passed (108,802 B gzip of 307,200 B)\n- `npm run check:build` → exit 1, only on two pre-existing duel test string literals (same failure RUN-04 recorded); CSP-ordering, base-path assets, served subpath and \"dev HTML has no CSP\" checks all passed\n\n```forge-result\n{\"summary\":\"Implemented RUN-05: the run save is validated once at boot, a valid save seeds the run controller so Continue Run restores the exact battle, reward, overview or result screen (same health, hand, energy, field, enemy plan and offers), and a corrupt or unknown-version save hides Continue Run while removing only fieldbound.run.v1. Restored runs keep autosaving, the stored seed/PRNG state replays the same next draw, and a restored result never rewrites the best-run record. 17 targeted tests, the full 986-test suite, typecheck, production build and the bundle budget pass.\",\"decisions\":[\"src/state/resume-run.ts is the single pure translation from a loaded save to controller state: only load status 'ok' yields 'available', and any phase/battle/offer mismatch is a typed 'inconsistent-save' instead of a partial restore. Payload parsing, key-local discard and storage fallbacks stay in src/persistence/run-save.ts, and the battle is rebuilt by the engine's restoreSnapshot, never a parallel parser.\",\"App performs the boot read once in a useState initializer via createRunSaveStore(runSaveStorage).load(), matching the existing settings boot pattern; StrictMode's double initializer is an idempotent read and the discard of a corrupt key stays idempotent.\",\"useSoloRunController gained an additive initialState option so the validated run is adopted at mount; Continue Run then only navigates to screenForRun(runState), so there is no second parse and no duplicated phase logic. No run rule, reward rule or save schema changed.\",\"battleDamage restarts at 0 and stats is null on restore because the RUN-03 schema is frozen. The run model floors a settled battle's damage at the net health lost since the run entered the fight, so result totals stay correct, and a reloaded result screen cannot re-record or inflate the best run.\",\"The Continue Run gate is `hasSave ?? (runState !== null)`: a restored or live run is the source of truth, while the existing test-only hasSave prop remains an override so the SHL-01 navigation suite is unchanged. The menu hint (encounter/health, or the result wording) is derived in App and passed as resumeHint, keeping MenuScreen presentational.\",\"?seed= is read only at run creation; Continue never re-reads it. The seed test changes the query to ?seed=1 before the reload and still asserts the saved seed and the same next draw.\",\"Storage that is unavailable yields no Continue Run at boot; a run started afterwards is still resumable in-session because that run genuinely lives in memory, and no durable resume is ever promised.\"],\"interfaces\":[\"src/state/resume-run.ts: ResumeReason, RunResumeAvailable {status,state,screen,save}, RunResumeNone {status,reason}, RunResume, resumeRun(load: RunSaveLoadResult): RunResume.\",\"src/state/run-controller.ts: SoloRunControllerOptions.initialState?: SoloRunState | null (read once at mount; the Continue Run seam).\",\"src/App.tsx: boot resume state, handleContinueRun, showContinueRun gate and continueRunHint; MenuScreen now receives the real intent and hint.\",\"src/ui/screens/MenuScreen.tsx: MenuScreenProps.resumeHint?: string, rendered in the Continue Run hint when present.\"],\"tests\":[\"npm test -- src/App.continue.test.tsx src/state/resume-run.test.ts: 17 passed\",\"npm run typecheck: exit 0\",\"npm test: 35 files, 986 passed\",\"npm run build: exit 0 (CSP in dist/index.html only)\",\"npm run check:budget: passed (108802 B gzip / 307200 B)\",\"Unit coverage: restored battle equals the engine-restored snapshot (health, hand, energy, field, enemy plan), same next draw after restore, same three offers, overview/victory/defeat screens, empty/unavailable/corrupt/inconsistent refusals, and only the run key removed.\",\"App coverage: no save hides Continue Run; unparseable and unknown-version saves are removed with settings and stats intact and no live-region error; unavailable storage still plays; mid-battle restore compares the whole captured board and then advances the save; reward restore keeps the offers and accepts a choice; result restore keeps totals and the stats key byte-identical; overview restore starts Rime Sentinel; a reloaded seeded run replays the same hand with a changed ?seed=.\"],\"warnings\":[\"npm run check:build exits 1 on two pre-existing duel test files (src/duel/match.test.ts and src/duel/round.test.ts): their source-guard tests contain the literal token in a list of strings they assert are absent, and the audit's naive scan cannot distinguish that from real usage. RUN-05 added no dangerous HTML, eval or new Function; the CSP, base-path, same-origin and served-dist checks in that audit all passed.\",\"A restored run-result hides the 'Best run' panel because stats is session-only and is not part of the frozen run save; the run totals are restored and fieldbound.stats.v1 is verified unchanged.\"],\"validationLimitations\":[\"check:build's source-token heuristic fails on pre-existing duel test string literals; it was not treated as a RUN-05 check and those files were left untouched to avoid out-of-scope changes.\"],\"unresolved\":[]}\n```\r\n",
+      "validationLimitations": [
+        "check:build's source-token heuristic fails on pre-existing duel test string literals; it was not treated as a RUN-05 check and those files were left untouched to avoid out-of-scope changes."
+      ],
+      "artifactId": "work-run-05-001",
+      "inputArtifactIds": [
+        "work-run-04-001",
+        "work-run-03-001"
+      ]
     },
     "DUEL-01": {
       "taskId": "DUEL-01",

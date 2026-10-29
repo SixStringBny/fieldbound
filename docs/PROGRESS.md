@@ -3,8 +3,8 @@
 ## Current State
 **Phase**: SOLO-RUN-3
 **Status**: In Progress
-**Validation Gaps**: 2 unverified check(s) - see "Validation Gaps"
-**Last Updated**: 2026-10-29T07:51:46.169Z
+**Validation Gaps**: 3 unverified check(s) - see "Validation Gaps"
+**Last Updated**: 2026-10-29T08:00:29.144Z
 **Run ID**: 8d8c7086-35b8-4e1f-ab83-08fc940bcf62
 **Harness**: opencode
 **Execution Mode**: auto
@@ -56,6 +56,8 @@
   - Files: src/persistence/run-save.ts, src/persistence/run-save.test.ts
 - [x] Phase SOLO-RUN-3, Task RUN-04: Build the solo controller, seed handling and screens (@frontend-engineer)
   - Files: src/state/run-controller.ts, src/state/run-controller.test.ts, src/persistence/seed.ts, src/persistence/seed.test.ts, src/ui/screens/SoloSetupScreen.tsx, src/ui/screens/RunOverviewScreen.tsx, src/ui/screens/RewardScreen.tsx, src/ui/screens/RunResultScreen.tsx, src/App.tsx, src/App.solo.test.tsx, src/styles/base.css, src/ui/screens/BattleScreen.tsx
+- [x] Phase SOLO-RUN-3, Task RUN-05: Restore a saved run and offer Continue Run (@frontend-engineer)
+  - Files: src/state/resume-run.ts, src/state/resume-run.test.ts, src/ui/screens/MenuScreen.tsx, src/App.tsx, src/App.continue.test.tsx, src/state/run-controller.ts
 - [x] Phase LOCAL-DUEL-1, Task DUEL-01: Implement the best-of-three match model (@duel-mode-engineer)
   - Files: src/duel/match.ts, src/duel/match.test.ts
 - [x] Phase LOCAL-DUEL-2, Task DUEL-02: Gate duel turns behind privacy and hide the off-turn hand (@duel-mode-engineer)
@@ -67,7 +69,6 @@
 - None currently running
 
 ## Remaining
-- [ ] Phase SOLO-RUN-3: Phase 3: Solo Flow
 - [ ] Phase RELEASE-VERIFICATION-1: Phase 1: Browser Harness
 - [ ] Phase RELEASE-VERIFICATION-2: Phase 2: Build, Deploy and Budget
 - [ ] Phase RELEASE-VERIFICATION-3: Phase 3: Human Review
@@ -78,6 +79,7 @@
 ## Validation Gaps
 - Task SHL-04: jsdom does not compute cascade or animation timing, so motion.css is asserted through its stylesheet text and the hook through behaviour; real-browser motion verification remains with REL-04's Playwright suite.
 - Task RUN-04: check:build's source-token heuristic fails on pre-existing duel test string literals; it was not treated as a RUN-04 check and the duel tests were left untouched to avoid out-of-scope changes.
+- Task RUN-05: check:build's source-token heuristic fails on pre-existing duel test string literals; it was not treated as a RUN-05 check and those files were left untouched to avoid out-of-scope changes.
 
 ## Notes
 - Workflow engine run 8d8c7086-35b8-4e1f-ab83-08fc940bcf62

@@ -10,6 +10,12 @@
 export interface MenuScreenProps {
   /** True only when a validated run save is available to resume. */
   readonly hasSave: boolean;
+  /**
+   * Optional one-line description of where the saved run will resume, for
+   * example "Encounter 2 of 4 · 28 of 40 health". The composition root derives
+   * it from the restored run; the screen never inspects storage.
+   */
+  readonly resumeHint?: string;
   readonly onPlaySolo: () => void;
   readonly onLocalDuel: () => void;
   readonly onContinueRun: () => void;
@@ -19,6 +25,7 @@ export interface MenuScreenProps {
 
 export function MenuScreen({
   hasSave,
+  resumeHint,
   onPlaySolo,
   onLocalDuel,
   onContinueRun,
@@ -80,7 +87,7 @@ export function MenuScreen({
                 Continue Run
               </button>
               <p className="menu__hint" id="menu-continue-run-hint">
-                Resume the run you left.
+                {resumeHint ?? 'Resume the run you left.'}
               </p>
             </li>
           ) : null}
