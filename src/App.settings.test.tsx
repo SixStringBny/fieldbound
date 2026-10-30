@@ -372,6 +372,36 @@ describe('App settings screen', () => {
     expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).toBeNull();
   });
 
+  /**
+   * The storage notice lost its `role="status"` on purpose (reading-screens
+   * §8.3, Q6): it reports a condition found on mount, and the app owns exactly
+   * one polite live region for the whole session.
+   */
+  it('shows the storage notice as static text and keeps exactly one live region', () => {
+    installMatchMedia(false);
+    renderApp(SCREENS.settings, null);
+
+    const notice = screen.getByText(/This browser cannot save settings/);
+
+    expect(notice.getAttribute('role')).toBeNull();
+    expect(notice.closest('[aria-live]')).toBeNull();
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(document.querySelectorAll('[aria-live]')).toHaveLength(1);
+    expect(screen.getByRole('status').textContent).toBe('');
+  });
+
+  it('focuses the Settings heading on arrival and keeps one Back action', () => {
+    renderApp();
+
+    const heading = screen.getByRole('heading', { level: 1, name: 'Settings' });
+
+    expect(document.activeElement).toBe(heading);
+    expect(heading.getAttribute('tabindex')).toBe('-1');
+    expect(heading.hasAttribute('data-route-focus')).toBe(true);
+    expect(screen.getAllByRole('button', { name: 'Back' })).toHaveLength(1);
+    expect(screen.getAllByRole('switch')).toHaveLength(2);
+  });
+
   it('does not crash when the browser storage getter throws', () => {
     const descriptor = Object.getOwnPropertyDescriptor(window, 'localStorage');
 

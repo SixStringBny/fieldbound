@@ -603,6 +603,38 @@ describe('App solo result', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Run complete' }),
     ).toBeTruthy();
+
+    // The route heading owns focus; the result surface adds no live line of its
+    // own, so the app keeps exactly the one region it mounts.
+    const runResultHeading = screen.getByRole('heading', {
+      level: 1,
+      name: 'Run complete',
+    });
+
+    expect(document.activeElement).toBe(runResultHeading);
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(document.querySelectorAll('.run-result [aria-live]')).toHaveLength(0);
+    expect(document.querySelectorAll('.run-result [role="status"]')).toHaveLength(
+      0,
+    );
+
+    // Verdict plaque above two parchment ledgers: totals, then the record.
+    const ledgers = Array.from(document.querySelectorAll('.result__ledger'));
+
+    expect(ledgers).toHaveLength(2);
+    expect(ledgers[0]?.classList.contains('result__ledger--totals')).toBe(true);
+    expect(ledgers[1]?.classList.contains('result__ledger--best')).toBe(true);
+    expect(
+      Array.from(document.querySelectorAll('.result__ledger--totals dt')).map(
+        (term) => term.textContent,
+      ),
+    ).toEqual(['Encounters cleared', 'Turns', 'Cards added', 'Damage taken']);
+    expect(
+      Array.from(document.querySelectorAll('.result__ledger--best dt')).map(
+        (term) => term.textContent,
+      ),
+    ).toEqual(['Furthest encounter', 'Boss clears', 'Fewest completed turns']);
+
     expect(statValue('Encounters cleared')).toBe('4 of 4');
     expect(statValue('Cards added')).toBe('3');
     expect(statValue('Boss clears')).toBe('1');

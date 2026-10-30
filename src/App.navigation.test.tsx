@@ -265,6 +265,103 @@ describe('How to Play rules reference', () => {
 
     expect(screen.getByRole('main').getAttribute('data-screen')).toBe('menu');
   });
+
+  it('lists the six sections in reading order and reports the disclosure state', () => {
+    render(<App initialScreen={SCREENS['how-to-play']} />);
+
+    const contents = screen.getByRole('navigation', { name: 'On this page' });
+    const links = within(contents).getAllByRole('link');
+
+    expect(
+      links.map((link) => link.getAttribute('href')),
+    ).toEqual([
+      '#rules-turn-title',
+      '#rules-energy-title',
+      '#rules-field-title',
+      '#rules-defense-title',
+      '#rules-status-title',
+      '#rules-modes-title',
+    ]);
+
+    for (const name of [
+      'A turn in three steps',
+      'Energy',
+      'The field cycle',
+      'Defense',
+      'Statuses',
+      'Modes',
+    ]) {
+      expect(
+        within(contents).getByRole('link', { name }),
+        `the contents is missing the ${name} link`,
+      ).toBeTruthy();
+    }
+
+    // Section order in the document matches the contents order.
+    const headings = within(screen.getByRole('main')).getAllByRole('heading', {
+      level: 2,
+    });
+    expect(headings.map((heading) => heading.textContent?.trim())).toEqual([
+      'A turn in three steps',
+      'Energy',
+      'The field cycle',
+      'Defense',
+      'Statuses',
+      'Modes',
+    ]);
+
+    // The section ids stay on the headings, which are the anchor targets.
+    expect(headings.map((heading) => heading.id)).toEqual([
+      'rules-turn-title',
+      'rules-energy-title',
+      'rules-field-title',
+      'rules-defense-title',
+      'rules-status-title',
+      'rules-modes-title',
+    ]);
+    for (const heading of headings) {
+      expect(heading.getAttribute('tabindex')).toBe('-1');
+    }
+
+    const toggle = screen.getByRole('button', { name: 'Contents' });
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(toggle.getAttribute('aria-controls')).toBe('how-to-play-contents');
+
+    fireEvent.click(toggle);
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('jumps to a section heading, closes the disclosure and writes no hash', () => {
+    render(<App initialScreen={SCREENS['how-to-play']} />);
+
+    const toggle = screen.getByRole('button', { name: 'Contents' });
+    const energyHeading = screen.getByRole('heading', { level: 2, name: 'Energy' });
+
+    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole('link', { name: 'Energy' }));
+
+    expect(document.activeElement).toBe(energyHeading);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(window.location.hash).toBe('');
+    expect(screen.getByRole('main').getAttribute('data-screen')).toBe(
+      'how-to-play',
+    );
+  });
+
+  it('focuses the How to Play heading on arrival', () => {
+    render(<App initialScreen={SCREENS['how-to-play']} />);
+
+    const heading = screen.getByRole('heading', {
+      level: 1,
+      name: 'How to Play',
+    });
+
+    expect(document.activeElement).toBe(heading);
+    expect(heading.getAttribute('tabindex')).toBe('-1');
+    expect(heading.hasAttribute('data-route-focus')).toBe(true);
+  });
 });
 
 describe('ui event bus', () => {

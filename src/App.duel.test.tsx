@@ -534,6 +534,27 @@ describe('App duel series', () => {
       expect(screen.getByText('Series 1\u20130')).toBeTruthy();
       expect(container.querySelectorAll('[data-instance-id]')).toHaveLength(0);
 
+      // The verdict owns focus, announces the score once and carries the public
+      // series strip plus the deterministic next opener (reading-screens §6.1).
+      expect(document.activeElement).toBe(
+        screen.getByRole('heading', { level: 1, name: 'Player 1 wins round 1' }),
+      );
+      expect(screen.getByRole('status').textContent).toBe(
+        'Player 1 wins round 1. 1\u20130.',
+      );
+      expect(screen.getAllByRole('status')).toHaveLength(1);
+
+      const roundStrip = screen.getByRole('list', { name: 'Series score' });
+      const roundPips = within(roundStrip).getAllByRole('listitem');
+
+      expect(roundPips).toHaveLength(3);
+      expect(
+        roundPips.map((pip) => pip.getAttribute('data-round-winner')),
+      ).toEqual(['player1', 'none', 'none']);
+      expect(roundPips[0]?.textContent).toContain('Round 1: Player 1');
+      expect(roundPips[2]?.textContent).toContain('Round 3: not played');
+      expect(screen.getByText('Next round: Player 2 opens.')).toBeTruthy();
+
       fireEvent.click(screen.getByRole('button', { name: 'Next Round' }));
 
       // Round 2 alternates the first player to Player 2 and starts at privacy.
@@ -562,6 +583,30 @@ describe('App duel series', () => {
       ).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
       expect(container.querySelectorAll('[data-instance-id]')).toHaveLength(0);
+
+      // The plaque owns focus, announces the final score once and names every
+      // played round in the strip (reading-screens §6.2).
+      expect(document.activeElement).toBe(
+        screen.getByRole('heading', {
+          level: 1,
+          name: 'Player 1 wins the match',
+        }),
+      );
+      expect(screen.getByRole('status').textContent).toBe(
+        'Player 1 wins the match. 2\u20130.',
+      );
+      expect(screen.getAllByRole('status')).toHaveLength(1);
+
+      const matchStrip = screen.getByRole('list', { name: 'Series score' });
+
+      expect(screen.getAllByRole('list', { name: 'Series score' })).toHaveLength(
+        1,
+      );
+      expect(
+        within(matchStrip)
+          .getAllByRole('listitem')
+          .map((pip) => pip.getAttribute('data-round-winner')),
+      ).toEqual(['player1', 'player1', 'none']);
     },
     30_000,
   );

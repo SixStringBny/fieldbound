@@ -579,3 +579,88 @@ describe('App dialogs and skip link', () => {
     ).toBeTruthy();
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* Reading routes (reading-screens §8)                                        */
+/* -------------------------------------------------------------------------- */
+
+describe('App reading routes', () => {
+  it('focuses the route heading on How to Play and Settings', () => {
+    const howToPlay = render(<App initialScreen={SCREENS['how-to-play']} />);
+    const howToPlayHeading = screen.getByRole('heading', {
+      level: 1,
+      name: 'How to Play',
+    });
+
+    expect(document.activeElement).toBe(howToPlayHeading);
+    expect(howToPlayHeading.getAttribute('tabindex')).toBe('-1');
+    howToPlay.unmount();
+
+    render(<App initialScreen={SCREENS.settings} />);
+
+    const settingsHeading = screen.getByRole('heading', {
+      level: 1,
+      name: 'Settings',
+    });
+
+    expect(document.activeElement).toBe(settingsHeading);
+    expect(settingsHeading.getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('opens the contents, focuses the section heading and closes the disclosure', () => {
+    render(<App initialScreen={SCREENS['how-to-play']} />);
+
+    const toggle = screen.getByRole('button', { name: 'Contents' });
+    const defense = screen.getByRole('heading', { level: 2, name: 'Defense' });
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.click(screen.getByRole('link', { name: 'Defense' }));
+
+    expect(document.activeElement).toBe(defense);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(window.location.hash).toBe('');
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(screen.getByRole('status').textContent).toBe('');
+  });
+
+  it('closes the contents with Escape and returns focus to the button', () => {
+    render(<App initialScreen={SCREENS['how-to-play']} />);
+
+    const contents = screen.getByRole('navigation', { name: 'On this page' });
+    const toggle = screen.getByRole('button', { name: 'Contents' });
+
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.keyDown(contents, { key: 'Escape' });
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(toggle);
+  });
+
+  it('keeps one live region while the storage notice is shown', () => {
+    render(<App initialScreen={SCREENS.settings} settingsStorage={null} />);
+
+    const notice = screen.getByText(/This browser cannot save settings/);
+
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { level: 1, name: 'Settings' }),
+    );
+    expect(notice.getAttribute('role')).toBeNull();
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(document.querySelectorAll('[aria-live]')).toHaveLength(1);
+    expect(screen.getByRole('status').textContent).toBe('');
+
+    // The switch still works in memory; nothing announces the failure.
+    const sound = screen.getByRole('switch', { name: 'Sound' });
+
+    fireEvent.click(sound);
+
+    expect(sound.getAttribute('aria-checked')).toBe('false');
+    expect(screen.getByRole('status').textContent).toBe('');
+  });
+});

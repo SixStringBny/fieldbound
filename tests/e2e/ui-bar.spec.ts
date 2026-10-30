@@ -1610,3 +1610,326 @@ for (const viewport of VIEWPORTS) {
     }
   });
 }
+
+/* -------------------------------------------------------------------------- */
+/* Reading scope — documents and results (ticket 6)                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The reading half of the bar, from `reading-screens.md` §2–§6 and §10.1.
+ *
+ * How to Play and Settings are measured at all five viewports here: their
+ * named objects (`AB-C1`), the single action seal (`AB-C2`), the text floors
+ * (`AB-P4`), no clipped text or control (`AB-G3`), route focus (`AB-G6`), the
+ * one live region (`AB-A4`), the measured pair and widths (`AB-T1`/`AB-T2`), the
+ * contrast branches (`AB-A7`) and the rendered identity and ban checks
+ * (`AB-V2`/`AB-V5`).
+ *
+ * `AB-P1` does not apply on these two routes: the bar scopes the 288px thumb
+ * envelope to play routes, and §3.3 pins only the phone `Contents` strip, so the
+ * `Back to menu` action is deliberately at the end of a scrolling document rather
+ * than under the thumb. That exemption is asserted here rather than left silent.
+ *
+ * The result routes are reached by playing, so their bar checks live in
+ * `reading-screens.spec.ts`, which measures all five viewports by resizing the
+ * one settled route instead of replaying the run and the duel five times.
+ */
+
+type DocumentRouteName = 'how-to-play' | 'settings';
+
+interface DocumentRoute {
+  readonly name: DocumentRouteName;
+  /** `AB-C2`: the one action seal, or null when the route has no ember fill. */
+  readonly primary: RegExp | null;
+  readonly visit: (page: Page) => Promise<void>;
+}
+
+const READING_DOCUMENTS: readonly DocumentRoute[] = [
+  {
+    name: 'how-to-play',
+    primary: /^Back to menu$/,
+    visit: async (page) => {
+      await openApp(page, SEED);
+      await page.getByRole('button', { name: 'How to Play', exact: true }).click();
+      await expectScreen(page, 'how-to-play', 'reading bar');
+    },
+  },
+  {
+    name: 'settings',
+    primary: null,
+    visit: async (page) => {
+      await openApp(page, SEED);
+      await page.getByRole('button', { name: 'Settings', exact: true }).click();
+      await expectScreen(page, 'settings', 'reading bar');
+    },
+  },
+];
+
+/** Every text-bearing element's rendered size, for the `AB-P4` floors. */
+async function readReadingText(page: Page) {
+  return page.evaluate(() =>
+    Array.from(document.querySelectorAll<HTMLElement>('#main-content *'))
+      .map((element) => {
+        const text = Array.from(element.childNodes)
+          .filter((node) => node.nodeType === Node.TEXT_NODE)
+          .map((node) => (node.textContent ?? '').trim())
+          .join(' ')
+          .trim();
+        const style = window.getComputedStyle(element);
+
+        return {
+          selector: `${element.tagName.toLowerCase()}.${element.className}`,
+          text,
+          size: Number.parseFloat(style.fontSize),
+          uppercase: style.textTransform === 'uppercase',
+          overflow: style.textOverflow,
+          clipped: element.scrollWidth > element.clientWidth + 1,
+          rendered:
+            text !== '' &&
+            element.getClientRects().length > 0 &&
+            style.display !== 'none' &&
+            style.visibility !== 'hidden' &&
+            style.position !== 'absolute',
+        };
+      })
+      .filter((entry) => entry.rendered),
+  );
+}
+
+for (const viewport of VIEWPORTS) {
+  test.describe(`reading bar ${viewport.label}`, () => {
+    test.use({
+      viewport: { width: viewport.width, height: viewport.height },
+      reducedMotion: 'reduce',
+    });
+
+    for (const route of READING_DOCUMENTS) {
+      test(`${route.name} at ${viewport.label}: objects, seal, focus, text, targets and widths`, async ({
+        page,
+      }) => {
+        const errors = collectConsoleErrors(page);
+
+        await route.visit(page);
+        await page.evaluate(() => document.fonts.ready);
+
+        // AB-C1 - the masthead, the reading document and, on How to Play, the
+        // contents surface. Settings has no contents by design (§4.1).
+        await expect(page.locator('.document__masthead')).toHaveCount(1);
+        await expect(page.locator('.document__eyebrow')).toBeVisible();
+        await expect(page.locator('.document__title')).toBeVisible();
+        await expect(page.locator('.document__tagline')).toBeVisible();
+        await expect(page.locator('.document__sheet')).toHaveCount(1);
+        await expect(page.locator('.document__sheet').first()).toBeVisible();
+        await expect(
+          page.getByRole('button', { name: 'Back', exact: true }),
+        ).toHaveCount(1);
+
+        if (route.name === 'how-to-play') {
+          await expect(page.locator('.contents')).toHaveCount(1);
+          await expect(page.locator('.document__sheet h2')).toHaveCount(6);
+        } else {
+          await expect(page.locator('.contents')).toHaveCount(0);
+          await expect(page.getByRole('switch')).toHaveCount(2);
+        }
+
+        // AB-G6 - the route change lands on the destination h1 with the ring.
+        const focus = await page.evaluate(() => {
+          const active = document.activeElement;
+
+          if (!(active instanceof HTMLElement)) {
+            return null;
+          }
+
+          const style = getComputedStyle(active);
+
+          return {
+            tag: active.tagName,
+            marked: active.hasAttribute('data-route-focus'),
+            outline: style.outlineStyle,
+            width: style.outlineWidth,
+          };
+        });
+
+        expect(focus?.tag, `${route.name}: the route heading takes focus`).toBe('H1');
+        expect(focus?.marked).toBe(true);
+        expect(focus?.outline).toBe('solid');
+        expect(focus?.width).toBe('2px');
+
+        // AB-C2 - one ember action seal on How to Play, none on Settings (its
+        // only action is the quiet masthead Back).
+        const seals = page.locator('#main-content .shell__button');
+
+        if (route.primary === null) {
+          await expect(seals, `${route.name}: no ember action seal`).toHaveCount(0);
+          await expect(
+            page.getByRole('button', { name: 'Back', exact: true }),
+            `${route.name}: exactly one Back`,
+          ).toHaveCount(1);
+        } else {
+          await expect(seals, `${route.name}: one action seal`).toHaveCount(1);
+          await expect(seals.first()).toHaveJSProperty('tagName', 'BUTTON');
+          await expect(seals.first()).toHaveAccessibleName(route.primary);
+        }
+
+        // AB-A4 - exactly one polite live region and no live line on the route.
+        const live = await page.evaluate(() => ({
+          statuses: document.querySelectorAll('[role="status"]').length,
+          liveRegions: document.querySelectorAll('[aria-live]').length,
+          inMain: document.querySelectorAll(
+            '#main-content [role="status"], #main-content [aria-live]',
+          ).length,
+          text: document.querySelector('[role="status"]')?.textContent?.trim() ?? '',
+        }));
+
+        expect(live.statuses, `${route.name}: one app-wide polite status`).toBe(1);
+        expect(live.liveRegions, `${route.name}: no second live region`).toBe(1);
+        expect(live.inMain, `${route.name}: the reading route adds no live line`).toBe(0);
+        expect(live.text, `${route.name}: arriving is not a settled transition`).toBe('');
+
+        // AB-P4 / AB-G3 - text floors, no ellipsis, nothing clipped.
+        const text = await readReadingText(page);
+
+        expect(text.length, `${route.name}: no rendered text was measured`).toBeGreaterThan(0);
+
+        for (const entry of text) {
+          expect(
+            entry.uppercase ? entry.size >= 11 : entry.size >= 12,
+            `${route.name}: "${entry.text}" renders at ${String(entry.size)}px${
+              entry.uppercase ? ' (uppercase label)' : ''
+            }`,
+          ).toBe(true);
+          expect(entry.overflow, `${route.name}: "${entry.text}" uses an ellipsis`).not.toBe(
+            'ellipsis',
+          );
+          expect(entry.clipped, `${route.name}: "${entry.text}" is clipped`).toBe(false);
+        }
+
+        const clippedControls = await page.evaluate(() =>
+          Array.from(document.querySelectorAll<HTMLElement>('#main-content button, #main-content a[href]'))
+            .filter(
+              (node) =>
+                node.getClientRects().length > 0 &&
+                (node.scrollWidth > node.clientWidth + 1 ||
+                  node.scrollHeight > node.clientHeight + 1),
+            )
+            .map((node) => (node.textContent ?? '').trim().slice(0, 40)),
+        );
+
+        expect(clippedControls, `${route.name}: a focusable control is clipped`).toEqual([]);
+
+        // AB-G4 / AB-G5 - no side scroll, every target 44px.
+        await expectNoHorizontalScroll(page);
+
+        for (const target of await readTargets(page)) {
+          expect(
+            target.width,
+            `${route.name} at ${viewport.label}: <${target.tag}> "${target.label}" is ${target.width}px wide`,
+          ).toBeGreaterThanOrEqual(MIN_TARGET_PX);
+          expect(
+            target.height,
+            `${route.name} at ${viewport.label}: <${target.tag}> "${target.label}" is ${target.height}px tall`,
+          ).toBeGreaterThanOrEqual(MIN_TARGET_PX);
+        }
+
+        // AB-P1 exemption: the reading routes pin only the contents strip.
+        if (viewport.width < 768 && route.name === 'how-to-play') {
+          const sticky = await page.evaluate(() =>
+            Array.from(document.querySelectorAll<HTMLElement>('#main-content *'))
+              .filter((node) => ['sticky', 'fixed'].includes(getComputedStyle(node).position))
+              .map((node) => node.className),
+          );
+
+          expect(sticky, 'only the Contents strip is pinned').toEqual(['contents']);
+        }
+
+        // AB-T2 - the route column never exceeds the cap and stays centred.
+        const routeBox = await boxOf(page, '#main-content');
+        const cap = viewport.width >= 1280 ? 1080 : viewport.width >= 1024 ? 984 : viewport.width;
+
+        expect(routeBox.width).toBeLessThanOrEqual(cap + 1);
+
+        const leftGap = routeBox.x;
+        const rightGap = viewport.width - (routeBox.x + routeBox.width);
+        expect(Math.abs(leftGap - rightGap), `${route.name}: the column is centred`).toBeLessThanOrEqual(2);
+
+        // AB-T1 / AB-T2 - the named boxes in §13.4.
+        if (viewport.width >= 1024) {
+          const sheet = await boxOf(page, '.document__sheet');
+          expect(Math.abs(sheet.width - 672), `${route.name}: the sheet is 42rem`).toBeLessThanOrEqual(8);
+
+          if (route.name === 'how-to-play') {
+            const rail = await boxOf(page, '.contents');
+            expect(Math.abs(rail.width - 224), 'the contents rail is 224px').toBeLessThanOrEqual(8);
+            expect(rail.x + rail.width, 'the rail sits left of the sheet').toBeLessThan(sheet.x);
+          } else {
+            const sheetCentre = sheet.x + sheet.width / 2;
+            expect(
+              Math.abs(sheetCentre - viewport.width / 2),
+              'the settings sheet is centred',
+            ).toBeLessThanOrEqual(2);
+          }
+        }
+
+        // AB-A7 - the contrast and forced-colors branches drop the materials.
+        await page.emulateMedia({ forcedColors: 'active' });
+
+        const forced = await page.evaluate(() => {
+          const sheet = document.querySelector('.document__sheet');
+          if (sheet === null) {
+            return null;
+          }
+          const style = getComputedStyle(sheet);
+          return { image: style.backgroundImage, rule: Number.parseFloat(style.borderTopWidth) };
+        });
+
+        expect(forced?.image, 'forced-colors must drop the paper material').toBe('none');
+        expect(forced?.rule, 'forced-colors must keep a visible rule').toBeGreaterThanOrEqual(1);
+
+        await page.emulateMedia({ forcedColors: 'none' });
+        await page.emulateMedia({ contrast: 'more' });
+
+        const more = await page.evaluate(() => {
+          const sheet = document.querySelector('.document__sheet');
+          if (sheet === null) {
+            return null;
+          }
+          const style = getComputedStyle(sheet);
+          return { image: style.backgroundImage, rule: Number.parseFloat(style.borderTopWidth) };
+        });
+
+        expect(more?.image, 'prefers-contrast must drop the paper material').toBe('none');
+        expect(more?.rule, 'prefers-contrast must harden the rule').toBeGreaterThanOrEqual(2);
+
+        await page.emulateMedia({ contrast: 'no-preference' });
+
+        // AB-V2 / AB-V5 - slate page, parchment sheet, no banned motif.
+        const identity = await page.evaluate(() => {
+          const nodes = Array.from(document.querySelectorAll<HTMLElement>('#main-content *'));
+          const sheet = document.querySelector('.document__sheet');
+
+          return {
+            page: getComputedStyle(document.body).backgroundColor,
+            sheet: sheet === null ? '' : getComputedStyle(sheet).backgroundColor,
+            filters: nodes.filter((node) => getComputedStyle(node).filter !== 'none').length,
+            backdrops: nodes.filter((node) => getComputedStyle(node).backdropFilter !== 'none').length,
+            trueBlack: nodes.filter((node) => getComputedStyle(node).backgroundColor === 'rgb(0, 0, 0)')
+              .length,
+            tables: document.querySelectorAll('#main-content table, #main-content form').length,
+          };
+        });
+
+        expect(identity.page, `${route.name}: the page ground is warm slate`).toBe(SLATE_PAGE);
+        expect(identity.sheet, `${route.name}: the one parchment material`).toBe(
+          'rgb(244, 232, 207)',
+        );
+        expect(identity.filters, `${route.name}: no CSS filter motif`).toBe(0);
+        expect(identity.backdrops, `${route.name}: no glassmorphism`).toBe(0);
+        expect(identity.trueBlack, `${route.name}: true black is not a surface`).toBe(0);
+        expect(identity.tables, `${route.name}: no table or form furniture`).toBe(0);
+
+        expectNoConsoleErrors(errors, `${route.name} reading bar`);
+      });
+    }
+  });
+}
+

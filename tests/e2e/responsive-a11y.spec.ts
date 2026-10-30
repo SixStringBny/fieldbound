@@ -33,10 +33,12 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import {
   collectConsoleErrors,
+  dismissPrivacy,
   expectNoConsoleErrors,
   expectNoHorizontalScroll,
   expectScreen,
   openApp,
+  playGreedyTurn,
   startSolo,
 } from './helpers';
 
@@ -881,3 +883,227 @@ for (const [index, viewport] of VIEWPORTS.entries()) {
     });
   });
 }
+
+/* -------------------------------------------------------------------------- */
+/* Reading screens (reading-screens �2��6, �8.4; ticket 6)                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The reading routes are documents: they scroll vertically, never horizontally,
+ * and nothing on them is pinned except the phone `Contents` strip. The five
+ * viewports prove the rail/strip swap, the 44px targets and the reduced-motion
+ * branch from both sources; the result surfaces are reached once and resized
+ * across the same five targets rather than replayed five times.
+ */
+function readingViewports() {
+  return VIEWPORTS;
+}
+
+async function openHowToPlay(page: Page): Promise<void> {
+  await openApp(page, 20261102);
+  await page.getByRole('button', { name: 'How to Play', exact: true }).click();
+  await expectScreen(page, 'how-to-play', 'reading layout');
+  await page.evaluate(() => document.fonts.ready);
+}
+
+async function openSettings(page: Page): Promise<void> {
+  await openApp(page, 20261102);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expectScreen(page, 'settings', 'reading layout');
+  await page.evaluate(() => document.fonts.ready);
+}
+
+for (const viewport of readingViewports()) {
+  test.describe(`reading ${viewport.label}`, () => {
+    test.use({
+      viewport: { width: viewport.width, height: viewport.height },
+      reducedMotion: 'no-preference',
+    });
+
+    test(`the documents scroll one way, keep 44px targets and swap the contents surface at ${viewport.label}`, async ({
+      page,
+    }) => {
+      const context = `${viewport.label} reading documents`;
+      const errors = collectConsoleErrors(page);
+
+      await openHowToPlay(page);
+
+      await expectNoHorizontalScroll(page);
+      await expectMinimumTargets(page, `${context} how-to-play`);
+
+      const contents = await page.evaluate(() => {
+        const nav = document.querySelector<HTMLElement>('.contents');
+        const bar = document.querySelector<HTMLElement>('.contents__bar');
+        const list = document.querySelector<HTMLElement>('.contents__list');
+
+        if (nav === null || bar === null || list === null) {
+          return null;
+        }
+
+        return {
+          position: getComputedStyle(nav).position,
+          barDisplay: getComputedStyle(bar).display,
+          listDisplay: getComputedStyle(list).display,
+          railLinks: Array.from(list.querySelectorAll('a')).filter(
+            (link) => link.getClientRects().length > 0,
+          ).length,
+        };
+      });
+
+      expect(contents, `${context}: the contents surface is missing`).not.toBeNull();
+      expect(contents!.position, `${context}: the contents never pins?`).toBe('sticky');
+      expect(
+        contents!.barDisplay === 'none',
+        `${context}: the phone strip must be gone at 1024 and above`,
+      ).toBe(viewport.width >= 1024);
+      expect(
+        contents!.railLinks,
+        `${context}: the rail is the contents below 1024 and above it`,
+      ).toBe(viewport.width >= 1024 ? 6 : 0);
+
+      await openSettings(page);
+
+      await expectNoHorizontalScroll(page);
+      await expectMinimumTargets(page, `${context} settings`);
+      await expect(page.getByRole('switch')).toHaveCount(2);
+      expectNoConsoleErrors(errors, context);
+    });
+
+    test(`the switch is stilled by the OS preference and by the stored override at ${viewport.label}`, async ({
+      page,
+    }) => {
+      const context = `${viewport.label} reading motion`;
+
+      // Source 1: the operating system asks for reduced motion.
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await openSettings(page);
+
+      const os = await page.evaluate(() => {
+        const thumb = document.querySelector<HTMLElement>('.settings__switch-thumb');
+        return thumb === null
+          ? null
+          : { transition: getComputedStyle(thumb).transitionDuration, transform: getComputedStyle(thumb).transform };
+      });
+
+      expect(os, `${context}: the switch thumb is missing`).not.toBeNull();
+      expectWithinReducedMotionCap('the switch thumb transition', os!.transition, context);
+
+      // Source 2: the in-app Reduce motion switch writes the explicit override.
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      await openSettings(page);
+
+      const toggle = page.getByRole('switch', { name: 'Reduce motion' });
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-checked', 'true');
+      await expect(page.locator('#app-root')).toHaveAttribute('data-reduced-motion', 'true');
+
+      const stored = await page.evaluate(() => {
+        const thumb = document.querySelector<HTMLElement>('.settings__switch-thumb');
+        return thumb === null ? null : getComputedStyle(thumb).transitionDuration;
+      });
+
+      expectWithinReducedMotionCap('the switch thumb transition', stored ?? '', context);
+      await expectNoHorizontalScroll(page);
+    });
+  });
+}
+
+test.describe('reading results', () => {
+  test.use({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+
+  test('the run result holds at all five widths', async ({ page }) => {
+    test.setTimeout(300_000);
+
+    const errors = collectConsoleErrors(page);
+
+    await openApp(page, 20261102);
+    await startSolo(page, 'ember');
+
+    for (let turn = 0; turn < 30; turn += 1) {
+      if ((await page.locator('#main-content').getAttribute('data-screen')) === 'run-result') {
+        break;
+      }
+
+      await page.getByRole('button', { name: 'End Turn', exact: true }).click();
+    }
+
+    await expectScreen(page, 'run-result', 'reading result layout');
+
+    for (const viewport of VIEWPORTS) {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await expectNoHorizontalScroll(page);
+      await expectMinimumTargets(page, `${viewport.label} run result`);
+    }
+
+    expectNoConsoleErrors(errors, 'the run result at five widths');
+  });
+
+  test('the round and match plaques hold at all five widths', async ({ page }) => {
+    test.setTimeout(300_000);
+
+    const errors = collectConsoleErrors(page);
+
+    await openApp(page, 20261103);
+    await page.getByRole('button', { name: 'Local Duel', exact: true }).click();
+
+    for (const [player, deck] of [
+      ['1', 'Ember'],
+      ['2', 'Frost'],
+    ] as const) {
+      await page
+        .getByRole('button', { name: `Choose the ${deck} deck`, exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: `Confirm Player ${player} deck`, exact: true })
+        .click();
+    }
+
+    await page.getByRole('button', { name: 'Start Match', exact: true }).click();
+    await page.getByRole('button', { name: "I'm ready", exact: true }).click();
+    await expectScreen(page, 'battle', 'the first duel round');
+
+    let screen = 'battle';
+
+    for (let step = 0; step < 160 && screen !== 'match-result'; step += 1) {
+      screen = (await page.locator('#main-content').getAttribute('data-screen')) ?? '';
+
+      if (screen === 'round-result' || screen === 'match-result') {
+        const variant = screen === 'round-result' ? '[data-duel-result="round"]' : '[data-duel-result="match"]';
+
+        for (const viewport of VIEWPORTS) {
+          await page.setViewportSize({ width: viewport.width, height: viewport.height });
+          await expect(page.locator(variant), `${viewport.label}: ${screen} is missing`).toBeVisible();
+          await expectNoHorizontalScroll(page);
+          await expectMinimumTargets(page, `${viewport.label} ${screen}`);
+        }
+
+        await page.setViewportSize({ width: 390, height: 844 });
+
+        if (screen === 'match-result') {
+          break;
+        }
+
+        await page.getByRole('button', { name: 'Next Round', exact: true }).click();
+        await page.getByRole('button', { name: "I'm ready", exact: true }).click();
+        await expectScreen(page, 'battle', 'the next duel round');
+        continue;
+      }
+
+      if (screen === 'privacy') {
+        const heading = await page.getByRole('heading', { level: 1 }).innerText();
+        await dismissPrivacy(page, heading.includes('Player 2') ? 'Player 2' : 'Player 1');
+        continue;
+      }
+
+      if (screen === 'battle') {
+        await playGreedyTurn(page);
+        continue;
+      }
+
+      throw new Error(`the duel left the known surfaces at "${screen}".`);
+    }
+
+    await expectScreen(page, 'match-result', 'the settled duel series');
+    expectNoConsoleErrors(errors, 'the duel plaques at five widths');
+  });
+});
