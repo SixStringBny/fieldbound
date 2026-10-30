@@ -21,7 +21,12 @@ jobs:
   verify:
     name: Typecheck, tests, build, E2E and audits
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The E2E suite is tri-browser and runs single-worker in CI: the per-test
+    # sum on the release machine (8c0f89d) is 95.4 minutes for 954 passing
+    # tests, before the two retries a failing test may take. The old 30-minute
+    # ceiling could not reach the audits, so the release gate could never pass
+    # on CI (ticket #25).
+    timeout-minutes: 180
 
     steps:
       - name: Check out the repository
