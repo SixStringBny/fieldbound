@@ -230,6 +230,43 @@ async function readTargets(page: Page): Promise<readonly RenderedTarget[]> {
   );
 }
 
+interface RouteFocusShape {
+  readonly tag: string;
+  readonly text: string;
+  /** The modality `App.tsx` recorded on the heading (AB-G6). */
+  readonly modality: string | null;
+  readonly outlineStyle: string;
+  readonly outlineWidth: string;
+  readonly outlineOffset: string;
+  readonly shadow: string;
+}
+
+/**
+ * The focused element and the ring the route-focus rule would paint on it.
+ * `modality` is the marker `App.tsx` writes, not a `:focus-visible` guess.
+ */
+async function readRouteFocus(page: Page): Promise<RouteFocusShape | null> {
+  return page.evaluate(() => {
+    const active = document.activeElement;
+
+    if (!(active instanceof HTMLElement)) {
+      return null;
+    }
+
+    const style = window.getComputedStyle(active);
+
+    return {
+      tag: active.tagName,
+      text: (active.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      modality: active.getAttribute('data-route-focus'),
+      outlineStyle: style.outlineStyle,
+      outlineWidth: style.outlineWidth,
+      outlineOffset: style.outlineOffset,
+      shadow: style.boxShadow,
+    };
+  });
+}
+
 interface StateCue {
   readonly selector: string;
   readonly text: string;
@@ -710,6 +747,61 @@ async function openMenuWithCorruptSave(page: Page): Promise<void> {
   await expectScreen(page, 'menu', 'the corrupt-save reload');
 }
 
+/** The menu's block geometry: enough to judge composition, fill and dead bands. */
+async function menuGeometry(page: Page) {
+  return page.evaluate(() => {
+    const box = (selector: string) => {
+      const node = document.querySelector(selector);
+
+      if (node === null) {
+        return null;
+      }
+
+      const rect = node.getBoundingClientRect();
+
+      return {
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+        bottom: rect.y + rect.height,
+      };
+    };
+
+    const stack = [
+      '.menu__hero',
+      '.menu__item--solo',
+      '.menu__item--duel',
+      '.menu__item--bookmark',
+      '.menu__docs',
+    ]
+      .map((selector) => box(selector))
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+
+    let maxGap = 0;
+
+    for (let index = 1; index < stack.length; index += 1) {
+      maxGap = Math.max(maxGap, stack[index]!.y - stack[index - 1]!.bottom);
+    }
+
+    return {
+      masthead: box('.menu__hero'),
+      solo: box('.menu__item--solo'),
+      duel: box('.menu__item--duel'),
+      bookmark: box('.menu__item--bookmark'),
+      docs: box('.menu__docs'),
+      docRow: box('.menu__row'),
+      playSolo: box('.menu__card--solo'),
+      menu: box('.menu'),
+      maxGap,
+      innerWidth: window.innerWidth,
+      innerHeight: window.innerHeight,
+      scrollHeight: document.documentElement.scrollHeight,
+      scrollWidth: document.documentElement.scrollWidth,
+    };
+  });
+}
+
 test.describe('menu', () => {
   test.use({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
 
@@ -887,87 +979,100 @@ test.describe('menu', () => {
     expect(await page.locator('.menu__card--solo').count()).toBe(1);
   });
 
-  test('AB-T1 the hero and hub are side by side', async ({ page }) => {
+  test('AB-T1 the two mode cards are side by side', async ({ page }) => {
     await openApp(page, SEED);
 
-    const hero = await page.locator('.menu__hero').boundingBox();
-    const hub = await page.locator('.menu__hub').boundingBox();
+    const geometry = await menuGeometry(page);
 
-    expect(hero).not.toBeNull();
-    expect(hub).not.toBeNull();
+    expect(geometry.solo).not.toBeNull();
+    expect(geometry.duel).not.toBeNull();
 
-    expect(hero!.x + hero!.width).toBeLessThanOrEqual(hub!.x + 1);
-    expect(Math.min(hero!.y + hero!.height, hub!.y + hub!.height)).toBeGreaterThan(
-      Math.max(hero!.y, hub!.y),
-    );
+    expect(
+      geometry.solo!.x + geometry.solo!.width,
+      'the modes share one row instead of stacking',
+    ).toBeLessThanOrEqual(geometry.duel!.x + 1);
+    expect(Math.abs(geometry.solo!.y - geometry.duel!.y), 'the modes start together').toBeLessThanOrEqual(2);
+    expect(Math.abs(geometry.solo!.height - geometry.duel!.height), 'the modes are equal').toBeLessThanOrEqual(2);
   });
 
-  test('AB-T2 the hub measures 512 inside a centred 1080 column', async ({ page }) => {
+  test('AB-T2 the modes fill a centred 1080 column', async ({ page }) => {
     await openApp(page, SEED);
 
-    const boxes = await page.evaluate(() => {
-      const read = (selector: string) => {
-        const node = document.querySelector(selector);
-        if (node === null) {
-          return null;
-        }
-        const rect = node.getBoundingClientRect();
-        return { x: rect.x, width: rect.width };
-      };
+    const geometry = await menuGeometry(page);
 
-      return {
-        menu: read('.menu'),
-        hero: read('.menu__hero'),
-        hub: read('.menu__hub'),
-        innerWidth: window.innerWidth,
-      };
-    });
+    expect(geometry.menu).not.toBeNull();
+    expect(geometry.solo).not.toBeNull();
+    expect(geometry.duel).not.toBeNull();
+    expect(geometry.docs).not.toBeNull();
 
-    expect(boxes.menu).not.toBeNull();
-    expect(boxes.hero).not.toBeNull();
-    expect(boxes.hub).not.toBeNull();
+    expect(geometry.menu!.width, 'the menu content column is 1080 at 1280').toBeCloseTo(1080, 0);
+    expect(Math.abs(geometry.solo!.width - 528), 'each mode is 528 at 1280').toBeLessThanOrEqual(8);
+    expect(Math.abs(geometry.solo!.width - geometry.duel!.width), 'the modes share the column').toBeLessThanOrEqual(1);
 
-    expect(boxes.menu!.width, 'the menu content column is 1080 at 1280').toBeCloseTo(1080, 0);
-    expect(Math.abs(boxes.hub!.width - 512), 'the hub is 512 at 1280').toBeLessThanOrEqual(8);
-    expect(Math.abs(boxes.hero!.width - 520), 'the hero takes the rest of 1080').toBeLessThanOrEqual(8);
+    // The footer is the same column as the modes, so there is no dead column
+    // under the pair.
+    expect(geometry.docs!.x, 'the footer starts with the modes').toBeCloseTo(geometry.menu!.x, 0);
+    expect(geometry.docs!.width, 'the footer spans the column').toBeCloseTo(geometry.menu!.width, 0);
 
-    const leftGap = boxes.menu!.x;
-    const rightGap = boxes.innerWidth - (boxes.menu!.x + boxes.menu!.width);
+    const leftGap = geometry.menu!.x;
+    const rightGap = geometry.innerWidth - (geometry.menu!.x + geometry.menu!.width);
     expect(Math.abs(leftGap - rightGap), 'the column is centred').toBeLessThanOrEqual(2);
   });
 
-  test('AB-G6 route focus lands on the h1 with the two-tone ring', async ({ page }) => {
+  test('AB-G6 route focus follows the input modality', async ({ page }) => {
     await openApp(page, SEED);
 
-    const focus = await page.evaluate(() => {
-      const element = document.activeElement;
-      if (!(element instanceof HTMLElement)) {
-        return null;
-      }
-      const style = getComputedStyle(element);
-      return {
-        tag: element.tagName,
-        text: element.textContent?.trim() ?? '',
-        outlineWidth: style.outlineWidth,
-        outlineStyle: style.outlineStyle,
-        outlineOffset: style.outlineOffset,
-        shadow: style.boxShadow,
-      };
-    });
+    // Cold first paint: the heading takes focus, but no input has happened, so
+    // there is no ring (and nothing that looks like a selection outline).
+    const cold = await readRouteFocus(page);
 
-    expect(focus).not.toBeNull();
-    expect(focus!.tag).toBe('H1');
-    expect(focus!.text).toBe('Fieldbound');
-    expect(focus!.outlineWidth).toBe('2px');
-    expect(focus!.outlineStyle).toBe('solid');
-    expect(focus!.outlineOffset).toBe('2px');
-    expect(focus!.shadow, 'the two-tone ring includes the inner halo').not.toBe('none');
+    expect(cold).not.toBeNull();
+    expect(cold!.tag).toBe('H1');
+    expect(cold!.text).toBe('Fieldbound');
+    expect(cold!.modality, 'the cold route records no input').toBe('initial');
+    expect(cold!.outlineStyle, 'the cold route paints no ring').toBe('none');
+    expect(cold!.shadow, 'the cold route paints no halo').toBe('none');
 
+    // Keyboard navigation: Tab to Play Solo, Enter. The destination heading
+    // reports the modality and shows the two-tone ring.
     await page.keyboard.press('Tab');
     expect(
       await page.evaluate(() => document.activeElement?.getAttribute('aria-labelledby')),
       'the first tab stop after the route heading is Play Solo',
     ).toBe('menu-play-solo-label');
+
+    await page.keyboard.press('Enter');
+    await expectScreen(page, 'solo-setup', 'the keyboard route change');
+
+    const keyboard = await readRouteFocus(page);
+
+    expect(keyboard!.tag).toBe('H1');
+    expect(keyboard!.text).toBe('Solo Run');
+    expect(
+      keyboard!.modality,
+      'a keyboard route change records the keyboard',
+    ).toBe('keyboard');
+    expect(keyboard!.outlineStyle).toBe('solid');
+    expect(keyboard!.outlineWidth).toBe('2px');
+    expect(keyboard!.outlineOffset).toBe('2px');
+    expect(keyboard!.shadow, 'the two-tone ring includes the inner halo').not.toBe('none');
+
+    // Pointer navigation: Back to menu lands on the menu with no ring, while
+    // the heading still holds focus for assistive technology.
+    await page.getByRole('button', { name: 'Back to menu', exact: true }).click();
+    await expectScreen(page, 'menu', 'the pointer route change');
+
+    const pointer = await readRouteFocus(page);
+
+    expect(pointer!.tag).toBe('H1');
+    expect(pointer!.text).toBe('Fieldbound');
+    expect(pointer!.modality, 'a pointer route change records the pointer').toBe('pointer');
+    expect(pointer!.outlineStyle, 'a pointer route change paints no ring').toBe('none');
+    expect(pointer!.shadow, 'a pointer route change paints no halo').toBe('none');
+    expect(
+      await page.evaluate(() => document.activeElement?.tagName),
+      'focus still lands on the destination heading for assistive technology',
+    ).toBe('H1');
   });
 
   test('AB-A4 exactly one polite live region and no menu announcement', async ({ page }) => {
@@ -1038,24 +1143,58 @@ for (const viewport of [
   test.describe(`menu phone ${viewport.label}`, () => {
     test.use({ viewport: { width: viewport.width, height: viewport.height }, reducedMotion: 'reduce' });
 
-    test(`AB-P1 the primary action sits inside the 288px thumb envelope at ${viewport.label}`, async ({
+    test(`AB-P1 the menu fills the phone viewport and keeps Play Solo on screen at ${viewport.label}`, async ({
       page,
     }) => {
-      await openApp(page, SEED);
+      for (const state of ['no save', 'valid save'] as const) {
+        if (state === 'no save') {
+          await openApp(page, SEED);
+        } else {
+          await openMenuWithSave(page);
+        }
 
-      const box = await page.getByRole('button', { name: 'Play Solo', exact: true }).boundingBox();
-      expect(box).not.toBeNull();
+        const geometry = await menuGeometry(page);
 
-      const thumbTop = viewport.height - 288;
+        expect(geometry.masthead, `${state}: the masthead must render`).not.toBeNull();
+        expect(geometry.solo, `${state}: Play Solo must render`).not.toBeNull();
+        expect(geometry.docRow, `${state}: the document links must render`).not.toBeNull();
 
-      expect(box!.y, 'Play Solo must start inside the thumb envelope').toBeGreaterThanOrEqual(thumbTop);
-      expect(box!.y + box!.height, 'Play Solo must stay inside the viewport').toBeLessThanOrEqual(
-        viewport.height,
-      );
-      expect(box!.x, 'at least 8px from the left edge').toBeGreaterThanOrEqual(8);
-      expect(box!.x + box!.width, 'at least 8px from the right edge').toBeLessThanOrEqual(
-        viewport.width - 8,
-      );
+        // AB-P1 menu amendment: the menu fills the viewport instead of reserving
+        // the 288px thumb band, so the primary action must be on screen without
+        // scrolling, clear of both side edges, and the page must not leave a
+        // dead band where the old hero reserve used to sit.
+        expect(geometry.playSolo, `${state}: Play Solo must be a rendered box`).not.toBeNull();
+        expect(
+          geometry.playSolo!.bottom,
+          `${state}: Play Solo must be visible without scrolling`,
+        ).toBeLessThanOrEqual(viewport.height);
+        expect(geometry.playSolo!.x, `${state}: at least 8px from the left edge`).toBeGreaterThanOrEqual(8);
+        expect(
+          geometry.playSolo!.x + geometry.playSolo!.width,
+          `${state}: at least 8px from the right edge`,
+        ).toBeLessThanOrEqual(viewport.width - 8);
+
+        expect(
+          geometry.solo!.y - geometry.masthead!.bottom,
+          `${state}: the masthead hands straight over to the modes`,
+        ).toBeLessThanOrEqual(48);
+        expect(
+          geometry.maxGap,
+          `${state}: no empty band taller than 15% of the viewport`,
+        ).toBeLessThanOrEqual(viewport.height * 0.15);
+        expect(geometry.scrollHeight, `${state}: the menu fits the phone viewport`).toBeLessThanOrEqual(
+          viewport.height + 1,
+        );
+        expect(geometry.scrollWidth, `${state}: no horizontal page scroll`).toBeLessThanOrEqual(
+          viewport.width + 1,
+        );
+
+        // The modes are the objects; the documents are one quiet row.
+        expect(
+          geometry.solo!.height,
+          `${state}: the mode cards are visibly larger than the document row`,
+        ).toBeGreaterThan(geometry.docRow!.height * 3);
+      }
     });
 
     test(`AB-P4 no ellipsis and the text floors hold at ${viewport.label}`, async ({ page }) => {
@@ -1063,7 +1202,6 @@ for (const viewport of [
 
       const text = await page.evaluate(() => {
         const selectors = [
-          '.menu__eyebrow',
           '.menu__tagline',
           '.menu__plaque',
           '.menu__card-title',
@@ -1090,9 +1228,7 @@ for (const viewport of [
       for (const item of text) {
         expect(item.textOverflow, `${item.selector} must not use ellipsis`).not.toBe('ellipsis');
         expect(item.clipped, `${item.selector} "${item.text}" is clipped`).toBe(false);
-        expect(item.fontSize, `${item.selector} "${item.text}" is below 12px`).toBeGreaterThanOrEqual(
-          item.selector === '.menu__eyebrow' ? 11 : 12,
-        );
+        expect(item.fontSize, `${item.selector} "${item.text}" is below 12px`).toBeGreaterThanOrEqual(12);
       }
     });
   });
@@ -1102,48 +1238,34 @@ for (const viewport of [
 test.describe('menu 1024', () => {
   test.use({ viewport: { width: 1024, height: 768 }, reducedMotion: 'reduce' });
 
-  test('AB-T1 the hero and hub are side by side at 1024', async ({ page }) => {
+  test('AB-T1 the two mode cards are side by side at 1024', async ({ page }) => {
     await openApp(page, SEED);
 
-    const hero = await page.locator('.menu__hero').boundingBox();
-    const hub = await page.locator('.menu__hub').boundingBox();
+    const geometry = await menuGeometry(page);
 
-    expect(hero).not.toBeNull();
-    expect(hub).not.toBeNull();
-    expect(hero!.x + hero!.width).toBeLessThanOrEqual(hub!.x + 1);
+    expect(geometry.solo).not.toBeNull();
+    expect(geometry.duel).not.toBeNull();
+    expect(
+      geometry.solo!.x + geometry.solo!.width,
+      'the modes share one row instead of stacking',
+    ).toBeLessThanOrEqual(geometry.duel!.x + 1);
   });
 
-  test('AB-T2 the hub measures 440 inside a centred 976 column', async ({ page }) => {
+  test('AB-T2 the modes fill a centred 976 column at 1024', async ({ page }) => {
     await openApp(page, SEED);
 
-    const boxes = await page.evaluate(() => {
-      const read = (selector: string) => {
-        const node = document.querySelector(selector);
-        if (node === null) {
-          return null;
-        }
-        const rect = node.getBoundingClientRect();
-        return { x: rect.x, width: rect.width };
-      };
+    const geometry = await menuGeometry(page);
 
-      return {
-        menu: read('.menu'),
-        hero: read('.menu__hero'),
-        hub: read('.menu__hub'),
-        innerWidth: window.innerWidth,
-      };
-    });
+    expect(geometry.menu).not.toBeNull();
+    expect(geometry.solo).not.toBeNull();
+    expect(geometry.duel).not.toBeNull();
 
-    expect(boxes.menu).not.toBeNull();
-    expect(boxes.hub).not.toBeNull();
-    expect(boxes.hero).not.toBeNull();
+    expect(geometry.menu!.width, 'the menu content column is 976 at 1024').toBeCloseTo(976, 0);
+    expect(Math.abs(geometry.solo!.width - 476), 'each mode is 476 at 1024').toBeLessThanOrEqual(8);
+    expect(Math.abs(geometry.solo!.width - geometry.duel!.width), 'the modes share the column').toBeLessThanOrEqual(1);
 
-    expect(boxes.menu!.width, 'the menu content column is 976 at 1024').toBeCloseTo(976, 0);
-    expect(Math.abs(boxes.hub!.width - 440), 'the hub is 440 at 1024').toBeLessThanOrEqual(8);
-    expect(Math.abs(boxes.hero!.width - 504), 'the hero takes the rest of 976').toBeLessThanOrEqual(8);
-
-    const leftGap = boxes.menu!.x;
-    const rightGap = boxes.innerWidth - (boxes.menu!.x + boxes.menu!.width);
+    const leftGap = geometry.menu!.x;
+    const rightGap = geometry.innerWidth - (geometry.menu!.x + geometry.menu!.width);
     expect(Math.abs(leftGap - rightGap), 'the column is centred').toBeLessThanOrEqual(2);
   });
 });
@@ -1351,30 +1473,18 @@ for (const viewport of VIEWPORTS) {
         await route.visit(page);
         await expectScreen(page, route.name, viewport.label);
 
-        // AB-G6 - the route change lands on the destination h1 with the ring.
-        const focus = await page.evaluate(() => {
-          const active = document.activeElement;
-
-          if (!(active instanceof HTMLElement)) {
-            return null;
-          }
-
-          const style = window.getComputedStyle(active);
-
-          return {
-            tag: active.tagName,
-            text: (active.textContent ?? '').trim(),
-            marked: active.hasAttribute('data-route-focus'),
-            outline: style.outlineStyle,
-            outlineWidth: style.outlineWidth,
-          };
-        });
+        // AB-G6 - the route change lands on the destination h1; this journey is
+        // pointer-driven, so the heading carries the pointer marker and no ring.
+        const focus = await readRouteFocus(page);
 
         expect(focus, `${route.name}: focus must land on the route heading`).not.toBeNull();
         expect(focus?.tag, `${route.name}: the route heading is the focused element`).toBe('H1');
-        expect(focus?.marked, `${route.name}: the heading carries data-route-focus`).toBe(true);
-        expect(focus?.outline, `${route.name}: the focus ring is visible`).not.toBe('none');
-        expect(focus?.outlineWidth, `${route.name}: the ring is 2px`).toBe('2px');
+        expect(focus?.modality, `${route.name}: the route change came from the pointer`).toBe(
+          'pointer',
+        );
+        expect(focus?.outlineStyle, `${route.name}: a pointer route change paints no ring`).toBe(
+          'none',
+        );
 
         // AB-C1 - the route's named objects.
         if (route.name === 'solo-setup') {
@@ -1766,28 +1876,17 @@ for (const viewport of VIEWPORTS) {
           await expect(page.getByRole('switch')).toHaveCount(2);
         }
 
-        // AB-G6 - the route change lands on the destination h1 with the ring.
-        const focus = await page.evaluate(() => {
-          const active = document.activeElement;
-
-          if (!(active instanceof HTMLElement)) {
-            return null;
-          }
-
-          const style = getComputedStyle(active);
-
-          return {
-            tag: active.tagName,
-            marked: active.hasAttribute('data-route-focus'),
-            outline: style.outlineStyle,
-            width: style.outlineWidth,
-          };
-        });
+        // AB-G6 - the route change lands on the destination h1; this journey is
+        // pointer-driven, so the heading carries the pointer marker and no ring.
+        const focus = await readRouteFocus(page);
 
         expect(focus?.tag, `${route.name}: the route heading takes focus`).toBe('H1');
-        expect(focus?.marked).toBe(true);
-        expect(focus?.outline).toBe('solid');
-        expect(focus?.width).toBe('2px');
+        expect(focus?.modality, `${route.name}: the route change came from the pointer`).toBe(
+          'pointer',
+        );
+        expect(focus?.outlineStyle, `${route.name}: a pointer route change paints no ring`).toBe(
+          'none',
+        );
 
         // AB-C2 - one ember action seal on How to Play, none on Settings (its
         // only action is the quiet masthead Back).

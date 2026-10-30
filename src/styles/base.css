@@ -65,11 +65,14 @@ ul {
   text-align: center;
 }
 
+/* One uppercase-label rule: 11px, 700, 0.1em tracking. Eyebrows and field
+   labels use it; only the display wordmark and field title are uppercase at a
+   larger size. */
 .shell__eyebrow {
   font-family: var(--fb-font-ui);
   font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
-  letter-spacing: var(--fb-tracking-wide);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
   text-transform: uppercase;
   color: var(--fb-text-soft);
 }
@@ -132,16 +135,41 @@ ul {
 }
 
 /*
- * The route `h1` and the main landmark are programmatic focus targets, not
- * controls: they always show the same two-tone ring, whatever moved focus, so
- * a keyboard user can see where the route change landed (AB-G6). `App.tsx`
- * marks the heading with `data-route-focus` when it focuses it on mount.
+ * The main landmark is a programmatic focus target for the skip link, which is
+ * keyboard-only, so it always shows the two-tone ring.
  */
-#main-content:focus,
-[data-route-focus]:focus {
+#main-content:focus {
   outline: var(--fb-focus-ring-width) solid var(--fb-focus);
   outline-offset: var(--fb-focus-offset);
   box-shadow: var(--fb-focus-shadow);
+}
+
+/*
+ * Route focus (AB-G6, amended 2026-10-30). The route `h1` is a programmatic
+ * focus target, not a control: it takes focus on every route change so
+ * assistive technology starts at the top of the new surface, but the ring only
+ * paints when the change came from the keyboard. `App.tsx` writes the observed
+ * modality onto the heading, because `:focus-visible` cannot reliably tell a
+ * script focus after a click from one after Tab+Enter across engines.
+ */
+[data-route-focus='keyboard']:focus {
+  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
+  outline-offset: var(--fb-focus-offset);
+  box-shadow: var(--fb-focus-shadow);
+}
+
+/*
+ * No ring for a pointer route change or the cold first paint. This is not a
+ * removed focus indicator: the heading is not a control and is not in the tab
+ * order, the ring above is the indicator, and AB-G6 withholds it on purpose for
+ * these two cases. The marker states which case is in force, and it also
+ * overrides the generic `:focus-visible` rule above when an engine reports a
+ * script-focused heading as focus-visible after a click.
+ */
+[data-route-focus='pointer']:focus,
+[data-route-focus='initial']:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 .shell__header--compact {

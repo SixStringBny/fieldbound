@@ -48,7 +48,7 @@
   grid-template-columns: auto minmax(0, 1fr);
   gap: var(--fb-space-2) var(--fb-space-4);
   align-items: center;
-  padding: 1.25rem; /* 20px at phone */
+  padding: var(--fb-space-5); /* 24px at phone */
   border: var(--fb-rule);
   border-radius: var(--fb-radius-md);
   background-color: var(--fb-surface-panel);
@@ -79,8 +79,8 @@
 .result__eyebrow {
   color: var(--fb-text-soft);
   font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
-  letter-spacing: var(--fb-tracking-wide);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
   line-height: var(--fb-leading-ui);
   text-transform: uppercase;
 }
@@ -122,7 +122,7 @@
 .result__ledger {
   display: grid;
   gap: var(--fb-space-3);
-  padding: 1.25rem; /* 20px at phone */
+  padding: var(--fb-space-5); /* 24px at phone */
   border: var(--fb-rule-on-paper);
   border-radius: var(--fb-radius-md);
   background-color: var(--fb-surface-document);
@@ -179,7 +179,7 @@
 .run-result__stat dt {
   color: var(--fb-text-on-paper-muted);
   font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
+  font-weight: 700;
   letter-spacing: var(--fb-tracking-label);
   line-height: var(--fb-leading-ui);
   text-transform: uppercase;
@@ -259,7 +259,7 @@
 .duel-result {
   display: grid;
   gap: var(--fb-space-4);
-  padding: 1.25rem; /* 20px at phone */
+  padding: var(--fb-space-5); /* 24px at phone */
   border: var(--fb-rule);
   border-radius: var(--fb-radius-md);
   background-color: var(--fb-surface-panel);
@@ -308,7 +308,7 @@
   }
 
   .duel-result {
-    padding: 1.5rem; /* 24px */
+    padding: var(--fb-space-5); /* 24px */
   }
 }
 
@@ -342,11 +342,11 @@
   }
 
   .result__outcome {
-    padding: 2rem; /* 32px */
+    padding: var(--fb-space-6); /* 32px */
   }
 
   .result__ledger {
-    padding: 2rem;
+    padding: var(--fb-space-6);
   }
 
   .result__title {
@@ -354,7 +354,7 @@
   }
 
   .duel-result {
-    padding: 2rem;
+    padding: var(--fb-space-6);
   }
 
   /* Run totals: four across; the best run: three across. */
@@ -395,15 +395,15 @@
   }
 
   .result__outcome {
-    padding: 2.5rem; /* 40px */
+    padding: var(--fb-space-6); /* 32px */
   }
 
   .result__ledger {
-    padding: 2.5rem;
+    padding: var(--fb-space-6);
   }
 
   .duel-result {
-    padding: 2.5rem;
+    padding: var(--fb-space-6);
   }
 
   .result__actions {
@@ -423,7 +423,11 @@
   }
 
   .result__outcome {
-    padding: 3rem; /* 48px */
+    padding: var(--fb-space-7); /* 48px */
+  }
+
+  .result__ledger {
+    padding: var(--fb-space-7);
   }
 
   .result__title {
@@ -431,7 +435,7 @@
   }
 
   .duel-result {
-    padding: 3rem;
+    padding: var(--fb-space-7);
   }
 
   .run-result__stats--totals .run-result__stat {

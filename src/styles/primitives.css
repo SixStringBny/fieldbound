@@ -68,7 +68,7 @@
 
 .fb-panel__label {
   font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
+  font-weight: 700;
   letter-spacing: var(--fb-tracking-label);
   text-transform: uppercase;
   color: var(--fb-text-soft);
@@ -210,7 +210,7 @@
   background-color: var(--fb-surface-raised);
   color: var(--fb-text);
   font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
+  font-weight: 700;
   letter-spacing: var(--fb-tracking-label);
   line-height: var(--fb-leading-ui);
   text-transform: uppercase;
@@ -264,7 +264,7 @@
 
 .fb-meter__label {
   font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
+  font-weight: 700;
   letter-spacing: var(--fb-tracking-label);
   text-transform: uppercase;
   color: var(--fb-text-soft);

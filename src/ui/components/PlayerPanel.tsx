@@ -54,6 +54,7 @@ export function PlayerPanel({
           value={side.health}
           max={side.maxHealth}
           tone="health"
+          showLabel={false}
         />
 
         <StatMeter
@@ -62,13 +63,17 @@ export function PlayerPanel({
           value={side.defense}
           max={DEFENSE_CAP}
           tone="defense"
+          showLabel={false}
         />
       </div>
 
       <StatusList statuses={side.statuses} ownerLabel="You" />
 
       <div className="player-panel__energy">
-        <p className="player-panel__energy-text">{side.energy} energy</p>
+        <p className="player-panel__energy-text">
+          <span aria-hidden="true">{side.energy}</span>
+          <span className="visually-hidden">{side.energy} energy</span>
+        </p>
         <ol className="energy-pips" aria-hidden="true">
           {Array.from({ length: pipCount }, (_, index) => (
             <li

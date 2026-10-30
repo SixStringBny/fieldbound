@@ -44,9 +44,9 @@ viewport.
 
 | Viewport | Header | Table | Arena | Enemy | Field | Player | Hand | Rail | Footer |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 375×667 | 52 | 537 | 367 | 165 | 196 | in footer | 158 | — | 72 |
-| 390×844 | 52 | 709 | 513 | 190 | 315 | in footer | 180 | — | 75 |
-| 768×1024 | 55 | 884 | 650 | 200 | 350 | 80 | 214 | — | 73 |
+| 375×667 | 52 | 537 | 348 | 174 | 165 | in footer | 158 | — | 75 |
+| 390×844 | 52 | 709 | 493 | 200 | 285 | in footer | 192 | — | 75 |
+| 768×1024 | 55 | 884 | 650 | 195 | 358 | 80 | 214 | — | 73 |
 | 1024×768 | 55 | 689 | 461 | 160 | 211 | 70 | 204 | 240 | — |
 | 1280×800 | 55 | 721 | 469 | 160 | 219 | 70 | 228 | 288 | — |
 
@@ -63,6 +63,13 @@ player plus two 10px gaps (8px on phone). The totals close exactly:
 At 1024/1280 the rail is the full content-row height and stops at the hand line.
 At 375/390 the board uses 6/8px gaps; at 768+ 10–12px. Reference boxes may flex
 by ±8px; the field absorbs the residual.
+
+On phone the field is capped: it stops at 300px and is never more than 40% of
+the board height (at 390×844 it measures 285px, 36%). The arena splits its
+spare height 2:1 between the field and the enemy panel, so the intent takes the
+room the field gives back instead of leaving a dead band beneath a small
+roundel; taller phones also give the hand the 168px card. The enemy band is
+therefore 165–208px on phone.
 
 ### 1.2 Grid/CSS contract
 
@@ -111,7 +118,8 @@ At 1024–1279px use `--fb-rail-width-compact` (240px) and the compact card widt
 ```css
 .battle-board { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; }
 .battle-arena { flex: 1; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
-.battle-field { flex: 1; min-height: 150px; }
+.battle-field { flex: 2 1 auto; min-height: 150px; max-height: 300px; }
+.battle-arena > .enemy-panel { flex: 1 1 auto; }
 ```
 
 `--fb-gutter` is `clamp(10px, 2vw, 22px)`; the board never exceeds
@@ -149,8 +157,10 @@ element whether it is the table rail or the phone footer block.
 
 - Table: 160px band; 100×108 portrait, name, element chip, statuses, HP/DEF
   meters, intent column on the right (or below at 1024–1279px).
-- Phone: 165–200px band; 62–68px portrait, name/chips, compact HP/DEF, statuses,
+- Phone: 165–208px band; 62–68px portrait, name/chips, compact HP/DEF, statuses,
   intent summary; `Show all N steps` (44px) when the plan has more than one step.
+  The band grows with the room the capped field gives back, so the intent is not
+  the cramped zone.
 - Intent: step rows (dot, name, effect, cost), total line, lethal badge, note
   that the preview is recomputed from live field/defense. Table shows the full
   plan; phone collapses to three steps + expand, and expands inline.
@@ -169,11 +179,15 @@ element whether it is the table rail or the phone footer block.
 
 - Table: 108px roundel, field name, “X is empowered; Y is countered; Z beats X”,
   full five-element cycle with `aria-current="step"`.
-- Phone: 68px roundel, field name, matchup sentence, current element + “beats X”
-  only; the full cycle is in How to Play. The cycle is not interactive.
+- Phone: 68px roundel at 375×667 and 96px at taller phones, the manifest field
+  art behind the shared scrim, field name, matchup sentence, current element +
+  “beats X” only; the full cycle is in How to Play. The cycle is not interactive.
+  There is no second name tag or inset ring inside the roundel.
 - Neutral copy: “Neutral field. No element is empowered; no card is countered.”
-- The field is the physical centre and the only zone that absorbs slack. Its
-  minimum is 150px phone, 180px tablet, 190px table.
+- The field is the physical centre and the zone that absorbs slack, up to its
+  cap. Its minimum is 150px phone, 180px tablet, 190px table; on phone it is
+  capped at 300px and at 40% of the board height, and the enemy intent takes the
+  remainder.
 - Field changes are palette + text; never colour-only.
 
 ### 2.4 Player panel / footer
@@ -204,10 +218,13 @@ element whether it is the table rail or the phone footer block.
 
 - Table rail: 288px at 1280, 240px at 1024–1279; head, latest strip, scrollable
   history. No toggle. Only the history scrolls; the rail stops at the hand line.
+- The log is the quietest surface: a muted header with no fill, the latest line
+  as ordinary 12px text with no bright strip or brass edge, 12px history and an
+  11px turn/meta label. Its one divider is solid.
 - Phone: the log region sits in the footer above the control bar. It contains
-  the latest one-line strip, the `Log` toggle, and the hidden history drawer.
-  Latest line is 12px, one line, ellipsis. The Log toggle is 44px. Tab order:
-  cards → Log → End Turn.
+  the latest one-line strip, the ghosted `Log` toggle, and the hidden history
+  drawer. Latest line is 12px, one line, ellipsis. The Log toggle keeps its
+  44px target without a pill outline. Tab order: cards → Log → End Turn.
 - Drawer: 82svh max, own vertical scroll, newest entry scrolled into view,
   Escape closes and returns focus to the toggle. Not a modal; no focus trap;
   history entries are not interactive.
@@ -279,18 +296,18 @@ truncated card names (full name in the detail sheet).
 | Cost seal | 27px, top-left | 21px | energy cost, wax fill |
 | Art | 66px, 6/5 crop | 48px | manifest SVG, scrim + vignette |
 | Name | 13px display, 2 lines | 11px, 2 lines | card name |
-| Meta | 11px uppercase | 11px | element · type |
-| Summary | 12px, 2 lines | hidden | printed effect summary |
 | Value | 20px | 16px | damage/defense/draw/shift + label |
-| Badges | 11px | 11px | Pierce, +N field, field bonus |
+| Badge | 11px | 11px | at most one: Pierce or the field bonus |
 | State | “Unaffordable” label | same | unaffordable only |
 
-The accessible name stays `cost, name, element type, primary, badges,
-unaffordable` (the existing `cardAccessibleName`). The face never relies on
-colour; the element glyph and label remain. Unaffordable cards are
-`aria-disabled="true"`, remain focusable/inspectable, do not lift on hover, and
-are rejected by the controller. The table fan does not overlap hit boxes; phone
-cards are fixed-width and never shrink.
+The face is cost, name, value and at most one badge. Element and type, the
+printed effect summary and any further badges live in the detail sheet. The
+accessible name still carries `cost, name, element type, primary, badges,
+unaffordable` (the existing `cardAccessibleName`), so the face is meaningful
+without colour. Unaffordable cards are `aria-disabled="true"`, remain
+focusable/inspectable, do not lift on hover, and are rejected by the controller.
+The table fan does not overlap hit boxes; phone cards are fixed-width and never
+shrink.
 
 ---
 

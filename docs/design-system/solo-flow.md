@@ -34,25 +34,34 @@ to Play and Settings remain paper documents owned by #11.
 
 ### 2.1 Composition
 
-At ≥1024px: two columns inside 1080px — hero (wordmark, tagline, run plaque)
-and hub (the five entries). At <1024px: one column, hero then hub. The page may
-scroll at 375×667 if the content exceeds the viewport.
+One column at every width, filled top to bottom: masthead, the two modes, the
+Continue bookmark when a valid save exists, and one quiet footer row of
+documents. The block fills the viewport - the mode rows take the slack - so the
+page never reserves an empty band above the thumb envelope (AB-P1 menu
+amendment); the primary action is simply on screen without scrolling. Below 768
+the modes stack; from 768 they sit side by side as the table's pair.
 
-| Viewport | Padding | Layout | Hub | Entry size |
+| Viewport | Padding | Modes | Bookmark | Documents |
 | --- | --- | --- | --- | --- |
-| 1280×800 | 48px 24px | 2 cols (1.05fr / 0.95fr), 48px gap | 512px | Play/Local 150px tall; Continue 88; quiet 56 |
-| 1024×768 | 32px 24px | 2 cols, 32px gap | 440px | Play/Local 140; Continue 84; quiet 56 |
-| 768×1024 | 24px 16px | 1 col | full width | Play/Local 96; Continue 84; quiet 56 |
-| 390×844 | 16px 12px | 1 col | full width | Play/Local 76; Continue 76; quiet 56 |
-| 375×667 | 12px 10px | 1 col | full width | Play/Local 72; Continue 72; quiet 56 |
+| 1280×800 | 48px 24px | 2 × 528, 24px gap, up to 480 tall | spans the column, 88 | one row, 48 tall |
+| 1024×768 | 32px 24px | 2 × 476, 24px gap, up to 480 | spans the column, 84 | one row, 48 tall |
+| 768×1024 | 24px 16px | 2 × 356, 24px gap, up to 480 | spans the column, 76 | one row, 48 tall |
+| 390×844 | 16px 12px | 1 col, 366 wide | spans the row, 76 | one row, 2 × 48 |
+| 375×667 | 12px 10px | 1 col, 351 wide | spans the row, 72 | one row, 2 × 48 |
 
-The hero: `FIELDBOUND` display wordmark, tagline “One field. Three energies. Two
-ways to play.”, and a run plaque:
+The masthead carries the `FIELDBOUND` display wordmark and the tagline, plus the
+quiet “No run in progress” line when there is no save. There is no eyebrow line
+and no reserved hero height.
 
-- No save: quiet “No run in progress” line; no empty entry slot.
-- Valid save: parchment bookmark card with the exact continue hint
-  `Encounter N of 4 · X of 40 health`, plus `Ember deck · 11 cards` when the
-  composition root supplies the deck view.
+Each mode card carries the field roundel - a brass ring with the element seal at
+its centre, and for the duel a second raised counter - above its title and
+promise line. The motif is the only large art on the page and is built from
+tokens and borders, so it needs no scrim, no reserved aspect ratio and no
+manifest asset; it survives the forced-colors branch and costs no bytes.
+
+A valid save adds the parchment bookmark between the modes and the footer, with
+the exact continue hint `Encounter N of 4 · X of 40 health`, plus
+`Ember deck · 11 cards` when the composition root supplies the deck view.
 
 ### 2.2 Entry points
 
@@ -60,12 +69,15 @@ DOM and tab order stay: **Play Solo**, **Local Duel**, **Continue Run** (only
 with a validated save), **How to Play**, **Settings**. The nav keeps
 `aria-label="Main menu"` and the `h1` stays **Fieldbound**.
 
-- Play Solo: largest parchment card, wax/ember seal, “Four fights, one 40-health
-  run.”
-- Local Duel: parchment card, brass seal, “Best of three, pass and play.”
+- Play Solo: the first of the two equal mode cards (stacked at phone, side by
+  side from 768), ember seal inside the field roundel, “Four fights, one
+  40-health run.”
+- Local Duel: the second mode card, brass seal with the second counter, “Best of
+  three, pass and play.”
 - Continue Run: parchment bookmark spanning the hub; encounter, health and deck
   line; clicking resumes exactly where the save left off.
-- How to Play / Settings: quiet brass rows at the bottom, not equal-weight cards.
+- How to Play / Settings: one quiet footer row at the bottom, not equal-weight
+  cards.
 - A corrupt/missing save must not render Continue; no error toast is needed.
 - No hover-only cue; the whole card/row is the 44px+ target.
 
@@ -73,8 +85,8 @@ with a validated save), **How to Play**, **Settings**. The nav keeps
 
 | State | Presentation |
 | --- | --- |
-| No save | No Continue entry; “No run in progress” plaque; Play/Local/How/Settings. |
-| Valid save | Continue bookmark between Local Duel and How to Play; resume hint + deck line. |
+| No save | No Continue entry; quiet “No run in progress” line; Play/Local/How/Settings. |
+| Valid save | Continue bookmark between the modes and the footer row; resume hint + deck line. |
 | Corrupt save | Treated as no save; no Continue. |
 | Loading | None: the composition root validates the save before rendering and the menu is synchronous. |
 

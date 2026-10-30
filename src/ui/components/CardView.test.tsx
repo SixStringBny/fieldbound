@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CardDefinition } from '../../engine/types';
 import { cardById } from '../../content/cards';
 import { CardView } from './CardView';
-import { ELEMENT_DISPLAY } from './ElementCue';
 
 function card(id: string): CardDefinition {
   const found = cardById(id);
@@ -37,7 +36,7 @@ function renderCard(cardDefinition: CardDefinition, options: RenderOptions = {})
 }
 
 describe('CardView', () => {
-  it('shows cost, name, element glyph and label, and the primary number', () => {
+  it('shows cost, name, the primary number and one badge on the face', () => {
     renderCard(card('ember-ember-lance'));
 
     const button = screen.getByRole('button', {
@@ -45,14 +44,17 @@ describe('CardView', () => {
     });
 
     expect(within(button).getByText('Ember Lance')).toBeTruthy();
-    expect(within(button).getByText('Ember')).toBeTruthy();
-    expect(
-      within(button).getByText(ELEMENT_DISPLAY.ember.glyph),
-    ).toBeTruthy();
     expect(within(button).getByText('4')).toBeTruthy();
     expect(within(button).getByText('damage')).toBeTruthy();
     expect(within(button).getByText('2')).toBeTruthy();
     expect(button.textContent).toContain('Pierce');
+
+    // Element and type stay in the frozen accessible name and the detail
+    // sheet; the face itself is cost, name, value and one badge.
+    expect(button.textContent).not.toContain('Ember attack');
+    expect(button.querySelector('.card-view__meta')).toBeNull();
+    expect(button.querySelector('.card-view__summary')).toBeNull();
+    expect(button.querySelectorAll('.card-view__badge')).toHaveLength(1);
   });
 
   it('names a Ward by its defense and a Shift by its destination', () => {

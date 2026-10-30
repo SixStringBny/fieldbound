@@ -77,8 +77,8 @@
 .document__eyebrow {
   color: var(--fb-text-soft);
   font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
-  letter-spacing: var(--fb-tracking-wide);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
   line-height: var(--fb-leading-ui);
   text-transform: uppercase;
 }
@@ -135,7 +135,7 @@
   width: 100%;
   max-width: var(--fb-document-max);
   margin-inline: auto;
-  padding: 1.25rem; /* 20px at phone */
+  padding: var(--fb-space-5); /* 24px at phone */
   border: var(--fb-rule-on-paper);
   border-radius: var(--fb-radius-md);
   background-color: var(--fb-surface-document);
@@ -150,7 +150,7 @@
   display: grid;
   gap: var(--fb-space-2); /* 8px above the first paragraph */
   min-width: 0;
-  padding-block: 1.75rem; /* 28px rhythm at phone */
+  padding-block: var(--fb-space-5); /* 24px rhythm at phone */
 }
 
 /* Paragraph rhythm keeps its 12px inside the 8px section gap. */
@@ -226,16 +226,15 @@
   list-style: none;
 }
 
+/* The sheet is the only outline. A turn stone is a numbered seal and its copy,
+   joined by the brass connector; it is not a second bordered panel. */
 .rules__step {
   position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: var(--fb-space-3);
   align-items: start;
-  padding: var(--fb-space-3);
-  border: var(--fb-rule-on-paper);
-  border-radius: var(--fb-radius-sm);
-  background-color: var(--fb-surface-document-raised);
+  padding: var(--fb-space-3) 0;
   color: var(--fb-text-on-paper);
 }
 
@@ -244,7 +243,7 @@
   content: '';
   position: absolute;
   top: calc(-1 * var(--fb-space-3));
-  left: calc(var(--fb-space-3) + 0.875rem - 1px);
+  left: calc(0.875rem - 1px);
   width: var(--fb-rule-width-strong);
   height: var(--fb-space-3);
   background-color: var(--fb-text-on-paper-muted);
@@ -397,8 +396,8 @@
 
 .field-cycle__name {
   font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
-  letter-spacing: 0;
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
   line-height: 1.1;
   text-transform: uppercase;
 }
@@ -697,12 +696,12 @@
   }
 
   .document__sheet {
-    padding: 2rem; /* 32px */
+    padding: var(--fb-space-6); /* 32px */
   }
 
   .document__section {
     gap: var(--fb-space-2);
-    padding-block: 2rem; /* 32px rhythm */
+    padding-block: var(--fb-space-6); /* 32px rhythm */
   }
 
   .document__heading {
@@ -828,14 +827,6 @@
   .app-root:has(> #main-content[data-screen='how-to-play']),
   .app-root:has(> #main-content[data-screen='settings']) {
     padding: 3rem 1.5rem 3rem; /* 1280x800: 48px 24px 48px */
-  }
-
-  .document__sheet {
-    padding: 2.5rem; /* 40px */
-  }
-
-  .document__section {
-    padding-block: 2.5rem; /* 40px rhythm */
   }
 
   .document__title {

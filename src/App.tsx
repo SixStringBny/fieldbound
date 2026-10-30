@@ -88,6 +88,8 @@ import type {
 import { resumeRun } from './state/resume-run';
 import type { RunResume } from './state/resume-run';
 import type { EngineResult, FieldElement } from './engine/types';
+import { useInputModality } from './ui/a11y/useInputModality';
+import type { InputModality } from './ui/a11y/useInputModality';
 import { useKeyboardControls } from './ui/a11y/useKeyboardControls';
 import { emitCue, uiEvents } from './ui/events';
 import { LiveRegion } from './ui/components/LiveRegion';
@@ -156,6 +158,13 @@ export const SCREENS: ScreenByKind = {
 };
 
 export const INITIAL_SCREEN: Screen = SCREENS.menu;
+
+/**
+ * What the route `h1` reports about the input that moved the route (AB-G6).
+ * `initial` is the cold first paint: the heading still takes focus, but no
+ * input has happened yet, so there is nothing to attribute the ring to.
+ */
+type RouteFocusModality = InputModality | 'initial';
 
 /**
  * The interim practice encounter the composition root mounts on the battle
@@ -478,13 +487,19 @@ export function App({
   }, []);
 
   /*
-   * Route focus, once for every route (reading-screens §8.1).
+   * Route focus, once for every route (reading-screens §8.1, AB-G6 as amended
+   * on 2026-10-30).
    *
    * On mount, and only on a route change, focus the route's `h1`. The heading
    * receives `tabindex="-1"` here rather than in twelve screen files, so the
-   * rule cannot drift per screen and no screen has to know about it. `data-route-focus`
-   * gives the heading the same visible two-tone ring a control gets (AB-G6),
-   * even when the navigation came from a pointer.
+   * rule cannot drift per screen and no screen has to know about it.
+   *
+   * `data-route-focus` carries the modality that caused the change, because the
+   * ring is only wanted after keyboard navigation: a pointer route change, and
+   * the cold first paint, still move focus for assistive technology but paint
+   * no ring. The browser's `:focus-visible` heuristic cannot make that call for
+   * a script-focused heading consistently across Chromium, Firefox and WebKit,
+   * so the composition root records the input itself.
    *
    * The rule must never fight focus a screen already owns: the privacy handoff
    * focuses `I'm ready`, and the battle board owns its own focus path. If the
@@ -492,6 +507,8 @@ export function App({
    * alone. Re-renders and setting toggles do not re-run it, because the effect
    * is keyed on the route.
    */
+  const lastInputModality = useInputModality();
+
   useEffect(() => {
     const main = document.getElementById('main-content');
 
@@ -513,10 +530,13 @@ export function App({
       return;
     }
 
+    const modality: RouteFocusModality =
+      lastInputModality.current ?? 'initial';
+
     heading.setAttribute('tabindex', '-1');
-    heading.setAttribute('data-route-focus', '');
+    heading.setAttribute('data-route-focus', modality);
     heading.focus();
-  }, [screen.kind]);
+  }, [lastInputModality, screen.kind]);
 
   /* ------------------------------------------------------------------------ */
   /* Duel intents                                                             */

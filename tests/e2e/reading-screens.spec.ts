@@ -152,7 +152,7 @@ async function focusShape(page: Page) {
       text: (active.textContent ?? '').replace(/\s+/g, ' ').trim(),
       id: active.id,
       tabindex: active.getAttribute('tabindex'),
-      marked: active.hasAttribute('data-route-focus'),
+      modality: active.getAttribute('data-route-focus'),
       outlineStyle: style.outlineStyle,
       outlineWidth: style.outlineWidth,
       outlineOffset: style.outlineOffset,
@@ -233,10 +233,12 @@ test.describe('how to play', () => {
     const focus = await focusShape(page);
     expect(focus?.tag).toBe('H1');
     expect(focus?.text).toBe('How to Play');
-    expect(focus?.marked).toBe(true);
     expect(focus?.tabindex).toBe('-1');
-    expect(focus?.outlineStyle).toBe('solid');
-    expect(focus?.outlineWidth).toBe('2px');
+    expect(
+      focus?.modality,
+      'How to Play was opened from a pointer click, so the heading records the pointer',
+    ).toBe('pointer');
+    expect(focus?.outlineStyle, 'a pointer route change paints no ring').toBe('none');
   });
 
   test('the contents opens, jumps to the heading and closes without a hash', async ({ page }) => {
@@ -508,7 +510,7 @@ test.describe('settings', () => {
     const focus = await focusShape(page);
     expect(focus?.text).toBe('Settings');
     expect(focus?.tag).toBe('H1');
-    expect(focus?.marked).toBe(true);
+    expect(focus?.modality, 'Settings was opened from a pointer click').toBe('pointer');
 
     // Tab order: skip → Back → Sound. From the route heading the first tab stop
     // is the Sound switch, because `Back` sits before the h1 in the masthead.

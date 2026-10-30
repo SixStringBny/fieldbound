@@ -2,10 +2,10 @@
  * One hand card as a native button (SHL-FR-03, VIS-NFR-03, battle-screen
  * section 4).
  *
- * The face shows the cost seal, art, name, element/type meta, printed summary
- * (table only), primary number and the Pierce / field-bonus badges. The
- * accessible name carries cost, name, element, type, primary number and badges,
- * so it is meaningful without colour.
+ * The face shows the cost seal, art, name, primary number and at most one badge.
+ * Element, type, the printed summary and any further badges live in the detail
+ * sheet; the accessible name still carries cost, name, element, type, primary
+ * number and every badge, so the face is meaningful without colour.
  *
  * Unaffordable cards stay in the tab order: the button is `aria-disabled`
  * (not `disabled`), which keeps keyboard users from being silently dropped out
@@ -22,10 +22,8 @@ import {
   cardAccessibleName,
   cardAltText,
   cardBadges,
-  cardEffectLines,
   cardPrimary,
 } from './card-presentation';
-import { CARD_TYPE_LABELS, ElementCue } from './ElementCue';
 
 export interface CardViewProps {
   readonly card: CardDefinition;
@@ -48,8 +46,7 @@ export function CardView({
   onInspect,
 }: CardViewProps) {
   const primary = cardPrimary(card);
-  const badges = cardBadges(card);
-  const summary = cardEffectLines(card)[0] ?? '';
+  const badge = cardBadges(card)[0];
 
   const activate = () => {
     onInspect(instanceId);
@@ -95,27 +92,16 @@ export function CardView({
 
       <span className="card-view__name">{card.name}</span>
 
-      <span className="card-view__meta">
-        <ElementCue element={card.element} />
-        <span className="card-view__type">{CARD_TYPE_LABELS[card.type]}</span>
-      </span>
-
-      <span className="card-view__summary">{summary}</span>
-
       <span className="card-view__primary">
         <span className="card-view__primary-value">{primary.value}</span>
         <span className="card-view__primary-label">{primary.label}</span>
       </span>
 
-      {badges.length > 0 ? (
+      {badge === undefined ? null : (
         <span className="card-view__badges">
-          {badges.map((badge) => (
-            <span className="card-view__badge" key={badge}>
-              {badge}
-            </span>
-          ))}
+          <span className="card-view__badge">{badge}</span>
         </span>
-      ) : null}
+      )}
 
       {affordable ? null : (
         <span className="card-view__state">
