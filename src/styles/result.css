@@ -246,6 +246,12 @@
   width: 100%;
 }
 
+/* The documented brass secondary (duel-flow §5.2) sits above the quiet Menu. */
+.result__brass {
+  border-color: var(--fb-rule-strong-color);
+  color: var(--fb-text);
+}
+
 /* -------------------------------------------------------------------------- */
 /* Duel plaques                                                               */
 /* -------------------------------------------------------------------------- */

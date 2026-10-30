@@ -1,179 +1,356 @@
 /**
- * Local duel surfaces (DUEL-FR-01, DUEL-FR-03, DUEL-FR-04, DUEL-FR-05,
- * SHL-FR-02, VIS-NFR-03).
+ * Local duel surfaces - setup, privacy, the board and the result plaques
+ * (duel-flow sections 2-5; OVERHAUL sections 6.9-6.12).
  *
- * Three groups:
+ * Three groups share one warm slate table:
  *
- *   - setup: the two-step deck picker and its locked summary;
- *   - privacy: a fixed, fully opaque interstitial that covers the viewport;
- *   - battle and result: two seat panels, the shared field and the score
- *     surfaces, reusing the board components where they already exist.
+ *   - setup: the shared physical deck table, the look-away banner, the sealed
+ *     step-2 marker, the locked summary and the sticky action bar;
+ *   - privacy: a fixed, fully opaque slate route with one parchment plaque;
+ *   - board: the #8 `100svh` shell with two seat panels, the shared field, the
+ *     active hand, the public log rail/footer and `End Turn`.
  *
- * Plain CSS custom properties only. Every interactive control is at least
- * 44px, focus styling comes from the shared `:focus-visible` rule, and no
- * animation is introduced here beyond the reduced-motion-safe transitions the
- * board already owns.
+ * Tokens only: no raw hex, `rgb()`, shadow, radius or duration literal outside
+ * `tokens.css` (AB-V1). Every control is at least 44px and focus styling comes
+ * from the shared `:focus-visible` rule.
  */
 
 /* -------------------------------------------------------------------------- */
-/* Shared duel surfaces                                                       */
+/* Setup route shell                                                          */
 /* -------------------------------------------------------------------------- */
 
-.duel-setup,
-.duel-battle,
-.duel-battle__board,
-.duel-result {
+/*
+ * The setup is a scrollable table surface. The page reserves the fixed action
+ * bar's height plus safe area so the last deck card is never covered
+ * (duel-flow section 2.1): 144px on phone, 112px from 640px.
+ */
+.shell[data-screen='duel-setup'] {
+  max-width: var(--fb-board-max);
+}
+
+.app-root:has(> #main-content[data-screen='duel-setup']) {
+  justify-content: flex-start;
+  padding: 0.75rem 0.625rem 9rem; /* 375x667: 12px 10px 144px */
+}
+
+.duel-setup {
   display: grid;
   gap: var(--fb-space-4);
   width: 100%;
   min-width: 0;
-  font-family: var(--fb-font-ui);
 }
 
-/* The active-turn column inside the shared `.battle-log-layout` grid. */
-.duel-battle__board {
-  gap: var(--fb-space-3);
-  padding: 0 0 var(--fb-space-4);
-}
-
-.duel-setup__head {
-  display: grid;
-  gap: var(--fb-space-2);
-}
-
+.duel-setup__head,
 .duel-setup__step {
   display: grid;
-  gap: var(--fb-space-3);
+  gap: var(--fb-space-2);
+  justify-items: start;
+  min-width: 0;
+}
+
+.duel-setup__head .shell__eyebrow {
+  margin: 0;
 }
 
 .duel-setup__step-label {
   color: var(--fb-text-soft);
-  font-size: var(--fb-text-sm);
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-wide);
+  line-height: var(--fb-leading-ui);
   text-transform: uppercase;
 }
 
+/* The step question is a programmatic focus target, never a control. */
+.duel-setup__title {
+  color: var(--fb-text);
+  font-family: var(--fb-font-display);
+  font-size: 1.5rem;
+  font-weight: var(--fb-weight-display);
+  letter-spacing: var(--fb-tracking-display);
+  line-height: var(--fb-leading-tight);
+}
+
+.duel-setup__title:focus {
+  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
+  outline-offset: var(--fb-focus-offset);
+  box-shadow: var(--fb-focus-shadow);
+}
+
+.duel-setup__step .shell__copy {
+  max-width: 34rem;
+}
+
+/* The look-away / "Player 1 has chosen" callout: a full-width banner. */
 .duel-setup__callout {
+  width: 100%;
   padding: var(--fb-space-2) var(--fb-space-3);
   border-left: var(--fb-rule-width-strong) solid var(--fb-rule-strong-color);
   border-radius: 0 var(--fb-radius-sm) var(--fb-radius-sm) 0;
   background-color: var(--fb-surface-inset);
-  font-weight: 700;
-}
-
-.duel-setup__confirm,
-.duel-setup__start {
-  justify-self: start;
-}
-
-.duel-setup .shell__button:disabled {
-  border-color: var(--fb-state-disabled-surface);
-  background-color: var(--fb-state-disabled-surface);
-  background-image: none;
-  color: var(--fb-state-disabled-ink);
-  box-shadow: none;
-  cursor: not-allowed;
-}
-
-.duel-setup__summary {
-  display: grid;
-  gap: var(--fb-space-3);
-}
-
-.duel-setup__picks {
-  display: grid;
-  gap: var(--fb-space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.duel-setup__deck-line {
-  padding: var(--fb-space-2) var(--fb-space-3);
-  border: var(--fb-rule-subtle);
-  border-radius: var(--fb-radius-md);
-  background-color: var(--fb-surface-raised);
-  font-size: 1.0625rem;
-  font-weight: 700;
-}
-
-.duel-setup__footer {
-  margin-top: var(--fb-space-2);
+  color: var(--fb-text);
+  font-size: var(--fb-text-md);
+  font-weight: var(--fb-weight-ui);
+  line-height: var(--fb-leading-ui);
 }
 
 /* -------------------------------------------------------------------------- */
-/* Deck picker                                                                */
+/* Sealed step-2 marker                                                       */
 /* -------------------------------------------------------------------------- */
 
-.duel-decks {
-  display: grid;
-  gap: var(--fb-space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.duel-deck {
-  display: grid;
-  grid-template-areas:
-    'name state'
-    'meta state';
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.2rem 0.75rem;
+/*
+ * One neutral card back and two lines. The marker is 88px tall at table and
+ * 96px at phone and spans the deck grid's width. It carries no deck name,
+ * element, element colour, aria-label or naming data attribute: the back is the
+ * same object used for both seats, so it cannot identify Player 1's pick.
+ */
+.duel-sealed {
+  display: flex;
   width: 100%;
-  min-height: var(--fb-target);
-  padding: 0.8rem 1rem;
+  min-height: 5.5rem; /* 88px */
+  align-items: center;
+  gap: var(--fb-space-3);
+  padding: var(--fb-space-2) var(--fb-space-3);
   border: var(--fb-rule);
   border-radius: var(--fb-radius-md);
   background-color: var(--fb-surface-panel);
   background-image: var(--fb-material-panel);
-  color: var(--fb-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
 }
 
-@media (hover: hover) {
-  .duel-deck:hover {
-    border-color: var(--fb-rule-strong-color);
-  }
+.duel-sealed__back,
+.duel-locked__back {
+  display: block;
+  width: 56px;
+  height: 78px;
+  flex: 0 0 auto;
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-sm);
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  box-shadow:
+    var(--fb-rim),
+    inset 0 0 0 1px var(--fb-rule-on-paper-color);
 }
 
-.duel-deck[aria-pressed='true'] {
-  border-color: var(--fb-rule-strong-color);
-  background-color: var(--fb-surface-selected);
-}
-
-.duel-deck__name {
-  grid-area: name;
-  font-size: 1.0625rem;
-  font-weight: 700;
-}
-
-.duel-deck__meta {
-  grid-area: meta;
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem;
-  color: var(--fb-text-soft);
-  font-size: 0.9375rem;
-}
-
-.duel-deck__state {
-  grid-area: state;
-  align-self: center;
+.duel-sealed__back::after,
+.duel-locked__back::after,
+.duel-card-back::after {
+  content: '◆';
+  display: grid;
+  height: 100%;
+  place-items: center;
   color: var(--fb-rule-strong-color);
-  font-weight: 700;
+  font-family: var(--fb-font-glyph);
+  font-size: var(--fb-text-sm);
+  line-height: 1;
+}
+
+.duel-sealed__body {
+  display: grid;
+  gap: var(--fb-space-1);
+  min-width: 0;
+}
+
+.duel-sealed__title {
+  color: var(--fb-text);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-xl);
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-ui);
+}
+
+.duel-sealed__hint {
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-leading-ui);
 }
 
 /* -------------------------------------------------------------------------- */
-/* Privacy interstitial                                                       */
+/* Locked summary                                                             */
 /* -------------------------------------------------------------------------- */
 
-/* Fixed and fully opaque: the battle is unmounted, and the backdrop itself
-   must not let anything behind it show through. */
+.duel-setup__summary {
+  display: grid;
+  gap: var(--fb-space-3);
+  justify-items: start;
+}
+
+.duel-setup__locked {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--fb-space-2);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A locked card is a record, not a target: no pressed state, no hover lift. */
+.duel-locked {
+  display: flex;
+  min-width: 0;
+  min-height: 10rem; /* 160px at phone */
+  align-items: center;
+  gap: var(--fb-space-3);
+  padding: var(--fb-space-3);
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  box-shadow: var(--fb-elev-2);
+  color: var(--fb-text-on-paper);
+}
+
+.duel-locked__body {
+  display: grid;
+  gap: var(--fb-space-1);
+  min-width: 0;
+}
+
+.duel-locked__player {
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-label);
+  line-height: var(--fb-leading-ui);
+  text-transform: uppercase;
+}
+
+.duel-locked__name {
+  color: var(--fb-text-on-paper);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-2xl);
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-ui);
+}
+
+.duel-locked__meta,
+.duel-locked__unavailable {
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-leading-ui);
+}
+
+.duel-locked__unavailable {
+  color: var(--fb-text-on-paper-danger);
+  font-weight: var(--fb-weight-ui);
+}
+
+/* The exact `Player 1: Ember` / `Player 2: Frost` lines. */
+.duel-setup__picks {
+  display: grid;
+  gap: var(--fb-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.duel-setup__pick {
+  color: var(--fb-text);
+  font-size: var(--fb-text-md);
+  font-weight: var(--fb-weight-ui);
+  line-height: var(--fb-leading-ui);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Sticky action bar                                                          */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Fixed, not sticky: the bar is out of the page flow, so the route reserves its
+ * height above. Phone stacks the primary above the back text; from 640px they
+ * sit side by side after the status line.
+ */
+.duel-bar {
+  position: fixed;
+  z-index: 3;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-top: var(--fb-rule);
+  background-color: var(--fb-surface-board);
+  background-image: var(--fb-material-slate);
+  box-shadow: var(--fb-rim);
+  color: var(--fb-text);
+}
+
+.duel-bar__inner {
+  display: flex;
+  max-width: var(--fb-board-max);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  margin: 0 auto;
+  padding: 0.375rem var(--fb-gutter)
+    calc(0.375rem + env(safe-area-inset-bottom, 0px));
+}
+
+.duel-bar__status {
+  margin: 0;
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-xs);
+  line-height: 1.2;
+}
+
+.duel-bar__actions {
+  display: grid;
+  gap: 2px;
+}
+
+.duel-bar__primary {
+  width: 100%;
+  min-height: 3rem; /* 48px */
+}
+
+.duel-bar .shell__back {
+  min-height: var(--fb-target);
+  justify-self: center;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Shared card back                                                           */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Parchment material, one brass rule, an inset hairline and a centred brass
+ * diamond. No text, no element colour, no deck hint, no image. It is the same
+ * object for both seats and for the setup's sealed marker.
+ */
+.duel-card-back {
+  display: block;
+  width: 26px;
+  height: 36px;
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-sm);
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  box-shadow:
+    var(--fb-rim),
+    inset 0 0 0 1px var(--fb-rule-on-paper-color);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Privacy handoff                                                            */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * A route, not an overlay: the battle is unmounted, and this fixed surface owns
+ * the whole viewport with an opaque slate material. No backdrop click handler
+ * exists; the plaque's one button is the only action.
+ */
+.app-root:has(> #main-content[data-screen='privacy']) {
+  height: 100svh;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.shell[data-screen='privacy'] {
+  max-width: none;
+  height: 100svh;
+}
+
 .duel-privacy {
   position: fixed;
   inset: 0;
@@ -182,15 +359,19 @@
   place-items: center;
   padding: var(--fb-space-4);
   overflow-y: auto;
-  background-color: var(--fb-surface-page);
+  background-color: var(--fb-surface-board);
   background-image: var(--fb-material-slate);
 }
 
-.duel-privacy__dialog {
+.duel-privacy__plaque {
   display: grid;
+  width: min(100%, 30rem); /* 480px at >=768, viewport -32px on phone */
+  max-height: calc(100svh - 2rem);
   gap: var(--fb-space-3);
-  width: min(100%, 30rem);
-  padding: var(--fb-space-6) var(--fb-space-4);
+  justify-items: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--fb-space-5) var(--fb-space-4);
   border: var(--fb-rule-on-paper);
   border-radius: var(--fb-radius-lg);
   background-color: var(--fb-surface-document);
@@ -198,29 +379,44 @@
   box-shadow: var(--fb-elev-4);
   color: var(--fb-text-on-paper);
   text-align: center;
+  animation: fb-duel-plaque var(--fb-dur-lift) var(--fb-ease) both;
 }
 
-.duel-privacy__kicker {
+.duel-privacy__eyebrow {
   color: var(--fb-text-on-paper-soft);
-  font-size: var(--fb-text-sm);
-  font-weight: 700;
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
   letter-spacing: var(--fb-tracking-wide);
+  line-height: var(--fb-leading-ui);
   text-transform: uppercase;
 }
 
 .duel-privacy__title {
-  font-size: clamp(1.75rem, 8vw, 2.75rem);
+  color: var(--fb-text-on-paper);
+  font-family: var(--fb-font-display);
+  font-size: 2.125rem; /* 34px at 375 */
+  font-weight: var(--fb-weight-display);
+  letter-spacing: var(--fb-tracking-display);
   line-height: 1.1;
 }
 
 .duel-privacy__hint {
   color: var(--fb-text-on-paper-soft);
   font-size: 1.0625rem;
+  line-height: var(--fb-leading-body);
+}
+
+.duel-privacy__score {
+  color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-md);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fb-weight-ui);
+  line-height: var(--fb-leading-ui);
 }
 
 .duel-privacy__ready {
   width: 100%;
-  min-height: var(--fb-target);
+  min-height: 3rem; /* 48px */
   padding: var(--fb-space-2) var(--fb-space-4);
   border: var(--fb-rule-width) solid var(--fb-action);
   border-radius: var(--fb-radius-md);
@@ -230,60 +426,168 @@
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
-@media (hover: hover) {
-  .duel-privacy__ready:hover {
-    background-color: var(--fb-action-hover);
+@keyframes fb-duel-plaque {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
 /* -------------------------------------------------------------------------- */
-/* Duel battle                                                                */
+/* Duel board header                                                          */
 /* -------------------------------------------------------------------------- */
 
-.duel-battle {
-  gap: var(--fb-space-3);
-  padding: 0 0 var(--fb-space-4);
-  color: var(--fb-text);
-  font-size: var(--fb-text-lg);
-  line-height: var(--fb-leading-body);
+.duel-header {
+  align-items: center;
+  gap: var(--fb-space-2);
 }
 
-.duel-battle > * {
+.duel-header__identity {
   min-width: 0;
+  flex: 1 1 auto;
 }
 
-.duel-battle__head {
+.duel-header__meta {
   display: grid;
-  gap: 0.35rem;
-  justify-items: start;
+  min-width: 0;
+  gap: 0;
 }
 
-.duel-battle__head .shell__eyebrow {
+.duel-header__eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--fb-space-2);
+}
+
+.duel-header__eyebrow .shell__eyebrow {
   margin: 0;
+  font-size: var(--fb-text-2xs);
+  white-space: nowrap;
 }
 
-.duel-battle__turn {
-  color: var(--fb-text-soft);
-  font-size: var(--fb-text-sm);
-  font-weight: 700;
+.duel-header__title {
+  color: var(--fb-text);
+  font-family: var(--fb-font-display);
+  font-size: 1rem;
+  font-weight: var(--fb-weight-display);
+  letter-spacing: var(--fb-tracking-display);
+  line-height: 1.15;
+  white-space: nowrap;
 }
+
+.duel-header__turn {
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.duel-header__leave {
+  flex: 0 0 auto;
+  min-height: var(--fb-target);
+  padding: var(--fb-space-1) var(--fb-space-2);
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/*
+ * The post-privacy destination (the first incoming card, else End Turn) shows
+ * the two-tone ring even when the ready action was a pointer tap: the ring is
+ * painted from an explicit marker, not from a focus-visible heuristic.
+ */
+[data-duel-focus]:focus {
+  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
+  outline-offset: var(--fb-focus-offset);
+  box-shadow: var(--fb-focus-shadow);
+}
+
+/*
+ * The narrowest phone gives up the wordmark mark so the eyebrow, the three
+ * pips and `Leave duel` all keep one row inside the 52px header.
+ */
+@media (max-width: 389px) {
+  .duel-header .battle-header__mark {
+    display: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Duel board grid                                                            */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * The board is the #8 grid with the duel's two seat panels: the opponent band
+ * takes the enemy-row place, the self band the player-row place, and the shared
+ * log placement rules apply unchanged. The duel cards are taller on tablet and
+ * table than the solo ones because there is no intent band to absorb them.
+ */
+.duel-board {
+  --fb-battle-card-w: var(--fb-card-w-phone);
+  --fb-battle-card-h: 9.5rem;
+}
+
+.duel-board > .duel-panel--self {
+  grid-area: player;
+}
+
+.duel-board > .hand {
+  min-height: 158px; /* 375x667 */
+}
+
+/* -------------------------------------------------------------------------- */
+/* Seat panels                                                                */
+/* -------------------------------------------------------------------------- */
 
 .duel-panel {
   position: relative;
   display: grid;
-  gap: var(--fb-space-2);
   min-width: 0;
-  padding: var(--fb-space-3);
+  align-content: start;
+  gap: var(--fb-space-1);
+  padding: var(--fb-space-2);
   border: var(--fb-rule);
   border-radius: var(--fb-radius-md);
   background-color: var(--fb-surface-panel);
   background-image: var(--fb-material-panel);
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
+  color: var(--fb-text);
+  /* The element bridge, restated locally so this sheet reads only tokens. */
+  --fb-duel-panel-accent: var(--fb-rule-strong-color);
+}
+
+.duel-panel[data-element='ember'] {
+  --fb-duel-panel-accent: var(--fb-ember-accent);
+}
+
+.duel-panel[data-element='frost'] {
+  --fb-duel-panel-accent: var(--fb-frost-accent);
+}
+
+.duel-panel[data-element='gale'] {
+  --fb-duel-panel-accent: var(--fb-gale-accent);
+}
+
+.duel-panel[data-element='stone'] {
+  --fb-duel-panel-accent: var(--fb-stone-accent);
 }
 
 .duel-panel--opponent {
-  border-color: var(--fb-danger);
+  min-height: 132px; /* 375x667; 150 at 390, 160 at 768, 140 at table */
+  border-left: var(--fb-rule-width-strong) solid var(--fb-duel-panel-accent);
 }
 
 .duel-panel--self {
@@ -293,43 +597,166 @@
 
 .duel-panel__head {
   display: flex;
+  min-width: 0;
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.25rem 0.75rem;
+  gap: 0 var(--fb-space-2);
 }
 
 .duel-panel__title {
+  color: var(--fb-text);
   font-family: var(--fb-font-display);
-  font-size: 1.125rem;
-  line-height: 1.2;
+  font-size: 1.0625rem;
+  font-weight: var(--fb-weight-display);
+  letter-spacing: var(--fb-tracking-display);
+  line-height: var(--fb-leading-ui);
 }
 
-.duel-panel__element {
+.duel-panel__deck {
   display: inline-flex;
+  min-width: 0;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0 var(--fb-space-1);
   color: var(--fb-text-soft);
-  font-size: var(--fb-text-sm);
+  font-size: var(--fb-text-2xs);
+  line-height: var(--fb-leading-ui);
 }
 
-.duel-panel__footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.25rem 0.75rem;
-}
-
-.duel-panel__energy,
-.duel-panel__count {
+.duel-panel__deck-name {
+  color: var(--fb-text);
   font-weight: 700;
+}
+
+.duel-panel__meters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--fb-space-2);
+}
+
+.duel-panel .status-list,
+.duel-panel .status-list--empty {
+  margin: 0;
+}
+
+.duel-panel__foot {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fb-space-1) var(--fb-space-2);
+}
+
+.duel-panel__hidden-hand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--fb-space-2);
+}
+
+.duel-panel__count {
+  color: var(--fb-text);
+  font-size: var(--fb-text-xs);
+  font-weight: 700;
+  line-height: var(--fb-leading-ui);
+  white-space: nowrap;
 }
 
 .duel-panel__piles {
   color: var(--fb-text-soft);
-  font-size: var(--fb-text-sm);
+  font-size: var(--fb-text-2xs);
+  line-height: var(--fb-leading-ui);
+}
+
+.duel-panel__energy {
+  display: flex;
+  align-items: center;
+  gap: var(--fb-space-1);
+}
+
+.duel-panel__energy-text {
+  color: var(--fb-text);
+  font-size: var(--fb-text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Hidden hand fan                                                            */
+/* -------------------------------------------------------------------------- */
+
+/* Phone: the self panel is the compact self row inside the footer, not a band. */
+@media (max-width: 767px) {
+  .duel-panel--self {
+    align-self: center;
+    gap: 2px;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  /* Visually hidden, still the region's accessible name. */
+  .duel-panel--self .duel-panel__head {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    border: 0;
+    white-space: nowrap;
+  }
+
+  .duel-panel--self .duel-panel__deck,
+  .duel-panel--self .duel-panel .status-list,
+  .duel-panel--self .status-list,
+  .duel-panel--self .status-list--empty,
+  .duel-panel--self .duel-panel__piles,
+  .duel-panel--self .energy-pips {
+    display: none;
+  }
+}
+
+.duel-fan {
+  display: inline-flex;
+  align-items: center;
+  padding-left: 6px;
+}
+
+.duel-fan .duel-card-back {
+  width: 20px;
+  height: 28px;
+  margin-left: -6px;
+}
+
+.duel-fan .duel-card-back:nth-child(1) {
+  transform: rotate(-6deg);
+}
+
+.duel-fan .duel-card-back:nth-child(2) {
+  transform: rotate(-3deg);
+}
+
+.duel-fan .duel-card-back:nth-child(3) {
+  transform: rotate(0deg);
+}
+
+.duel-fan .duel-card-back:nth-child(4) {
+  transform: rotate(3deg);
+}
+
+.duel-fan .duel-card-back:nth-child(5) {
+  transform: rotate(6deg);
+}
+
+/* Three backs on a phone; the count carries the real value. */
+.duel-fan .duel-card-back:nth-child(n + 4) {
+  display: none;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -340,12 +767,12 @@
  * Three public pips for the best-of-three (duel-flow section 4.9). The list is
  * named `Series score` and every pip is named by its round and winner; the
  * painted pip is decorative, so the strip is never colour-only. It is the same
- * record on the round result and the match result.
+ * record on the board, the round result and the match result.
  */
 .series-strip {
   display: flex;
   align-items: center;
-  gap: var(--fb-space-2);
+  gap: 0.375rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -385,11 +812,304 @@
 }
 
 /* -------------------------------------------------------------------------- */
+/* Results                                                                    */
+/* -------------------------------------------------------------------------- */
+
+.duel-result {
+  justify-items: start;
+}
+
+.duel-result .series-strip {
+  margin: 0;
+}
+
+/* -------------------------------------------------------------------------- */
 /* Breakpoints                                                                */
 /* -------------------------------------------------------------------------- */
 
-@media (min-width: 640px) {
-  .duel-decks {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (min-width: 390px) {
+  .app-root:has(> #main-content[data-screen='duel-setup']) {
+    padding: 1rem 0.75rem 9rem; /* 390x844: 16px 12px 144px */
   }
+
+  .duel-panel--opponent {
+    min-height: 150px;
+  }
+
+  .duel-board > .hand {
+    min-height: 180px;
+  }
+
+  .duel-privacy__title {
+    font-size: 2.25rem; /* 36px */
+  }
+}
+
+/* Phone cards drop to 136px only under a 700px-tall viewport. */
+@media (max-width: 767px) and (max-height: 700px) {
+  .duel-board {
+    --fb-battle-card-h: 8.5rem;
+  }
+
+  .duel-board > .hand {
+    min-height: 158px;
+  }
+}
+
+@media (min-width: 640px) {
+  .app-root:has(> #main-content[data-screen='duel-setup']) {
+    padding: 1.25rem 1rem 7rem; /* 768x1024: 20px 16px 112px */
+  }
+
+  .duel-bar__inner {
+    min-height: 4.5rem; /* 80px */
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--fb-space-3);
+    padding-block: var(--fb-space-2);
+  }
+
+  .duel-bar__status {
+    flex: 1 1 auto;
+    font-size: var(--fb-text-sm);
+  }
+
+  .duel-bar__actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: var(--fb-space-2);
+  }
+
+  .duel-bar__primary {
+    width: auto;
+    flex: 0 0 auto;
+    padding-inline: var(--fb-space-5);
+  }
+
+  .duel-bar .shell__back {
+    justify-self: auto;
+  }
+
+  .duel-sealed {
+    min-height: 5.5rem;
+    max-width: 43.375rem;
+    margin-inline: auto;
+    padding-block: var(--fb-space-1); /* 88px: 78px back + 2 x 4px + rule */
+  }
+
+  .duel-setup__locked {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--fb-space-3);
+    max-width: 43.375rem;
+    margin-inline: auto;
+  }
+
+  .duel-locked {
+    min-height: 12.5rem; /* 200px at 768 */
+  }
+
+  .duel-card-back {
+    width: 26px;
+    height: 36px;
+  }
+
+  .duel-fan .duel-card-back {
+    width: 26px;
+    height: 36px;
+  }
+
+  .duel-fan .duel-card-back:nth-child(n + 4) {
+    display: block;
+  }
+
+  .duel-panel--opponent {
+    min-height: 160px;
+  }
+
+  .duel-panel {
+    gap: var(--fb-space-1) var(--fb-space-2);
+    padding: var(--fb-space-3);
+  }
+
+  .duel-panel__title {
+    font-size: 1.125rem;
+  }
+
+  .duel-panel--self {
+    grid-template-areas:
+      'head meters energy'
+      'status status status';
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--fb-space-1) var(--fb-space-4);
+    min-height: 5rem; /* 80px at 768 */
+    padding: var(--fb-space-2) var(--fb-space-4);
+  }
+
+  .duel-panel--self .duel-panel__head {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0;
+    grid-area: head;
+  }
+
+  .duel-panel--self .duel-panel__meters {
+    grid-area: meters;
+  }
+
+  .duel-panel--self .duel-panel__foot {
+    grid-area: energy;
+    justify-content: flex-end;
+  }
+
+  .duel-panel--self .status-list,
+  .duel-panel--self .status-list--empty {
+    display: flex;
+    grid-area: status;
+  }
+
+  .duel-panel--self .status-list--empty {
+    display: none;
+  }
+
+  .duel-panel--self .duel-panel__piles {
+    display: none;
+  }
+
+  .duel-board {
+    --fb-battle-card-w: var(--fb-card-w-compact);
+    --fb-battle-card-h: 10.5rem;
+  }
+
+  .duel-board > .hand {
+    min-height: 214px;
+  }
+
+  .duel-header__title {
+    font-size: 1.125rem;
+  }
+
+  .duel-privacy__plaque {
+    padding: var(--fb-space-6);
+  }
+
+  .duel-privacy__title {
+    font-size: 2.5rem; /* 40px at 768 */
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-root:has(> #main-content[data-screen='duel-setup']) {
+    padding: 1.5rem 1.25rem 7rem; /* 1024x768: 24px 20px 112px */
+  }
+
+  .duel-sealed {
+    max-width: 58.5rem;
+  }
+
+  .duel-setup__locked {
+    gap: var(--fb-space-4);
+    max-width: 58.5rem;
+  }
+
+  .duel-locked {
+    min-height: 11.875rem; /* 190px */
+  }
+
+  .duel-panel--opponent {
+    min-height: 140px;
+  }
+
+  .duel-panel--self {
+    min-height: 4.375rem; /* 70px */
+    padding: var(--fb-space-1) var(--fb-space-4);
+  }
+
+  .duel-panel--self .status-list,
+  .duel-panel--self .status-list--empty {
+    display: none;
+  }
+
+  .duel-board > .hand {
+    min-height: 204px;
+  }
+
+  .duel-privacy__title {
+    font-size: 2.75rem; /* 44px */
+  }
+
+  .duel-privacy__plaque {
+    padding: var(--fb-space-6);
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-root:has(> #main-content[data-screen='duel-setup']) {
+    padding: 2rem 1.5rem 7rem; /* 1280x800: 32px 24px 112px */
+  }
+
+  .duel-sealed {
+    max-width: 65.25rem;
+  }
+
+  .duel-setup__locked {
+    gap: var(--fb-space-5);
+    max-width: 65.25rem;
+  }
+
+  .duel-locked {
+    min-height: 12.5rem; /* 200px at 1280 */
+  }
+
+  .duel-board {
+    --fb-battle-card-w: var(--fb-card-w-table);
+    --fb-battle-card-h: 12.125rem;
+  }
+
+  .duel-board > .hand {
+    min-height: 228px;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Interaction states and motion                                              */
+/* -------------------------------------------------------------------------- */
+
+@media (hover: hover) {
+  .duel-privacy__ready:hover {
+    background-color: var(--fb-action-hover);
+  }
+}
+
+.duel-privacy__ready:focus-visible {
+  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
+  outline-offset: var(--fb-focus-offset);
+  box-shadow: var(--fb-focus-shadow);
+}
+
+.duel-privacy__ready:active {
+  background-color: var(--fb-action-pressed);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duel-privacy__plaque {
+    animation: none;
+    transform: none;
+  }
+
+  .duel-privacy__ready {
+    transition: none;
+  }
+}
+
+[data-reduced-motion='true'] .duel-privacy__plaque {
+  animation: none;
+  transform: none;
+}
+
+[data-reduced-motion='false'] .duel-privacy__plaque {
+  animation: fb-duel-plaque var(--fb-dur-lift) var(--fb-ease) both;
 }

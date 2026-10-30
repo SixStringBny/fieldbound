@@ -66,7 +66,7 @@ export function MatchResultScreen({
         <li className="result__action">
           <button
             type="button"
-            className="shell__back result__secondary"
+            className="shell__back result__secondary result__brass"
             onClick={onChangeDecks}
           >
             Change decks

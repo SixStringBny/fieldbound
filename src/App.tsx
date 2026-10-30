@@ -42,6 +42,7 @@ import { enemyById } from './content/enemies';
 import { createMatch, matchWinner, recordRoundWinner, rematch } from './duel/match';
 import type { DuelMatch, DuelPlayer, DuelRound } from './duel/match';
 import {
+  canDuelAct,
   createDuelRound,
   dismissDuelPrivacy,
   duelRoundView,
@@ -99,6 +100,7 @@ import { DuelBattleScreen } from './ui/screens/DuelBattleScreen';
 import type { DuelBattleScreenProps } from './ui/screens/DuelBattleScreen';
 import { DuelSetupScreen } from './ui/screens/DuelSetupScreen';
 import { duelPlayerName, duelScoreText } from './ui/screens/duel-copy';
+import { projectDuelBoardView } from './ui/screens/duel-view';
 import { HowToPlayScreen } from './ui/screens/HowToPlayScreen';
 import { MatchResultScreen } from './ui/screens/MatchResultScreen';
 import { MenuScreen } from './ui/screens/MenuScreen';
@@ -987,8 +989,15 @@ export function App({
   const battle = battleConfig ?? PRACTICE_BATTLE_CONFIG;
 
   // Redacted view of the live duel round. `null` whenever no round is running,
-  // so every non-duel route keeps rendering its own surface.
+  // so every non-duel route keeps rendering its own surface. The board view is
+  // the controller's active-turn view widened with the two public presentation
+  // facts duel-flow section 8.2 allows: the locked deck names and the completed
+  // round history (projection only; the frozen controllers are untouched).
   const duelView = duel?.phase === 'round' ? duelRoundView(duel.round) : null;
+  const duelBoardView =
+    duel?.phase === 'round' && duelView?.kind === 'battle'
+      ? projectDuelBoardView(duelView, duel.match)
+      : null;
   // The round seed keys the shared public log's deterministic dialogue. Only
   // the active battle view consumes it; every other duel surface has no log.
   const duelLogSeed = duel?.phase === 'round' ? duel.match.roundSeed : 0;
@@ -1069,13 +1078,14 @@ export function App({
         />
       ),
     battle:
-      duelView?.kind === 'battle' ? (
+      duelBoardView !== null && duel?.phase === 'round' ? (
         <DuelBattleRoute
-          view={duelView}
+          view={duelBoardView}
           cards={cardCatalog}
           seed={duelLogSeed}
-          fieldMatchup={fieldMatchupFor(duelView.field)}
+          fieldMatchup={fieldMatchupFor(duelBoardView.field)}
           baseUrl={import.meta.env.BASE_URL}
+          live={canDuelAct(duel.round)}
           reducedMotion={reducedMotion}
           onPlayCard={handleDuelPlay}
           onEndTurn={handleDuelEndTurn}
@@ -1129,13 +1139,20 @@ export function App({
     'duel-setup': (
       <DuelSetupScreen
         decks={STARTER_DECKS}
+        cards={cardCatalog}
         onStartMatch={handleStartMatch}
         onBack={leaveDuel}
+        onAnnounce={announce}
       />
     ),
     privacy:
       duelView?.kind === 'privacy' ? (
-        <PrivacyScreen viewer={duelView.viewer} onReady={handleDuelReady} />
+        <PrivacyScreen
+          viewer={duelView.viewer}
+          round={duelView.round}
+          wins={duelView.wins}
+          onReady={handleDuelReady}
+        />
       ) : (
         <DuelUnavailable title="Privacy handoff" onBack={leaveDuel} />
       ),
