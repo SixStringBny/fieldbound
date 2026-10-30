@@ -254,6 +254,133 @@ describe('App battle cues', () => {
 });
 
 /* -------------------------------------------------------------------------- */
+/* Feedback beat                                                              */
+/* -------------------------------------------------------------------------- */
+
+describe('App battle feedback', () => {
+  function impactNumbers(): HTMLElement[] {
+    return Array.from(
+      document.querySelectorAll<HTMLElement>('[data-impact-number]'),
+    );
+  }
+
+  it('shows no impact number on the opening render', () => {
+    renderBattle();
+
+    expect(impactNumbers()).toHaveLength(0);
+    expect(document.querySelector('[data-feedback-key]')).toBeNull();
+    expect(
+      document.querySelector('.hand')?.getAttribute('data-dealt'),
+    ).toBe('false');
+  });
+
+  it('shows one signed, aria-hidden number for the target that lost health', () => {
+    renderBattle();
+
+    playFromHand(/Cinder Jab/);
+
+    const numbers = impactNumbers();
+
+    expect(numbers).toHaveLength(1);
+    expect(numbers[0]?.textContent).toBe('\u22123');
+    expect(numbers[0]?.getAttribute('data-side')).toBe('opponent');
+    expect(numbers[0]?.getAttribute('data-kind')).toBe('damage');
+    expect(numbers[0]?.getAttribute('aria-hidden')).toBe('true');
+    expect(enemyRegion().contains(numbers[0] ?? null)).toBe(true);
+    expect(document.querySelector('.hand')?.getAttribute('data-dealt')).toBe(
+      'true',
+    );
+  });
+
+  it('replaces the running number on a fast second play and keeps both log entries', () => {
+    renderBattle();
+
+    playFromHand(/Cinder Jab/);
+    const first = document.querySelector('[data-feedback-key]')?.getAttribute(
+      'data-feedback-key',
+    );
+
+    playFromHand(/Ember Lance/);
+
+    const numbers = impactNumbers();
+
+    // Exactly one number is on screen: the newer beat replaced the older one.
+    expect(numbers).toHaveLength(1);
+    expect(numbers[0]?.textContent).toBe('\u22124');
+    expect(
+      document.querySelector('[data-feedback-key]')?.getAttribute(
+        'data-feedback-key',
+      ),
+    ).not.toBe(first);
+
+    const log = screen.getByRole('region', { name: 'Battle log' });
+    expect(log.textContent).toContain('Cinder Jab');
+    expect(log.textContent).toContain('Ember Lance');
+  });
+
+  it('shows the defense chip instead of a number for a Ward', () => {
+    renderBattle();
+
+    playFromHand(/Ash Guard/);
+
+    const chip = document.querySelector('[data-defense-chip]');
+
+    expect(chip?.textContent).toBe('+2 DEF');
+    expect(chip?.getAttribute('aria-hidden')).toBe('true');
+    expect(impactNumbers()).toHaveLength(0);
+  });
+
+  it('marks the field shift and the turn handoff on their own beats', () => {
+    renderBattle();
+
+    expect(document.querySelector('[data-field-shift]')).toBeNull();
+    expect(
+      document.querySelector('.battle-header__turn')?.getAttribute(
+        'data-feedback-handoff',
+      ),
+    ).toBeNull();
+
+    playFromHand(/Ember Shift/);
+
+    expect(document.querySelector('[data-field-shift]')?.getAttribute('data-to')).toBe(
+      'ember',
+    );
+    // A card play does not change the turn, so it is not a handoff beat.
+    expect(
+      document.querySelector('.battle-header__turn')?.getAttribute(
+        'data-feedback-handoff',
+      ),
+    ).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    expect(
+      document.querySelector('.battle-header__turn')?.getAttribute(
+        'data-feedback-handoff',
+      ),
+    ).toBe('true');
+  });
+
+  it('reveals the intent block when a new plan arrives with the player turn', () => {
+    renderBattle();
+
+    expect(
+      document.querySelector('.enemy-panel__intent')?.getAttribute(
+        'data-intent-reveal',
+      ),
+    ).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    expect(
+      document.querySelector('.enemy-panel__intent')?.getAttribute(
+        'data-intent-reveal',
+      ),
+    ).toBe('true');
+  });
+});
+
+/* -------------------------------------------------------------------------- */
 /* Victory, rejection and leaving                                             */
 /* -------------------------------------------------------------------------- */
 

@@ -14,6 +14,7 @@ import type {
 } from '../../engine/types';
 import { byId as cardCatalog } from '../../content/cards';
 import { enemyById } from '../../content/enemies';
+import type { FeedbackBeat } from '../feedback/derive';
 import { BattleBoard } from './BattleBoard';
 import type { BattleLogLineView } from './BattleLog';
 import type { FieldMatchup } from './FieldBanner';
@@ -149,6 +150,11 @@ function renderBoard(
   state: BattleState = makeState(),
   fieldMatchup: FieldMatchup | null = EMBER_MATCHUP,
   logLines: BattleLogLineView[] = [],
+  options: {
+    readonly feedback?: FeedbackBeat | null;
+    readonly dealt?: boolean;
+    readonly reducedMotion?: boolean;
+  } = {},
 ) {
   const onPlayCard = vi.fn();
   const onEndTurn = vi.fn();
@@ -164,10 +170,34 @@ function renderBoard(
       onEndTurn={onEndTurn}
       logLines={logLines}
       logToggleLabel="Log"
+      feedback={options.feedback ?? null}
+      dealt={options.dealt ?? false}
+      reducedMotion={options.reducedMotion ?? false}
     />,
   );
 
   return { ...result, onPlayCard, onEndTurn };
+}
+
+/** One settled beat: the opponent lost 5, the player gained 2 defense. */
+function makeBeat(overrides: Partial<FeedbackBeat> = {}): FeedbackBeat {
+  return {
+    key: 4,
+    draw: false,
+    drawn: [],
+    impacts: [{ side: 'opponent', kind: 'damage', amount: -5 }],
+    defense: [],
+    field: null,
+    revealIntent: false,
+    handoff: false,
+    flash: [{ side: 'opponent', kind: 'damage' }],
+    ...overrides,
+  };
+}
+
+/** Remove `/* … *\/` comments so prose about a property cannot be scanned. */
+function stripCssComments(css: string): string {
+  return css.replace(/\/\*[\s\S]*?\*\//g, '');
 }
 
 function cinderJabButton(): HTMLElement {
@@ -636,6 +666,257 @@ describe('BattleBoard manifest images', () => {
 });
 
 /* -------------------------------------------------------------------------- */
+/* Feedback beat                                                              */
+/* -------------------------------------------------------------------------- */
+
+describe('BattleBoard feedback beat', () => {
+  it('renders no decoration without a beat and never on the opening deal', () => {
+    const { container } = renderBoard();
+
+    expect(container.querySelector('[data-feedback-key]')).toBeNull();
+    expect(container.querySelector('[data-impact-number]')).toBeNull();
+    expect(container.querySelector('[data-impact-flash]')).toBeNull();
+    expect(container.querySelector('[data-defense-chip]')).toBeNull();
+    expect(container.querySelector('.hand')?.getAttribute('data-dealt')).toBe(
+      'false',
+    );
+  });
+
+  it('shows one signed, aria-hidden impact number inside the target panel', () => {
+    const { container } = renderBoard(makeState(), EMBER_MATCHUP, [], {
+      feedback: makeBeat(),
+      dealt: true,
+    });
+
+    const enemy = screen.getByRole('region', { name: 'Cinder Warden' });
+    const number = enemy.querySelector('[data-impact-number]');
+
+    expect(number).not.toBeNull();
+    expect(number?.textContent).toBe('\u22125');
+    expect(number?.getAttribute('data-side')).toBe('opponent');
+    expect(number?.getAttribute('data-kind')).toBe('damage');
+    expect(number?.getAttribute('aria-hidden')).toBe('true');
+
+    const layer = enemy.querySelector('.battle-feedback');
+    expect(layer?.getAttribute('data-feedback-key')).toBe('4');
+    expect(layer?.getAttribute('aria-hidden')).toBe('true');
+    expect(container.querySelectorAll('[data-impact-number]')).toHaveLength(1);
+  });
+
+  it('uses U+2212 for damage and a plus for healing', () => {
+    renderBoard(makeState(), EMBER_MATCHUP, [], {
+      feedback: makeBeat({
+        impacts: [{ side: 'player', kind: 'heal', amount: 2 }],
+        flash: [{ side: 'player', kind: 'heal' }],
+      }),
+      dealt: true,
+    });
+
+    const player = screen.getByRole('region', { name: 'You' });
+    const number = player.querySelector('[data-impact-number]');
+
+    expect(number?.textContent).toBe('+2');
+    expect(number?.textContent).not.toContain('-');
+    expect(player.querySelector('[data-impact-flash]')?.getAttribute('data-kind')).toBe(
+      'heal',
+    );
+  });
+
+  it('shows a +N DEF chip instead of a number when only defense rose', () => {
+    const { container } = renderBoard(makeState(), EMBER_MATCHUP, [], {
+      feedback: makeBeat({
+        impacts: [],
+        defense: [{ side: 'player', amount: 3, total: 4 }],
+        flash: [{ side: 'player', kind: 'defense' }],
+      }),
+      dealt: true,
+    });
+
+    const player = screen.getByRole('region', { name: 'You' });
+    const chip = player.querySelector('[data-defense-chip]');
+
+    expect(chip?.textContent).toBe('+3 DEF');
+    expect(chip?.getAttribute('data-side')).toBe('player');
+    expect(chip?.getAttribute('aria-hidden')).toBe('true');
+    expect(container.querySelector('[data-impact-number]')).toBeNull();
+  });
+
+  it('marks the field shift and the handoff surfaces for their beat', () => {
+    const { container } = renderBoard(makeState(), EMBER_MATCHUP, [], {
+      feedback: makeBeat({
+        field: { previous: 'neutral', next: 'ember' },
+        handoff: true,
+      }),
+      dealt: true,
+    });
+
+    const shift = container.querySelector('[data-field-shift]');
+    expect(shift?.getAttribute('aria-hidden')).toBe('true');
+    expect(shift?.getAttribute('data-to')).toBe('ember');
+
+    // The footer energy label is the board's handoff surface; the header lives
+    // on the battle screen.
+    const handoff = container.querySelectorAll('[data-feedback-handoff]');
+    expect(handoff).toHaveLength(1);
+    expect(handoff[0]?.getAttribute('data-feedback-handoff')).toBe('true');
+    expect(handoff[0]?.textContent).toContain('energy');
+  });
+
+  it('marks the intent block only when the plan first appears', () => {
+    const { container, rerender } = renderBoard(
+      makeState(),
+      EMBER_MATCHUP,
+      [],
+      { feedback: makeBeat({ revealIntent: true, handoff: true }), dealt: true },
+    );
+
+    const intent = container.querySelector('.enemy-panel__intent');
+    expect(intent?.getAttribute('data-intent-reveal')).toBe('true');
+
+    rerender(
+      <BattleBoard
+        state={makeState()}
+        enemy={requiredEnemy('enemy-cinder-warden')}
+        fieldMatchup={EMBER_MATCHUP}
+        cards={cardCatalog}
+        baseUrl="/app/"
+        onPlayCard={vi.fn()}
+        onEndTurn={vi.fn()}
+        logLines={[]}
+        logToggleLabel="Log"
+        feedback={makeBeat({ key: 5 })}
+        dealt
+      />,
+    );
+
+    expect(
+      container
+        .querySelector('.enemy-panel__intent')
+        ?.getAttribute('data-intent-reveal'),
+    ).toBeNull();
+  });
+
+  it('renders the impact number exactly once per target per beat', () => {
+    const { container } = renderBoard(makeState(), EMBER_MATCHUP, [], {
+      feedback: makeBeat({
+        impacts: [
+          { side: 'player', kind: 'damage', amount: -6 },
+          { side: 'opponent', kind: 'damage', amount: -3 },
+        ],
+        flash: [
+          { side: 'player', kind: 'damage' },
+          { side: 'opponent', kind: 'damage' },
+        ],
+      }),
+      dealt: true,
+    });
+
+    const numbers = Array.from(
+      container.querySelectorAll('[data-impact-number]'),
+    );
+
+    expect(numbers).toHaveLength(2);
+    expect(numbers.map((node) => node.textContent)).toEqual(['\u22123', '\u22126']);
+    expect(
+      Array.from(container.querySelectorAll('[data-impact-flash]')),
+    ).toHaveLength(2);
+  });
+
+  it('marks the hand dealt once a transition has settled', () => {
+    const { container } = renderBoard(makeState(), EMBER_MATCHUP, [], {
+      feedback: makeBeat({ draw: true, drawn: ['player:hand:0:ember-cinder-jab'] }),
+      dealt: true,
+    });
+
+    const hand = container.querySelector('.hand');
+    expect(hand?.getAttribute('data-dealt')).toBe('true');
+    expect(hand?.getAttribute('data-draw')).toBe('true');
+
+    // Only the instance that entered the hand carries the draw marker.
+    const items = Array.from(container.querySelectorAll('.hand__item'));
+
+    expect(
+      items.filter((item) => item.getAttribute('data-drawn') === 'true'),
+    ).toHaveLength(1);
+  });
+
+  it('renders nothing at all under reduced motion', () => {
+    const { container } = renderBoard(makeState(), EMBER_MATCHUP, [], {
+      feedback: makeBeat({
+        impacts: [{ side: 'opponent', kind: 'damage', amount: -5 }],
+        defense: [{ side: 'opponent', amount: 2, total: 3 }],
+        field: { previous: 'neutral', next: 'ember' },
+        revealIntent: true,
+        handoff: true,
+      }),
+      dealt: true,
+      reducedMotion: true,
+    });
+
+    expect(container.querySelector('[data-feedback-key]')).toBeNull();
+    expect(container.querySelector('[data-impact-number]')).toBeNull();
+    expect(container.querySelector('[data-defense-chip]')).toBeNull();
+    expect(container.querySelector('[data-impact-flash]')).toBeNull();
+    expect(container.querySelector('[data-field-shift]')).toBeNull();
+    expect(
+      container.querySelector('[data-intent-reveal]'),
+    ).toBeNull();
+    expect(container.querySelector('[data-feedback-handoff]')).toBeNull();
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Feedback stylesheet contract                                               */
+/* -------------------------------------------------------------------------- */
+
+describe('BattleBoard feedback contract', () => {
+  function motionCss(): string {
+    return stripCssComments(
+      readFileSync(resolve(process.cwd(), 'src/ui/motion/motion.css'), 'utf8'),
+    );
+  }
+
+  it('animates only transform and opacity, and transitions no forbidden property', () => {
+    const css = motionCss();
+    const animated = [...css.matchAll(/(?:animation-name|animation):\s*([^;}]+)/g)]
+      .flatMap((match) => (match[1] ?? '').split(','))
+      .map((part) => part.trim().split(/\s+/)[0] ?? '');
+
+    for (const name of animated) {
+      expect(name === 'none' || name.startsWith('fb-feedback-'), name).toBe(
+        true,
+      );
+    }
+
+    for (const match of css.matchAll(/transition(?:-property)?\s*:\s*([^;}]+)/g)) {
+      for (const part of (match[1] ?? '').split(',')) {
+        const property = part.trim().split(/\s+/)[0] ?? '';
+
+        expect(
+          ['transform', 'opacity', 'color', 'border-color', 'background-color'],
+          `transition on ${property}`,
+        ).toContain(property);
+      }
+    }
+
+    expect(css).not.toMatch(/box-shadow/);
+  });
+
+  it('keeps the layer and the numbers out of the layout and the reduced branch', () => {
+    const css = motionCss();
+
+    expect(css).toMatch(/\.battle-feedback\s*\{[^}]*position:\s*absolute/s);
+    expect(css).toMatch(/\.battle-feedback\s*\{[^}]*inset:\s*0/s);
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
+    expect(css).toMatch(/\[data-reduced-motion='true'\]/);
+    expect(css).toMatch(/\[data-reduced-motion='false'\]/);
+    expect(css).toMatch(/transition-duration:\s*var\(--fb-dur-instant\)/);
+    expect(css).toMatch(/transform:\s*none/);
+  });
+});
+
+
+/* -------------------------------------------------------------------------- */
 /* Purity and import boundary                                                 */
 /* -------------------------------------------------------------------------- */
 
@@ -647,6 +928,7 @@ describe('BattleBoard presentation boundaries', () => {
     'CardView.tsx',
     'ElementCue.tsx',
     'EnemyPanel.tsx',
+    'FeedbackLayer.tsx',
     'FieldBanner.tsx',
     'Hand.tsx',
     'PlayerPanel.tsx',

@@ -115,6 +115,9 @@ interface MotionSnapshot {
   readonly handItem: MotionSample | null;
   readonly fieldBanner: MotionSample | null;
   readonly playerPanel: MotionSample | null;
+  readonly intent: MotionSample | null;
+  readonly feedbackLayer: MotionSample | null;
+  readonly impactNumber: MotionSample | null;
 }
 
 function stopDescription(stop: FocusStop): string {
@@ -372,6 +375,9 @@ async function readMotionSnapshot(page: Page): Promise<MotionSnapshot> {
       handItem: pick('.hand__item'),
       fieldBanner: pick('.field-banner'),
       playerPanel: pick('.player-panel'),
+      intent: pick('.enemy-panel__intent'),
+      feedbackLayer: pick('.battle-feedback'),
+      impactNumber: pick('[data-impact-number]'),
     };
   });
 }
@@ -798,6 +804,76 @@ for (const [index, viewport] of VIEWPORTS.entries()) {
       expectStilled('the hand row item', motion.handItem, motionContext);
       expectStilled('the field banner', motion.fieldBanner, motionContext);
       expectStilled('the player panel', motion.playerPanel, motionContext);
+      expectStilled('the intent block', motion.intent, motionContext);
+
+      /*
+       * Motion-and-feedback section 10: the beat is an absolute branch. No
+       * impact number, chip, flash, shift ring, handoff or feedback layer may
+       * exist in the DOM — not hidden, not transparent, absent — so there is
+       * nothing to still.
+       */
+      expect(
+        motion.feedbackLayer,
+        `${motionContext}: a feedback layer was rendered under reduced motion.`,
+      ).toBeNull();
+      expect(
+        motion.impactNumber,
+        `${motionContext}: an impact number was rendered under reduced motion.`,
+      ).toBeNull();
+      await expect(page.locator('[data-impact-flash]')).toHaveCount(0);
+      await expect(page.locator('[data-defense-chip]')).toHaveCount(0);
+      await expect(page.locator('[data-field-shift]')).toHaveCount(0);
+      await expect(page.locator('[data-feedback-handoff]')).toHaveCount(0);
+
+      // The same facts stay visible: play a card and read the value, the log
+      // entry and the one polite sentence.
+      const enemyHealth = page.getByRole('meter', {
+        name: 'Cinder Warden health',
+        exact: true,
+      });
+      const healthBefore = await enemyHealth.getAttribute('aria-valuenow');
+      const affordable = page.locator('.hand .card-view[data-affordable="true"]');
+      const affordableCount = await affordable.count();
+      let attack = null;
+
+      for (let index = 0; index < affordableCount; index += 1) {
+        const candidate = affordable.nth(index);
+        const label = (await candidate.getAttribute('aria-label')) ?? '';
+
+        if (/\battack,/.test(label)) {
+          attack = candidate;
+          break;
+        }
+      }
+
+      if (attack === null) {
+        throw new Error(
+          `${motionContext}: no affordable attack was on screen under reduced motion, so the settled transition cannot be measured.`,
+        );
+      }
+
+      await attack.click();
+      await page.getByRole('button', { name: 'Play card', exact: true }).click();
+      await expect(
+        page.locator('[data-card-detail-layer="true"]'),
+        `${motionContext}: the detail sheet did not close after Play card.`,
+      ).toBeHidden();
+
+      await expect
+        .poll(async () => enemyHealth.getAttribute('aria-valuenow'), {
+          message: `${motionContext}: the settled transition did not change the meter.`,
+          timeout: 5_000,
+        })
+        .not.toBe(healthBefore);
+
+      await expect(page.locator('[data-impact-number]')).toHaveCount(0);
+      await expect(page.locator('[data-feedback-key]')).toHaveCount(0);
+      await expect(
+        page.locator('[data-battle-log-entry]').last(),
+        `${motionContext}: the log did not record the settled transition.`,
+      ).toBeAttached();
+      await expect(page.getByRole('status')).toHaveCount(1);
+      await expect(page.getByRole('status')).not.toHaveText('');
 
       await expectNoHorizontalScroll(page);
 

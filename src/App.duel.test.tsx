@@ -386,6 +386,129 @@ describe('App duel battle', () => {
 });
 
 /* -------------------------------------------------------------------------- */
+/* Feedback beat                                                              */
+/* -------------------------------------------------------------------------- */
+
+describe('App duel feedback', () => {
+  function opponentRegion(): HTMLElement {
+    return screen.getByRole('region', { name: 'Player 2' });
+  }
+
+  function opponentHealth(): number {
+    return Number(
+      within(opponentRegion())
+        .getByRole('meter', { name: 'Player 2 health' })
+        .getAttribute('aria-valuenow'),
+    );
+  }
+
+  /** Play the first affordable card through its detail sheet. */
+  function playFirstAffordable(): boolean {
+    const hand = screen.queryByRole('region', { name: 'Your hand' });
+
+    if (hand === null) {
+      return false;
+    }
+
+    const playable = within(hand)
+      .queryAllByRole('button')
+      .find((button) => button.getAttribute('aria-disabled') !== 'true');
+
+    if (playable === undefined) {
+      return false;
+    }
+
+    fireEvent.click(playable);
+    const dialog = screen.queryByRole('dialog');
+
+    if (dialog === null) {
+      return false;
+    }
+
+    const play = within(dialog).getByRole('button', { name: 'Play card' });
+
+    if ((play as HTMLButtonElement).disabled) {
+      fireEvent.click(
+        within(dialog).getByRole('button', { name: 'Close card detail' }),
+      );
+      return false;
+    }
+
+    fireEvent.click(play);
+    return true;
+  }
+
+  it('shows the same signed number over the public health delta', () => {
+    const match = createMatch({
+      player1DeckId: 'deck-ember',
+      player2DeckId: 'deck-frost',
+      seed: 99,
+    });
+
+    if (!match.ok) {
+      throw new Error(match.error.message);
+    }
+
+    // A fixed round seed keeps the opening hand deterministic: it holds an
+    // affordable attack, so the first health change is a known one.
+    render(<App initialScreen={SCREENS.privacy} duelMatch={match.value} />);
+    pressReady();
+
+    expect(currentScreen()).toBe('battle');
+    expect(document.querySelector('[data-feedback-key]')).toBeNull();
+
+    let observed = false;
+
+    for (let step = 0; step < 6 && !observed; step += 1) {
+      if (currentScreen() !== 'battle') {
+        break;
+      }
+
+      const before = opponentHealth();
+
+      if (!playFirstAffordable()) {
+        break;
+      }
+
+      if (currentScreen() !== 'battle') {
+        break;
+      }
+
+      const after = opponentHealth();
+
+      if (after < before) {
+        const numbers = opponentRegion().querySelectorAll(
+          '[data-impact-number]',
+        );
+
+        expect(numbers).toHaveLength(1);
+        expect(numbers[0]?.textContent).toBe(`\u2212${before - after}`);
+        expect(numbers[0]?.getAttribute('data-side')).toBe('opponent');
+        expect(numbers[0]?.getAttribute('aria-hidden')).toBe('true');
+        observed = true;
+      }
+    }
+
+    expect(observed).toBe(true);
+
+    // A duel has no intent block at all, so nothing can be revealed.
+    expect(document.querySelector('[data-intent-reveal]')).toBeNull();
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+  });
+
+  it('renders no beat behind the privacy handoff', () => {
+    const { container } = render(<App />);
+
+    startDuel();
+
+    expect(currentScreen()).toBe('privacy');
+    expect(container.querySelector('[data-feedback-key]')).toBeNull();
+    expect(container.querySelector('[data-impact-number]')).toBeNull();
+    expect(container.querySelector('[data-duel-battle]')).toBeNull();
+  });
+});
+
+/* -------------------------------------------------------------------------- */
 /* Score progression and match result                                         */
 /* -------------------------------------------------------------------------- */
 

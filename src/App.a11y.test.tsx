@@ -11,6 +11,12 @@ import { describe, expect, it } from 'vitest';
 import { App, SCREENS } from './App';
 import { byId as cardCatalog } from './content/cards';
 import { enemyById } from './content/enemies';
+import {
+  DEFAULT_SETTINGS,
+  SETTINGS_STORAGE_KEY,
+  serializeSettings,
+} from './persistence/settings';
+import type { SettingsStorage } from './persistence/settings';
 import type { BattleControllerConfig } from './state/battle-controller';
 
 /* -------------------------------------------------------------------------- */
@@ -67,6 +73,36 @@ function battleConfig(
 
 function renderBattle(config: BattleControllerConfig = battleConfig()) {
   return render(<App initialScreen={SCREENS.battle} battleConfig={config} />);
+}
+
+/**
+ * The same battle with an explicit in-app "reduce motion" choice, so the
+ * absolute reduced branch is exercised without a real OS preference.
+ */
+function renderBattleReduced(config: BattleControllerConfig = battleConfig()) {
+  const stored = new Map<string, string>([
+    [
+      SETTINGS_STORAGE_KEY,
+      serializeSettings({ ...DEFAULT_SETTINGS, reducedMotion: true }),
+    ],
+  ]);
+  const storage: SettingsStorage = {
+    getItem: (key) => stored.get(key) ?? null,
+    setItem: (key, value) => {
+      stored.set(key, value);
+    },
+    removeItem: (key) => {
+      stored.delete(key);
+    },
+  };
+
+  return render(
+    <App
+      initialScreen={SCREENS.battle}
+      battleConfig={config}
+      settingsStorage={storage}
+    />,
+  );
 }
 
 function mainRegion(): HTMLElement {
@@ -308,10 +344,56 @@ describe('App live announcements', () => {
   });
 });
 
+describe('App feedback accessibility', () => {
+  it('keeps impact numbers out of the accessibility tree and adds no live region', () => {
+    renderBattle();
+
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+
+    openCard(/Cinder Jab/);
+    const dialog = screen.getByRole('dialog', { name: 'Cinder Jab' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Play card' }));
+
+    const number = document.querySelector('[data-impact-number]');
+
+    expect(number).not.toBeNull();
+    expect(number?.closest('[aria-hidden="true"]')).not.toBeNull();
+    expect(number?.getAttribute('tabindex')).toBeNull();
+
+    // Exactly one live region still, and it speaks the fact rather than the
+    // decoration.
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(liveRegion().textContent).toContain('Cinder Warden takes 3 damage');
+    expect(liveRegion().textContent).not.toContain('\u22123');
+    expect(screen.queryAllByRole('alert')).toHaveLength(0);
+  });
+
+  it('renders no beat at all under reduced motion and keeps every fact visible', () => {
+    renderBattleReduced();
+
+    openCard(/Cinder Jab/);
+    const dialog = screen.getByRole('dialog', { name: 'Cinder Jab' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Play card' }));
+
+    expect(document.querySelector('[data-impact-number]')).toBeNull();
+    expect(document.querySelector('[data-feedback-key]')).toBeNull();
+    expect(document.querySelector('[data-impact-flash]')).toBeNull();
+    expect(document.querySelector('[data-defense-chip]')).toBeNull();
+    expect(document.querySelector('[data-field-shift]')).toBeNull();
+    expect(document.querySelector('[data-feedback-handoff]')).toBeNull();
+
+    // The same facts remain: the meter value, the log entry and the sentence.
+    expect(enemyHealth()).toBe('27 of 30 health');
+    expect(
+      screen.getByRole('region', { name: 'Battle log' }).textContent,
+    ).toContain('Cinder Jab');
+    expect(liveRegion().textContent).toContain('Cinder Warden takes 3 damage');
+  });
+});
+
 /* -------------------------------------------------------------------------- */
 /* Escape, focus trap and skip link                                           */
 /* -------------------------------------------------------------------------- */
-
 describe('App dialogs and skip link', () => {
   it('traps focus in the card detail, ignores E there and restores the invoker on Escape', () => {
     renderBattle();
