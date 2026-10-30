@@ -58,6 +58,7 @@ import { resolveRunSeed } from './persistence/seed';
 import type { SeedSource } from './persistence/seed';
 import {
   RUN_ENCOUNTER_COUNT,
+  RUN_LADDER,
   RUN_MAX_HEALTH,
   currentEnemy,
   runSummary,
@@ -871,6 +872,25 @@ export function App({
     [applyRunAttempt, chooseRunReward],
   );
 
+  /**
+   * One polite line per deliberate selection on the solo surfaces. The screens
+   * own their own selection state and only report the name they chose; the copy
+   * lives here with every other announcement so only one region ever speaks.
+   */
+  const handleSoloDeckSelected = useCallback(
+    (deckName: string) => {
+      announce(`${deckName} deck selected. Start Run is enabled.`);
+    },
+    [announce],
+  );
+
+  const handleRewardSelected = useCallback(
+    (name: string) => {
+      announce(`${name} selected. Take reward is enabled.`);
+    },
+    [announce],
+  );
+
   const handleRunOverview = useCallback(() => {
     navigate('run-overview');
 
@@ -1025,6 +1045,7 @@ export function App({
         cards={cardCatalog}
         onStart={handleStartRun}
         onBack={() => navigate('menu')}
+        onSelect={handleSoloDeckSelected}
       />
     ),
     'run-overview':
@@ -1033,6 +1054,7 @@ export function App({
       ) : (
         <RunOverviewScreen
           progress={runProgress(runState.run)}
+          ladder={RUN_LADDER}
           encounterNumber={runEncounterNumber(runState.run)}
           encounterTotal={RUN_ENCOUNTER_COUNT}
           health={runCurrentHealth(runState)}
@@ -1090,6 +1112,7 @@ export function App({
           health={runState.run.health}
           maxHealth={RUN_MAX_HEALTH}
           onChoose={handleChooseReward}
+          onSelect={handleRewardSelected}
         />
       ),
     'run-result':

@@ -1,20 +1,33 @@
 /**
  * The mandatory solo reward (RUN-FR-02, RUN-FR-03, RUN-US-02).
  *
- * After every normal-encounter victory the run stops here and exactly one
- * option must be chosen; there is no skip. Card options show the printed face,
- * element, cost and full effect. The heal option appears only when the run is
- * below 20 health and states the exact amount carried by the offer, so the
- * screen never re-derives the reward rule.
+ * Three dealt offers from `docs/design-system/solo-flow.md` section 5. Selection
+ * and confirmation are two deliberate steps:
  *
- * Presentational only: it reports `onChoose(index)` and imports no engine
- * mutator, controller or storage module.
+ *   1. activating an offer marks it `aria-pressed="true"`, lifts it and enables
+ *      the confirm action labelled with the choice;
+ *   2. activating that confirm action reports exactly one `onChoose(index)`.
+ *
+ * The screen does not advance on the first activation, there is no skip and no
+ * menu escape while the reward phase is open. A missing card face renders a
+ * labelled, disabled option; an invalid offer list shows a labelled error and
+ * mounts no confirm bar.
+ *
+ * Presentational only: it imports no engine mutator, controller or storage
+ * module, and `onSelect` is a reporting hook for the one app-wide polite region.
  */
+import { useRef, useState } from 'react';
+import type { Element } from '../../engine/types';
 import type { RewardOffer } from '../../run/rewards';
 import { AssetImage } from '../components/AssetImage';
 import { cardEffectLines, cardPrimary } from '../components/card-presentation';
 import { ElementCue, elementLabel } from '../components/ElementCue';
 import type { CardCatalogView } from '../components/view-types';
+
+/** The reward screen always deals exactly three offers. */
+const OFFER_COUNT = 3;
+
+const PROMPT = 'Select one reward to continue.';
 
 export interface RewardScreenProps {
   /** Exactly the three offers the run controller generated. */
@@ -26,8 +39,73 @@ export interface RewardScreenProps {
   /** Current run health, shown as context for the heal option. */
   readonly health: number;
   readonly maxHealth: number;
-  /** The chosen offer's index; the run advances after exactly one call. */
+  /** The confirmed offer's index; the run advances after exactly one call. */
   readonly onChoose: (index: number) => void;
+  /** Optional hook reporting the name the player just selected. */
+  readonly onSelect?: (name: string) => void;
+}
+
+type OfferView =
+  | {
+      readonly kind: 'card';
+      readonly name: string;
+      readonly effect: string;
+      readonly primary: { readonly value: string; readonly label: string };
+      readonly element: Element;
+      readonly cost: number;
+      readonly cardId: string;
+      readonly available: true;
+    }
+  | {
+      readonly kind: 'heal';
+      readonly name: string;
+      readonly effect: string;
+      readonly amount: number;
+      readonly available: true;
+    }
+  | {
+      readonly kind: 'unavailable';
+      readonly name: string;
+      readonly effect: string;
+      readonly available: false;
+    };
+
+function offerView(
+  offer: RewardOffer,
+  cards: CardCatalogView,
+  maxHealth: number,
+): OfferView {
+  if (offer.kind === 'heal') {
+    return {
+      kind: 'heal',
+      name: `Heal ${String(offer.amount)}`,
+      effect: `+${String(offer.amount)} health, up to ${String(maxHealth)}. No card is added to the deck.`,
+      amount: offer.amount,
+      available: true,
+    };
+  }
+
+  const card = cards[offer.cardId];
+
+  if (card === undefined) {
+    return {
+      kind: 'unavailable',
+      name: 'Card data unavailable',
+      effect: 'This offer cannot be taken.',
+      available: false,
+    };
+  }
+
+  return {
+    kind: 'card',
+    name: card.name,
+    effect: cardEffectLines(card).join(' '),
+    primary: cardPrimary(card),
+    element: card.element,
+    cost: card.cost,
+    cardId: card.id,
+    available: true,
+  };
 }
 
 export function RewardScreen({
@@ -37,7 +115,43 @@ export function RewardScreen({
   health,
   maxHealth,
   onChoose,
+  onSelect,
 }: RewardScreenProps) {
+  const [selection, setSelection] = useState<number | null>(null);
+  // One confirmation only: the phase guard in the controller is the second
+  // line of defence, this ref is the first.
+  const confirmed = useRef(false);
+  const [confirming, setConfirming] = useState(false);
+
+  const views = offers.map((offer) => offerView(offer, cards, maxHealth));
+  const valid = offers.length === OFFER_COUNT;
+  const selectedView = selection === null ? null : (views[selection] ?? null);
+
+  const select = (index: number) => {
+    const view = views[index];
+
+    if (view === undefined || !view.available) {
+      return;
+    }
+
+    setSelection(index);
+    onSelect?.(view.name);
+  };
+
+  const confirm = () => {
+    if (selection === null || confirmed.current || selectedView === null) {
+      return;
+    }
+
+    if (!selectedView.available) {
+      return;
+    }
+
+    confirmed.current = true;
+    setConfirming(true);
+    onChoose(selection);
+  };
+
   return (
     <section className="reward" aria-labelledby="reward-title">
       <header className="reward__head">
@@ -54,95 +168,155 @@ export function RewardScreen({
         </p>
       </header>
 
-      <ul className="reward__options" aria-label="Reward options">
-        {offers.map((offer, index) => {
-          if (offer.kind === 'heal') {
+      {valid ? null : (
+        <p className="reward__error" data-reward-error="true">
+          The reward options could not be dealt, so there is nothing to take. No
+          choice has been made and no card has been added to the deck.
+        </p>
+      )}
+
+      {valid ? (
+        <ul className="reward__options" aria-label="Reward options">
+          {views.map((view, index) => {
+            const selected = selection === index;
+            const descriptionId = `reward-offer-${String(index)}-effect`;
+            const label = view.available
+              ? `Choose ${view.name}`
+              : 'Card data unavailable';
+
             return (
-              <li key={`heal:${String(index)}`}>
+              <li className="reward__item" key={`${view.kind}:${String(index)}`}>
                 <button
                   type="button"
-                  className="reward-option reward-option--heal"
-                  aria-label={`Choose Heal ${String(offer.amount)}`}
-                  onClick={() => onChoose(index)}
+                  className={`reward-option reward-option--${view.kind}`}
+                  data-offer-index={index}
+                  {...(view.kind === 'card'
+                    ? { 'data-element': view.element }
+                    : {})}
+                  aria-pressed={selected}
+                  aria-label={label}
+                  aria-describedby={descriptionId}
+                  disabled={!view.available}
+                  onClick={() => {
+                    select(index);
+                  }}
                 >
-                  <span className="reward-option__kind">Heal</span>
-                  <span className="reward-option__title">
-                    Heal {offer.amount}
+                  <span className="reward-option__head">
+                    {view.kind === 'card' ? (
+                      <span className="reward-option__cost" aria-hidden="true">
+                        {view.cost}
+                      </span>
+                    ) : (
+                      <span
+                        className="reward-option__seal"
+                        aria-hidden="true"
+                      >
+                        {view.kind === 'heal' ? '✚' : '⊘'}
+                      </span>
+                    )}
                   </span>
-                  <span className="reward-option__effect">
-                    Restores {offer.amount} health, up to {maxHealth}. No card is
-                    added to the deck.
+
+                  {view.kind === 'card' ? (
+                    <span className="reward-option__art">
+                      <AssetImage
+                        assetId={`card:${view.cardId}`}
+                        baseUrl={baseUrl}
+                        alt={`${view.name}, ${elementLabel(view.element)} card`}
+                        kind="card"
+                      />
+                    </span>
+                  ) : null}
+
+                  <span className="reward-option__title">{view.name}</span>
+
+                  {view.kind === 'card' ? (
+                    <span className="reward-option__meta">
+                      <ElementCue element={view.element} />
+                    </span>
+                  ) : null}
+
+                  {view.kind === 'card' ? (
+                    <span className="reward-option__primary">
+                      <span className="reward-option__primary-value">
+                        {view.primary.value}
+                      </span>
+                      <span className="reward-option__primary-label">
+                        {view.primary.label}
+                      </span>
+                    </span>
+                  ) : null}
+
+                  {view.kind === 'heal' ? (
+                    <span className="reward-option__primary">
+                      <span className="reward-option__primary-value">
+                        +{view.amount}
+                      </span>
+                      <span className="reward-option__primary-label">
+                        health
+                      </span>
+                    </span>
+                  ) : null}
+
+                  {view.kind === 'heal' ? (
+                    <span className="reward-option__meta">
+                      {health} / {maxHealth} health now
+                    </span>
+                  ) : null}
+
+                  <span
+                    className="reward-option__effect"
+                    id={descriptionId}
+                  >
+                    {view.effect}
                   </span>
+
+                  {selected && view.available ? (
+                    <span className="reward-option__state">
+                      <span
+                        className="reward-option__state-glyph"
+                        aria-hidden="true"
+                      >
+                        ✓
+                      </span>{' '}
+                      Selected
+                    </span>
+                  ) : null}
                 </button>
               </li>
             );
-          }
+          })}
+        </ul>
+      ) : null}
 
-          const card = cards[offer.cardId];
+      {valid ? (
+        <div className="solo-bar solo-bar--reward">
+          <div className="solo-bar__inner">
+            <p className="reward__summary" id="reward-summary">
+              {selectedView === null ? (
+                PROMPT
+              ) : (
+                <>
+                  <strong>{selectedView.name}</strong> · {selectedView.effect}
+                </>
+              )}
+            </p>
 
-          if (card === undefined) {
-            return (
-              <li key={`missing:${offer.cardId}`}>
-                <button
-                  type="button"
-                  className="reward-option"
-                  aria-label={`Choose ${offer.cardId}`}
-                  onClick={() => onChoose(index)}
-                >
-                  <span className="reward-option__title">{offer.cardId}</span>
-                  <span className="reward-option__effect">
-                    Card data is unavailable.
-                  </span>
-                </button>
-              </li>
-            );
-          }
-
-          const primary = cardPrimary(card);
-
-          return (
-            <li key={`card:${offer.cardId}`}>
+            <div className="solo-bar__actions">
               <button
                 type="button"
-                className="reward-option"
-                data-element={card.element}
-                aria-label={`Choose ${card.name}`}
-                onClick={() => onChoose(index)}
+                className="shell__button solo-bar__primary"
+                onClick={confirm}
+                disabled={selectedView === null || confirming}
+                aria-describedby="reward-summary"
               >
-                <span className="reward-option__art">
-                  <AssetImage
-                    assetId={`card:${card.id}`}
-                    baseUrl={baseUrl}
-                    alt={`${card.name}, ${elementLabel(card.element)} card`}
-                    kind="card"
-                  />
-                </span>
-
-                <span className="reward-option__head">
-                  <span className="reward-option__cost" aria-hidden="true">
-                    {card.cost}
-                  </span>
-                  <span className="reward-option__title">{card.name}</span>
-                  <ElementCue element={card.element} />
-                </span>
-
-                <span className="reward-option__primary">
-                  <span className="reward-option__primary-value">
-                    {primary.value}
-                  </span>{' '}
-                  <span className="reward-option__primary-label">
-                    {primary.label}
-                  </span>
-                </span>
-
-                <span className="reward-option__effect">
-                  {cardEffectLines(card).join(' ')}
-                </span>
+                {selectedView === null
+                  ? 'Take reward'
+                  : `Take ${selectedView.name}`}
               </button>
-            </li>
-          );
-        })}
-      </ul>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

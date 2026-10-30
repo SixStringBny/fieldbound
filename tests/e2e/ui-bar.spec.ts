@@ -23,10 +23,12 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import {
   collectConsoleErrors,
+  currentScreen,
   expectNoConsoleErrors,
   expectNoHorizontalScroll,
   expectScreen,
   openApp,
+  playGreedyTurn,
   startSolo,
 } from './helpers';
 
@@ -63,28 +65,32 @@ const EMBER_ACTION = '#8f1d1d';
 type RouteKind = 'play' | 'reading';
 
 /**
- * The one axe rule this ticket cannot turn green itself.
+ * The one axe rule these two routes cannot turn green themselves.
  *
  * `label-content-name-mismatch` (WCAG 2.5.3 Label in Name) fires on the deck
  * and hand-card buttons: their `aria-label` is the frozen accessible name
  * ("Choose the Ember deck", the card's name-and-numbers sentence) while the
- * visible text is the block of content inside the button. Fixing it means
- * changing an accessible name that battle-screen §7.1 and solo-flow §9.1 freeze
- * string-for-string, which is the owning screen ticket's job, not foundation's.
+ * visible text is the block of content inside the button.
  *
- * AB-A1 therefore runs on every route and excludes exactly this rule on the
- * three card surfaces below, so contrast, roles, names and structure are still
- * proven. The battle entry stays: ticket #20 keeps the frozen card accessible
- * name and the visible face inside the same button (the unchanged
- * `CardView.test.tsx` contract, outside the ticket's test allowlist), and on
- * shift/draw cards the visible "to Frost" / "1 draw" words are not a contiguous
- * token run of "shifts the field to Frost" / "draws 1". The measured 375 and
- * 1280 axe runs report only this rule on the battle route. Once ticket 5 lands,
- * delete the solo/duel entries and the rule is enforced there with nothing
- * excluded.
+ * Measured at solo-setup and reward by ticket 5: the deck card must contain all
+ * ten printed card names (solo-flow §3.1, §9.1) and each dealt offer's face is
+ * the card itself (§5.1), so no accessible name that keeps the frozen
+ * "Choose the <Deck> deck" / "Choose <name>" strings can contain the visible
+ * text. Moving either face outside its button would break the whole-object
+ * target, so the rule stays excluded here and on the duel table that reuses the
+ * same deck component. Every other rule - contrast, roles, names, structure -
+ * is still enforced on all three routes.
+ *
+ * The battle entry stays: ticket #20 keeps the frozen card accessible name and
+ * the visible face inside the same button (the unchanged `CardView.test.tsx`
+ * contract, outside the ticket's test allowlist), and on shift/draw cards the
+ * visible "to Frost" / "1 draw" words are not a contiguous token run of "shifts
+ * the field to Frost" / "draws 1". Once the duel ticket lands, delete its entry
+ * and the rule is enforced there with nothing excluded.
  */
 const DEFERRED_AXE_RULES: Readonly<Record<string, { readonly rule: string; readonly owner: string }>> = {
-  'solo-setup': { rule: 'label-content-name-mismatch', owner: '#20 (solo flow)' },
+  'solo-setup': { rule: 'label-content-name-mismatch', owner: '#22 (solo flow)' },
+  reward: { rule: 'label-content-name-mismatch', owner: '#22 (solo flow)' },
   'duel-setup': { rule: 'label-content-name-mismatch', owner: '#22 (duel flow)' },
   battle: { rule: 'label-content-name-mismatch', owner: '#20 (battle screen)' },
 };
@@ -98,18 +104,10 @@ interface RouteCase {
 }
 
 /**
- * The one AB-C3 clause a foundation ticket cannot fix itself.
- *
- * `AB-C3` bans `dl` on a play route. `run-overview` renders its run status
- * (health, deck size, turns) as a `dl.run-overview__stats`, which is markup the
- * solo-flow ticket owns (solo-flow section 4). The check keeps every other
- * clause on that route (no form, input, select, textarea or table) and drops
- * only the `dl` clause until ticket 5 restyles the status block; the deferral is
- * reported on #18.
+ * `AB-C3` bans `dl` on a play route. `run-overview` used to render its run
+ * status as a `dl`; ticket 5 restyled that block as a `ul`, so every play route
+ * is now measured with no exclusion.
  */
-const DEFERRED_DL_ROUTES: Readonly<Record<string, string>> = {
-  'run-overview': '#20 (solo flow): the run status block is a dl today',
-};
 
 const ROUTES: readonly RouteCase[] = [
   {
@@ -412,10 +410,7 @@ for (const viewport of VIEWPORTS) {
         expect(counts.table, `${route.name}: no table`).toBe(0);
 
         if (route.kind === 'play') {
-          if (DEFERRED_DL_ROUTES[route.name] === undefined) {
-            expect(counts.dl, `${route.name}: no dl on a play route`).toBe(0);
-          }
-
+          expect(counts.dl, `${route.name}: no dl on a play route`).toBe(0);
           expect(counts.switches, `${route.name}: no switches on a play route`).toBe(0);
         }
 
@@ -1191,3 +1186,427 @@ test.describe('menu axe saved', () => {
     expectNoConsoleErrors(errors, 'menu with a validated save');
   });
 });
+
+
+/* -------------------------------------------------------------------------- */
+/* Solo flow — deck table, ladder and dealt reward (ticket 5)                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The three solo surfaces from `solo-flow.md` §3–§5, measured at the same five
+ * viewports as the rest of the bar. Setup and overview are one click (or one
+ * battle start) from the menu; the reward needs a settled fight, so the spec
+ * plays the seeded run with the shared greedy policy until the reward phase
+ * mounts. Nothing writes storage and no app module is imported.
+ */
+type SoloRouteName = 'solo-setup' | 'run-overview' | 'reward';
+
+interface SoloRouteCase {
+  readonly name: SoloRouteName;
+  /** The route's named primary action, as the bar requires it (AB-C2). */
+  readonly primary: RegExp;
+  readonly visit: (page: Page) => Promise<void>;
+}
+
+async function visitSetup(page: Page): Promise<void> {
+  await openApp(page, SEED);
+  await page.getByRole('button', { name: 'Play Solo', exact: true }).click();
+  await expectScreen(page, 'solo-setup', 'solo setup');
+}
+
+async function visitOverview(page: Page): Promise<void> {
+  await openApp(page, SEED);
+  await startSolo(page, 'ember');
+  await page.getByRole('button', { name: 'Run overview', exact: true }).click();
+  await expectScreen(page, 'run-overview', 'run overview');
+}
+
+/** Play the seeded fight out until the reward phase is on screen. */
+async function visitReward(page: Page): Promise<void> {
+  await openApp(page, SEED);
+  await startSolo(page, 'ember');
+
+  for (let step = 0; step < 80; step += 1) {
+    const screen = await currentScreen(page);
+
+    if (screen === 'reward') {
+      return;
+    }
+
+    if (screen !== 'battle') {
+      throw new Error(
+        `The seeded solo run left the battle for "${String(screen)}" before the reward phase.`,
+      );
+    }
+
+    await playGreedyTurn(page);
+  }
+
+  throw new Error(
+    'The seeded solo run did not reach the reward within 80 greedy turns.',
+  );
+}
+
+const SOLO_ROUTES: readonly SoloRouteCase[] = [
+  { name: 'solo-setup', primary: /^Start Run$/, visit: visitSetup },
+  { name: 'run-overview', primary: /^(Next Battle|Back to battle)$/, visit: visitOverview },
+  { name: 'reward', primary: /^Take (reward|Heal \d+|[A-Z].*)$/, visit: visitReward },
+];
+
+/** The reward confirms only after a selection, so its label starts generic. */
+const REWARD_PROMPT = 'Select one reward to continue.';
+
+interface SoloTextBox {
+  readonly text: string;
+  readonly size: number;
+  readonly uppercase: boolean;
+}
+
+/** Every rendered text node on the route, with its computed size and case. */
+async function readTextFloors(page: Page): Promise<readonly SoloTextBox[]> {
+  return page.evaluate(() =>
+    Array.from(document.querySelectorAll<HTMLElement>('#main-content *'))
+      .map((element) => {
+        const text = Array.from(element.childNodes)
+          .filter((node) => node.nodeType === Node.TEXT_NODE)
+          .map((node) => (node.textContent ?? '').trim())
+          .join(' ')
+          .trim();
+        const style = window.getComputedStyle(element);
+
+        return {
+          text,
+          size: Number.parseFloat(style.fontSize),
+          uppercase: style.textTransform === 'uppercase',
+          rendered:
+            text !== '' &&
+            element.getClientRects().length > 0 &&
+            style.display !== 'none' &&
+            style.visibility !== 'hidden',
+        };
+      })
+      .filter((entry) => entry.rendered)
+      .map(({ text, size, uppercase }) => ({ text, size, uppercase })),
+  );
+}
+
+interface Box {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+async function boxOf(page: Page, selector: string, index = 0): Promise<Box> {
+  const box = await page.evaluate(
+    ({ selector: target, index: position }) => {
+      const element = document.querySelectorAll<HTMLElement>(target)[position];
+
+      if (element === undefined) {
+        return null;
+      }
+
+      const rect = element.getBoundingClientRect();
+
+      return {
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+      };
+    },
+    { selector, index },
+  );
+
+  if (box === null) {
+    throw new Error(`no element matched "${selector}" at index ${String(index)}`);
+  }
+
+  return box;
+}
+
+for (const viewport of VIEWPORTS) {
+  test.describe(`solo bar ${viewport.label}`, () => {
+    test.use({
+      viewport: { width: viewport.width, height: viewport.height },
+      reducedMotion: 'reduce',
+    });
+
+    for (const route of SOLO_ROUTES) {
+      test(`solo ${route.name} at ${viewport.label}: objects, seal, focus, text and targets`, async ({
+        page,
+      }) => {
+        test.setTimeout(route.name === 'reward' ? 180_000 : 60_000);
+
+        const mobile = viewport.width < 768;
+
+        await route.visit(page);
+        await expectScreen(page, route.name, viewport.label);
+
+        // AB-G6 - the route change lands on the destination h1 with the ring.
+        const focus = await page.evaluate(() => {
+          const active = document.activeElement;
+
+          if (!(active instanceof HTMLElement)) {
+            return null;
+          }
+
+          const style = window.getComputedStyle(active);
+
+          return {
+            tag: active.tagName,
+            text: (active.textContent ?? '').trim(),
+            marked: active.hasAttribute('data-route-focus'),
+            outline: style.outlineStyle,
+            outlineWidth: style.outlineWidth,
+          };
+        });
+
+        expect(focus, `${route.name}: focus must land on the route heading`).not.toBeNull();
+        expect(focus?.tag, `${route.name}: the route heading is the focused element`).toBe('H1');
+        expect(focus?.marked, `${route.name}: the heading carries data-route-focus`).toBe(true);
+        expect(focus?.outline, `${route.name}: the focus ring is visible`).not.toBe('none');
+        expect(focus?.outlineWidth, `${route.name}: the ring is 2px`).toBe('2px');
+
+        // AB-C1 - the route's named objects.
+        if (route.name === 'solo-setup') {
+          const decks = page.getByRole('button', { name: /^Choose the .* deck$/ });
+
+          await expect(decks, 'solo-setup: four deck cards').toHaveCount(4);
+          await expect(page.getByText(/^10 cards$/, { exact: true })).toHaveCount(4);
+          await expect(page.getByText(/^2 Shift cards$/, { exact: true })).toHaveCount(4);
+          await expect(page.locator('.solo-deck__tag')).toHaveCount(8);
+
+          for (const id of ['ember', 'frost', 'gale', 'stone']) {
+            const contents = page.locator(`[id="solo-setup-deck-${id}-contents"]`);
+
+            await expect(contents, `solo-setup: the ${id} contents block`).toHaveCount(1);
+            await expect(contents.locator('.solo-deck__card')).toHaveCount(10);
+            await expect(contents.locator('.solo-deck__tag')).toHaveCount(2);
+            await expect(contents.locator('.solo-deck__tag').first()).toContainText('Shift');
+          }
+
+          // One selection at a time, and Start only enables with one.
+          const start = page.getByRole('button', { name: 'Start Run', exact: true });
+          await expect(start, 'solo-setup: Start is disabled before a choice').toBeDisabled();
+          await expect(page.getByText(/^Select one of the four decks/)).toBeVisible();
+
+          await decks.nth(0).click();
+          await expect(page.locator('.solo-deck[aria-pressed="true"]')).toHaveCount(1);
+          await expect(start, 'solo-setup: Start enables with a choice').toBeEnabled();
+
+          await decks.nth(1).click();
+          await expect(page.locator('.solo-deck[aria-pressed="true"]')).toHaveCount(1);
+        }
+
+        if (route.name === 'run-overview') {
+          await expect(page.getByText('1 of 4', { exact: true })).toBeVisible();
+
+          const ladder = page.locator('.run-progress__step');
+          await expect(ladder, 'run-overview: four ladder steps').toHaveCount(4);
+          await expect(
+            page.locator('[aria-current="step"]'),
+            'run-overview: exactly one current step',
+          ).toHaveCount(1);
+          await expect(page.locator('.run-progress__step--current')).toContainText('Current');
+          await expect(ladder.locator('.run-progress__status')).toHaveCount(4);
+          await expect(ladder.first()).toContainText('health');
+
+          await expect(page.getByRole('meter', { name: 'Run health' })).toBeVisible();
+          await expect(page.locator('.run-overview__stat-value').first()).toHaveText(
+            /^\d+ cards$/,
+          );
+          await expect(
+            page.getByRole('heading', { name: /^(Next|Current) enemy$/ }),
+            'run-overview: the enemy panel is titled for the live phase',
+          ).toBeVisible();
+        }
+
+        if (route.name === 'reward') {
+          const offers = page.locator('.reward__options button.reward-option');
+
+          await expect(offers, 'reward: exactly three offers').toHaveCount(3);
+
+          const labels = await offers.evaluateAll((nodes) =>
+            nodes.map((node) => node.getAttribute('aria-label') ?? ''),
+          );
+
+          expect(
+            new Set(labels).size,
+            `reward: the three offers must be distinct, received ${labels.join(', ')}`,
+          ).toBe(3);
+          await expect(page.getByText(/^Health: \d+ \/ 40$/)).toBeVisible();
+
+          // The deliberate two-step interaction (§5.2).
+          const confirm = page.locator('.solo-bar__primary');
+          await expect(confirm, 'reward: nothing is selected yet').toHaveText('Take reward');
+          await expect(confirm).toBeDisabled();
+          await expect(page.locator('.solo-bar__status, #reward-summary')).toContainText(
+            REWARD_PROMPT,
+          );
+
+          await offers.nth(0).click();
+          await expect(offers.nth(0), 'reward: the offer reports itself selected').toHaveAttribute(
+            'aria-pressed',
+            'true',
+          );
+          await expectScreen(page, 'reward', 'after selecting a reward');
+          await expect(confirm, 'reward: the confirm is labelled with the choice').toHaveText(
+            /^Take /,
+          );
+          await expect(confirm).toBeEnabled();
+        }
+
+        // AB-C2 - exactly one action seal, a native button with a name.
+        const seals = page.locator('#main-content .shell__button');
+        await expect(seals, `${route.name}: one action seal`).toHaveCount(1);
+        const seal = seals.first();
+        await expect(seal).toHaveJSProperty('tagName', 'BUTTON');
+        await expect(seal).toHaveAccessibleName(route.primary);
+
+        // AB-A4 - one polite region for the whole app.
+        await expect(page.getByRole('status')).toHaveCount(1);
+
+        // AB-P4 - no ellipsis and the type floors hold.
+        const boxes = await readTextFloors(page);
+
+        expect(boxes.length, `${route.name}: no rendered text was measured`).toBeGreaterThan(0);
+
+        for (const entry of boxes) {
+          expect(
+            entry.uppercase ? entry.size >= 11 : entry.size >= 12,
+            `${route.name}: "${entry.text}" renders at ${String(entry.size)}px${
+              entry.uppercase ? ' (uppercase label)' : ''
+            }`,
+          ).toBe(true);
+        }
+
+        const ellipsis = await page.evaluate(() =>
+          Array.from(document.querySelectorAll<HTMLElement>('#main-content *'))
+            .filter((element) => window.getComputedStyle(element).textOverflow === 'ellipsis')
+            .map((element) => (element.textContent ?? '').trim().slice(0, 40)),
+        );
+
+        expect(ellipsis, `${route.name}: no text is truncated with an ellipsis`).toEqual([]);
+
+        // AB-G4 / AB-G5 - no side scroll and every target is 44px.
+        await expectNoHorizontalScroll(page);
+
+        const targets = await readTargets(page);
+        expect(targets.length, `${route.name}: no interactive elements`).toBeGreaterThan(0);
+
+        for (const target of targets) {
+          expect(
+            target.width,
+            `${route.name} at ${viewport.label}: <${target.tag}> "${target.label}" is ${target.width}px wide`,
+          ).toBeGreaterThanOrEqual(MIN_TARGET_PX);
+          expect(
+            target.height,
+            `${route.name} at ${viewport.label}: <${target.tag}> "${target.label}" is ${target.height}px tall`,
+          ).toBeGreaterThanOrEqual(MIN_TARGET_PX);
+        }
+
+        // AB-P1 - the primary action sits in the lowest 288px, inside the frame.
+        if (mobile) {
+          const sealBox = await boxOf(page, '#main-content .shell__button');
+
+          expect(
+            sealBox.y,
+            `${route.name}: the primary action starts at ${String(sealBox.y)}px, above the ${String(
+              viewport.height - 288,
+            )}px thumb envelope`,
+          ).toBeGreaterThanOrEqual(viewport.height - 288);
+          expect(
+            sealBox.y + sealBox.height,
+            `${route.name}: the primary action must be fully inside the viewport`,
+          ).toBeLessThanOrEqual(viewport.height + 1);
+          expect(sealBox.x, `${route.name}: at least 8px from the left edge`).toBeGreaterThanOrEqual(8);
+          expect(
+            sealBox.x + sealBox.width,
+            `${route.name}: at least 8px from the right edge`,
+          ).toBeLessThanOrEqual(viewport.width - 8 + 1);
+        }
+
+        // AB-T2 - the route box is centred inside the cap.
+        const routeBox = await boxOf(page, '#main-content');
+        const cap = viewport.width >= 1280 ? 1080 : 984;
+
+        expect(
+          routeBox.width,
+          `${route.name}: the content box is ${String(routeBox.width)}px, wider than the ${String(
+            cap,
+          )}px cap`,
+        ).toBeLessThanOrEqual(cap + 1);
+
+        const leftGap = routeBox.x;
+        const rightGap = viewport.width - (routeBox.x + routeBox.width);
+
+        expect(
+          Math.abs(leftGap - rightGap),
+          `${route.name}: left gap ${String(leftGap)}px and right gap ${String(rightGap)}px differ`,
+        ).toBeLessThanOrEqual(2);
+
+        // AB-T1 / AB-T2 - the documented pair and card boxes at table width.
+        if (viewport.width >= 1024) {
+          const table =
+            viewport.width >= 1280
+              ? { deck: 512, ladder: 720, offers: 708 }
+              : { deck: 460, ladder: 660, offers: 640 };
+
+          if (route.name === 'solo-setup') {
+            const first = await boxOf(page, '.solo-deck', 0);
+            const second = await boxOf(page, '.solo-deck', 1);
+
+            expect(first.width, 'solo-setup: the first deck card width').toBeCloseTo(
+              table.deck,
+              -1,
+            );
+            expect(first.y, 'solo-setup: the first two cards share a row').toBeCloseTo(
+              second.y,
+              -1,
+            );
+            expect(second.x, 'solo-setup: the second card is beside the first').toBeGreaterThan(
+              first.x + first.width,
+            );
+          }
+
+          if (route.name === 'run-overview') {
+            const ladder = await boxOf(page, '.run-progress');
+            const side = await boxOf(page, '.run-overview__side');
+
+            expect(
+              side.x,
+              'run-overview: the status column sits beside the ladder, not below it',
+            ).toBeGreaterThan(ladder.x + ladder.width);
+            expect(ladder.width, 'run-overview: the ladder column width').toBeCloseTo(
+              table.ladder,
+              -1,
+            );
+          }
+
+          if (route.name === 'reward') {
+            const offers = await boxOf(page, '.reward__options');
+
+            expect(offers.width, 'reward: the dealt row width').toBeCloseTo(table.offers, -1);
+          }
+        }
+      });
+    }
+
+    if (viewport.width === 375 || viewport.width === 1280) {
+      test(`solo reward axe at ${viewport.label}`, async ({ page }) => {
+        test.setTimeout(180_000);
+
+        const errors = collectConsoleErrors(page);
+
+        await visitReward(page);
+        await expectScreen(page, 'reward', `${viewport.label} reward axe`);
+        await page.evaluate(() => document.fonts.ready);
+
+        await analyse(page, 'reward');
+
+        expectNoConsoleErrors(errors, `reward at ${viewport.label}`);
+      });
+    }
+  });
+}

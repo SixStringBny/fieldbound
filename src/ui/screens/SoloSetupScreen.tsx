@@ -1,53 +1,78 @@
 /**
  * Solo run setup (RUN-FR-01, VIS-US-01).
  *
- * Four starter deck cards let the player choose the element the run is built
- * around. Each card states the element (glyph and word), a one-line identity,
- * the ten card names and the two Shift cards, so the choice is made from the
- * deck's actual contents rather than colour or a stat sheet.
+ * The physical deck table from `docs/design-system/solo-flow.md` section 3: four
+ * parchment deck cards, each a native button that reports `aria-pressed` and
+ * carries the element seal, the deck name, its identity line, the `10 cards ·
+ * 2 Shift cards` count and all ten printed card names with the Shift cards
+ * tagged in words.
  *
  * The screen is presentational: it receives the frozen deck catalog and the
  * card lookup, holds only the local selection, and reports one typed intent,
- * `onStart`, with the chosen element. It imports no engine mutator, controller
- * or storage module.
+ * `onStart`, with the chosen element. `onSelect` is a reporting hook so the
+ * composition root can speak the one polite announcement; the screen never
+ * mounts a live region of its own and imports no engine mutator, controller or
+ * storage module.
  */
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { DeckDefinition, FieldElement } from '../../engine/types';
-import { ElementCue } from '../components/ElementCue';
+import { DeckTable } from '../components/DeckTable';
 import type { CardCatalogView } from '../components/view-types';
-
-/**
- * One-line deck identity copy. This is presentation prose, not a rule: the
- * engine still resolves every card. The element is prefixed by the screen so the
- * line always names its own subject.
- */
-const DECK_IDENTITIES: Readonly<Record<FieldElement, string>> = {
-  ember: 'aggressive, piercing',
-  frost: 'patient, defensive',
-  gale: 'swift, drawing cards',
-  stone: 'steady, heavy hits',
-};
 
 export interface SoloSetupScreenProps {
   /** The four frozen starter decks, in documented order. */
   readonly decks: readonly DeckDefinition[];
   /** Read-only card lookup for the printed card names. */
   readonly cards: CardCatalogView;
-  /** Start a run on the chosen starter element. */
+  /** Start a run on the chosen starter element; called at most once. */
   readonly onStart: (element: FieldElement) => void;
   /** Return to the menu without starting a run. */
   readonly onBack: () => void;
+  /**
+   * Optional hook for the composition root: the deck name the player just
+   * picked. The screen still owns the selection; this only reports it so the
+   * one app-wide status region can speak.
+   */
+  readonly onSelect?: (deckName: string) => void;
 }
+
+const START_HINT = 'Select one of the four decks to enable Start Run.';
 
 export function SoloSetupScreen({
   decks,
   cards,
   onStart,
   onBack,
+  onSelect,
 }: SoloSetupScreenProps) {
   const [selection, setSelection] = useState<string | null>(null);
+  // A second activation of Start Run must not start a second run, even before
+  // the composition root has swapped the route.
+  const started = useRef(false);
+  const [starting, setStarting] = useState(false);
 
   const chosen = decks.find((deck) => deck.id === selection) ?? null;
+
+  const select = (deckId: string) => {
+    const deck = decks.find((candidate) => candidate.id === deckId);
+
+    if (deck === undefined) {
+      return;
+    }
+
+    setSelection(deck.id);
+    onSelect?.(deck.name);
+  };
+
+  const start = () => {
+    if (chosen === null || started.current) {
+      return;
+    }
+
+    started.current = true;
+    setStarting(true);
+    onStart(chosen.element);
+  };
 
   return (
     <section className="solo-setup" aria-labelledby="solo-setup-title">
@@ -62,84 +87,45 @@ export function SoloSetupScreen({
         </p>
       </header>
 
-      <ul className="solo-decks" aria-label="Starter decks">
-        {decks.map((deck) => {
-          const selected = deck.id === selection;
-          const names = deck.cards.map(
-            (cardId) => cards[cardId]?.name ?? cardId,
-          );
-          const shifts = deck.cards.filter(
-            (cardId) => cards[cardId]?.type === 'shift',
-          );
+      <DeckTable
+        decks={decks}
+        cards={cards}
+        selection={selection}
+        onSelect={select}
+        label="Starter decks"
+        idPrefix="solo-setup"
+      />
 
-          return (
-            <li key={deck.id}>
-              <button
-                type="button"
-                className="solo-deck"
-                data-element={deck.element}
-                aria-pressed={selected}
-                aria-label={`Choose the ${deck.name} deck`}
-                onClick={() => setSelection(deck.id)}
-              >
-                <span className="solo-deck__head">
-                  <span className="solo-deck__name">{deck.name}</span>
-                  <ElementCue element={deck.element} />
-                </span>
+      <div className="solo-bar solo-bar--setup">
+        <div className="solo-bar__inner">
+          <p className="solo-bar__status" id="solo-setup-hint">
+            {chosen === null ? (
+              START_HINT
+            ) : (
+              <>
+                <span aria-hidden="true">✓ </span>
+                {chosen.name} deck selected
+              </>
+            )}
+          </p>
 
-                <span className="solo-deck__identity">
-                  {deck.name}: {DECK_IDENTITIES[deck.element]}
-                </span>
+          <div className="solo-bar__actions">
+            <button
+              type="button"
+              className="shell__button solo-bar__primary"
+              onClick={start}
+              disabled={chosen === null || starting}
+              aria-describedby="solo-setup-hint"
+            >
+              Start Run
+            </button>
 
-                <span className="solo-deck__section-label">
-                  {deck.cards.length} cards
-                </span>
-                <span className="solo-deck__cards">
-                  {names.join(' · ')}
-                </span>
-
-                <span className="solo-deck__section-label">
-                  Shift cards ({shifts.length})
-                </span>
-                <span className="solo-deck__cards">
-                  {shifts
-                    .map((cardId) => cards[cardId]?.name ?? cardId)
-                    .join(' · ')}
-                </span>
-
-                {selected ? (
-                  <span className="solo-deck__state">Selected</span>
-                ) : null}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-
-      <div className="solo-setup__actions">
-        <button
-          type="button"
-          className="shell__button"
-          onClick={() => {
-            if (chosen !== null) {
-              onStart(chosen.element);
-            }
-          }}
-          disabled={chosen === null}
-        >
-          Start Run
-        </button>
-
-        <button type="button" className="shell__back" onClick={onBack}>
-          Back to menu
-        </button>
+            <button type="button" className="shell__back" onClick={onBack}>
+              Back to menu
+            </button>
+          </div>
+        </div>
       </div>
-
-      {chosen === null ? (
-        <p className="solo-setup__hint">
-          Select one of the four decks to enable Start Run.
-        </p>
-      ) : null}
     </section>
   );
 }

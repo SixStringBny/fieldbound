@@ -147,8 +147,8 @@
 }
 
 @media (hover: hover) {
-  .shell__button:hover,
-  .fb-button--primary:hover {
+  .shell__button:not(:disabled):hover,
+  .fb-button--primary:not(:disabled):hover {
     background-color: var(--fb-action-hover);
   }
 
@@ -176,7 +176,9 @@
 }
 
 .fb-button:disabled,
-.fb-button[aria-disabled='true'] {
+.fb-button[aria-disabled='true'],
+.shell__button:disabled,
+.shell__button[aria-disabled='true'] {
   border-color: var(--fb-state-disabled-surface);
   background-color: var(--fb-state-disabled-surface);
   background-image: none;

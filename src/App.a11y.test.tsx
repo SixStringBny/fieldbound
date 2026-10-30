@@ -18,6 +18,8 @@ import {
 } from './persistence/settings';
 import type { SettingsStorage } from './persistence/settings';
 import type { BattleControllerConfig } from './state/battle-controller';
+import { createEncounterConfig } from './state/run-controller';
+import type { SoloEncounterFactory } from './state/run-controller';
 
 /* -------------------------------------------------------------------------- */
 /* Fixture                                                                    */
@@ -394,6 +396,134 @@ describe('App feedback accessibility', () => {
 /* -------------------------------------------------------------------------- */
 /* Escape, focus trap and skip link                                           */
 /* -------------------------------------------------------------------------- */
+describe('App solo route focus and announcements', () => {
+  const soloEncounter: SoloEncounterFactory = (run, enemy) => {
+    const base = createEncounterConfig(run, enemy);
+
+    return {
+      ...base,
+      opponent: { ...base.opponent, health: 1 },
+    };
+  };
+
+  function currentScreen(): string {
+    return mainRegion().getAttribute('data-screen') ?? '';
+  }
+
+  /** Play the deterministic one-health encounter until the route changes. */
+  function settleBattle(): void {
+    for (let step = 0; step < 30; step += 1) {
+      if (currentScreen() !== 'battle') {
+        return;
+      }
+
+      const hand = screen.queryByRole('region', { name: 'Your hand' });
+
+      if (hand === null) {
+        return;
+      }
+
+      const playable = within(hand)
+        .queryAllByRole('button')
+        .find((button) => button.getAttribute('aria-disabled') !== 'true');
+
+      if (playable === undefined) {
+        fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+        continue;
+      }
+
+      fireEvent.click(playable);
+      const dialog = screen.queryByRole('dialog');
+
+      if (dialog === null) {
+        continue;
+      }
+
+      const play = within(dialog).getByRole('button', { name: 'Play card' });
+
+      if ((play as HTMLButtonElement).disabled) {
+        fireEvent.click(
+          within(dialog).getByRole('button', { name: 'Close card detail' }),
+        );
+        return;
+      }
+
+      fireEvent.click(play);
+    }
+  }
+
+  function startSoloRun(): void {
+    fireEvent.click(screen.getByRole('button', { name: 'Play Solo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Choose the Ember deck' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Run' }));
+  }
+
+  it('focuses the Solo Run heading and announces one deck selection once', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play Solo' }));
+
+    expect(currentScreen()).toBe('solo-setup');
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { level: 1, name: 'Solo Run' }),
+    );
+
+    const status = screen.getByRole('status');
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(status.textContent).toBe('');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Choose the Frost deck' }));
+
+    expect(status.textContent).toBe(
+      'Frost deck selected. Start Run is enabled.',
+    );
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+
+    // Still the same route, and the selection does not steal or move focus.
+    expect(currentScreen()).toBe('solo-setup');
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { level: 1, name: 'Solo Run' }),
+    );
+  });
+
+  it('announces the reward selection and advances only on confirmation', () => {
+    render(<App soloEncounter={soloEncounter} />);
+    startSoloRun();
+
+    expect(currentScreen()).toBe('battle');
+    settleBattle();
+
+    expect(currentScreen()).toBe('reward');
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { level: 1, name: 'Choose a reward' }),
+    );
+
+    const status = screen.getByRole('status');
+    const option = screen.getAllByRole('button', {
+      name: /^Choose /,
+    })[0] as HTMLElement;
+    const name = (option.getAttribute('aria-label') ?? '').replace(
+      /^Choose /,
+      '',
+    );
+
+    fireEvent.click(option);
+
+    expect(status.textContent).toBe(
+      `${name} selected. Take reward is enabled.`,
+    );
+    expect(currentScreen()).toBe('reward');
+
+    fireEvent.click(screen.getByRole('button', { name: `Take ${name}` }));
+
+    expect(currentScreen()).toBe('run-overview');
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { level: 1, name: 'Run overview' }),
+    );
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+  });
+});
+
 describe('App dialogs and skip link', () => {
   it('traps focus in the card detail, ignores E there and restores the invoker on Escape', () => {
     renderBattle();

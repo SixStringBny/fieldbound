@@ -8,6 +8,7 @@ import './styles/fonts.css';
 import './styles/base.css';
 import './styles/primitives.css';
 import './styles/menu.css';
+import './styles/solo.css';
 
 const rootElement = document.getElementById('root');
 

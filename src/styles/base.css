@@ -347,20 +347,12 @@ ul {
     scroll-behavior: auto;
   }
 }
-
 /* -------------------------------------------------------------------------- */
-/* Solo run surfaces                                                          */
+/* Run result surface                                                          */
 /* -------------------------------------------------------------------------- */
 
-.battle-screen__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.solo-setup,
-.run-overview,
-.reward,
+/* The detailed verdict and ledger treatment belongs to the reading-screens
+   ticket; the solo ticket keeps the shared shell and actions unchanged. */
 .run-result {
   display: grid;
   gap: 1rem;
@@ -368,166 +360,28 @@ ul {
   min-width: 0;
 }
 
-.solo-setup__head,
-.run-overview__head,
-.reward__head,
 .run-result__head {
   display: grid;
   gap: 0.35rem;
 }
 
-.solo-setup__head .shell__eyebrow,
-.run-overview__head .shell__eyebrow,
-.reward__head .shell__eyebrow,
 .run-result__head .shell__eyebrow {
   margin: 0;
 }
 
-.solo-decks {
-  display: grid;
-  gap: 0.85rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.solo-deck {
-  display: grid;
-  gap: 0.35rem;
-  width: 100%;
-  min-height: var(--fb-target);
-  padding: 1rem;
-  border: var(--fb-rule);
-  border-radius: var(--fb-radius-md);
-  background-color: var(--fb-surface-panel);
-  background-image: var(--fb-material-panel);
-  color: var(--fb-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.solo-deck[aria-pressed='true'] {
-  border-color: var(--fb-rule-strong-color);
-  background-color: var(--fb-surface-selected);
-}
-
-.solo-deck__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.solo-deck__name {
-  font-size: 1.25rem;
-  font-weight: 700;
-}
-
-.solo-deck__identity {
-  color: var(--fb-text);
-  font-weight: 600;
-}
-
-.solo-deck__section-label {
-  margin-top: 0.35rem;
-  color: var(--fb-text-soft);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.solo-deck__cards {
-  color: var(--fb-text-soft);
-  font-size: 0.9375rem;
-}
-
-.solo-deck__state {
-  margin-top: 0.35rem;
-  font-weight: 700;
-  color: var(--fb-rule-strong-color);
-}
-
-.solo-setup__actions,
-.run-overview__actions,
 .run-result__actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.75rem;
-  align-items: center;
 }
 
-.solo-setup__hint {
-  color: var(--fb-text-soft);
-  font-size: 0.9375rem;
-}
-
-.run-overview__progress {
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.run-progress {
-  display: grid;
-  gap: 0.4rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.run-progress__step {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 0.65rem;
-  align-items: center;
-  min-height: var(--fb-target);
-  padding: 0.5rem 0.75rem;
-  border: var(--fb-rule-subtle);
-  border-radius: var(--fb-radius-md);
-  background-color: var(--fb-surface-inset);
-}
-
-.run-progress__step--current {
-  border-color: var(--fb-rule-strong-color);
-  background-color: var(--fb-surface-selected);
-  font-weight: 700;
-}
-
-.run-progress__step--cleared .run-progress__status {
-  color: var(--fb-success);
-}
-
-.run-progress__number {
-  display: inline-flex;
-  width: 1.75rem;
-  height: 1.75rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--fb-radius-pill);
-  background-color: var(--fb-surface-raised);
-  font-weight: 700;
-}
-
-.run-progress__name {
-  min-width: 0;
-}
-
-.run-progress__status {
-  color: var(--fb-text-soft);
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.run-overview__stats,
 .run-result__stats {
   display: grid;
   gap: 0.55rem;
   margin: 1rem 0 0;
 }
 
-.run-overview__stat,
 .run-result__stat {
   display: flex;
   flex-wrap: wrap;
@@ -538,138 +392,13 @@ ul {
   border-bottom: var(--fb-rule-subtle);
 }
 
-.run-overview__stat dt,
 .run-result__stat dt {
   color: var(--fb-text-soft);
 }
 
-.run-overview__stat dd,
 .run-result__stat dd {
   margin: 0;
   font-weight: 700;
-}
-
-.run-overview__enemy-body {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 0.75rem;
-}
-
-.run-overview__enemy-body .asset-image {
-  width: 6rem;
-  flex: 0 0 auto;
-}
-
-.run-overview__enemy-name {
-  font-size: 1.125rem;
-  font-weight: 700;
-}
-
-.run-overview__enemy-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.25rem;
-  color: var(--fb-text-soft);
-}
-
-.reward__health {
-  color: var(--fb-text-soft);
-  font-weight: 600;
-}
-
-.reward__options {
-  display: grid;
-  gap: 0.85rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.reward-option {
-  display: grid;
-  gap: 0.4rem;
-  width: 100%;
-  min-height: var(--fb-target);
-  padding: 1rem;
-  border: var(--fb-rule);
-  border-radius: var(--fb-radius-md);
-  background-color: var(--fb-surface-panel);
-  background-image: var(--fb-material-panel);
-  color: var(--fb-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-@media (hover: hover) {
-  .reward-option:hover {
-    border-color: var(--fb-rule-strong-color);
-  }
-}
-
-.reward-option__art {
-  display: block;
-  max-width: 9rem;
-}
-
-.reward-option__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.reward-option__cost {
-  display: inline-flex;
-  width: 1.75rem;
-  height: 1.75rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--fb-radius-pill);
-  background-color: var(--fb-surface-inset);
-  color: var(--fb-text);
-  font-weight: 700;
-}
-
-.reward-option__kind {
-  color: var(--fb-text-soft);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.reward-option__title {
-  font-size: 1.125rem;
-  font-weight: 700;
-}
-
-.reward-option__primary {
-  display: flex;
-  align-items: baseline;
-  gap: 0.35rem;
-}
-
-.reward-option__primary-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.reward-option__primary-label {
-  color: var(--fb-text-soft);
-}
-
-.reward-option__effect {
-  color: var(--fb-text-soft);
-  font-size: 0.9375rem;
-}
-
-.reward-option--heal {
-  border-color: var(--fb-success);
-  background-color: var(--fb-surface-raised);
 }
 
 .run-result__outcome {
@@ -687,11 +416,4 @@ ul {
   margin-top: 0.75rem;
   color: var(--fb-text-soft);
   font-size: 0.9375rem;
-}
-
-@media (min-width: 720px) {
-  .solo-decks,
-  .reward__options {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
