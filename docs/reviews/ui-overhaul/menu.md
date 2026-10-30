@@ -1,8 +1,8 @@
-# Menu route review — ticket 2
+# Menu route review — ticket 2, re-issued at the polish release
 
 **Route:** `menu`
-**Ticket:** [#19 Menu: the table hub](https://github.com/SixStringBny/fieldbound/issues/19)
-**Commit reviewed:** `23e9d89`
+**Ticket:** [#19 Menu: the table hub](https://github.com/SixStringBny/fieldbound/issues/19), polished by [#29](https://github.com/SixStringBny/fieldbound/issues/29)
+**Commit reviewed:** `ebae15c`
 **Decision:** approved
 
 ## Human review
@@ -11,38 +11,36 @@
 | --- | --- |
 | Reviewer | Ben McCusker (@SixStringBny), project owner |
 | Date | 2026-10-30 |
-| Viewports | 390×844, 768×1024, 1280×800 (plus 375×667 and 1024×768 in the attached sweep) |
-| Evidence | 12 full-page frames on #19 (no-save and valid-save states) and the local production build |
+| Viewports | 390×844, 768×1024, 1280×800 (plus 375×667 and 1024×768 in the sweep) |
+| Evidence | the `AB-E2` five-viewport frames and the local production build |
 | Result | **Approved**, no issues |
 
 ## What was reviewed
 
-The table-hub menu on the foundation shell: hero wordmark, tagline and run plaque;
-Play Solo and Local Duel as parchment mode cards with wax/brass seals; the
-Continue Run bookmark only under a validated save, with the exact encounter and
-deck lines; How to Play and Settings as quiet brass rows. Two columns at ≥1024,
-one below; no horizontal scroll; route `h1` focus; one live region; the no-save,
-valid-save and corrupt-save states.
+The menu as a filled table: the masthead, the two mode cards as the page's
+largest objects (each carrying the field roundel), the Continue bookmark only
+under a validated save, and one quiet footer row for How to Play and Settings.
+Fresh and saved states; the five-entry contract; the single action seal; route
+`h1` focus in both input modalities; no horizontal scroll.
 
 ## Judgement calls recorded
 
-- The hub uses the spec's explicit 512px (1280) and 440px (1024) columns rather
-  than the nominal 1.05fr/0.95fr ratio, which measured 490 at 1280. `AB-T1` and
-  `AB-T2` measure the explicit widths.
-- The hero run plaque and the Continue bookmark are one object: the bookmark is
-  the validated-save plaque, so the exact hint appears once and the hero shows
-  `No run in progress` only without a save.
-- The deck line is derived from the restored run (`Ember deck · 10 cards` at a
-  fresh run); the spec's `11 cards` is the post-reward example.
-- At 375/390 the hero reserves the thumb envelope so Play Solo sits wholly in
-  the lowest 288px (`AB-P1`), leaving a tall hero field on the smallest screens.
-  The owner accepted this composition.
-- The legacy `justify-content: center` shell rule is opted out for the menu at
-  ≥640px so it starts at the spec's page padding; other routes are untouched.
+- The composition fills the viewport rather than reserving the thumb band, so
+  `AB-P1` gained a menu exception: the primary action is on screen without
+  scrolling and clear of both edges, the masthead hands over within 48px, no band
+  exceeds 15% of the viewport, the page does not scroll, and each mode card is at
+  least 3× a document row. A docked quick-start was rejected — a second Play Solo
+  control would break the five-entry and single-seal contracts.
+- The mode roundel is built from tokens (brass ring, element seal, a second
+  raised counter for the duel), so the menu carries the field motif with no
+  manifest image, no scrim and no extra bytes. `AB-V3`'s menu assertion stays
+  honest with zero `<img>`/`<svg>`.
+- `AB-T1`'s menu pair is the two mode cards; `AB-T2` measures 476 each at 1024 and
+  528 each at 1280 inside the centred column.
+- `AB-G6` is keyboard-only after #28: pointer route changes still move focus to
+  the `h1` but paint no ring.
 
 ## Deliberately deferred
 
-None for this route. `AB-A7` (forced-colors / prefers-contrast) and `AB-G3`
-(clipping) were added to the menu scope and pass. The CI artefact naming for
-`AB-E2` lands with release verification; the per-viewport frames are attached to
-the ticket as the route evidence.
+None for this route. `AB-A7` and `AB-G3` pass, and the real 375px one-handed
+note for `H-P1` was attested at the polish release.

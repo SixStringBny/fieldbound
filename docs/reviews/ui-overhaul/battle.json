@@ -1,16 +1,16 @@
 {
   "taskId": "UI-3-battle",
   "reviewer": "Ben McCusker (@SixStringBny)",
-  "reviewedAt": "2026-10-30T03:31:46.001Z",
+  "reviewedAt": "2026-10-30T19:20:24.040Z",
   "decision": "approved",
   "evidence": [
     {
       "path": "docs/reviews/ui-overhaul/battle.md",
-      "sha256": "6a3af5ca5541d2f2155dd9357eb5efb9f706847397b3aec5bead771f48582a0f"
+      "sha256": "c2fb004cf35f2e1f7942f7260ffbe5df4de86c4dee8c230171eac0832f0f0426"
     }
   ],
   "route": "battle",
-  "commit": "efb6106",
+  "commit": "ebae15c",
   "viewports": [
     "375x667",
     "390x844",
@@ -20,7 +20,7 @@
   ],
   "mechanical": {
     "owner": "qa-automation-engineer",
-    "ranAt": "2026-10-30T03:31:46.001Z",
+    "ranAt": "2026-10-30T19:20:24.040Z",
     "checks": [
       {
         "id": "AB-C1",
@@ -186,7 +186,7 @@
   },
   "human": {
     "owner": "Ben McCusker (@SixStringBny)",
-    "reviewedAt": "2026-10-30T03:31:46.001Z",
+    "reviewedAt": "2026-10-30T19:20:24.040Z",
     "viewports": [
       "390x844",
       "768x1024",
@@ -206,7 +206,7 @@
       {
         "id": "H-P1",
         "status": "pass",
-        "note": "At 375/390 a turn is playable one-handed; cards, Log and End Turn sit in the thumb envelope and the page never scrolls."
+        "note": "At 375/390 a turn is playable one-handed; cards, Log and End Turn sit in the thumb envelope and the page never scrolls. Real 375px device pass attested by the owner on 2026-10-30."
       },
       {
         "id": "H-T1",

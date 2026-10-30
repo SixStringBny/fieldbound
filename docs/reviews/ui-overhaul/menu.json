@@ -1,20 +1,20 @@
 {
   "taskId": "UI-2-menu",
   "reviewer": "Ben McCusker (@SixStringBny)",
-  "reviewedAt": "2026-10-30T16:16:31.935Z",
+  "reviewedAt": "2026-10-30T19:20:24.040Z",
   "decision": "approved",
   "evidence": [
     {
       "path": "docs/reviews/ui-overhaul/menu.md",
-      "sha256": "03db787c4d8349e96e6c326f37572e8a27b1253ffb987c5305b90666775a0267"
+      "sha256": "fa099b41ee6fa94687d7816fd6a3782bdce94ad6d11419da98c2eb30b2cf6a91"
     },
     {
       "path": "docs/reviews/ui-overhaul/release.md",
-      "sha256": "be39d100e4f1496a8fe910282ffb1e876e7c1b4ac4bcf428d66ed4634cfe0444"
+      "sha256": "df1d3fd01375bb1bdd6f4ca2b311bc6df838c2a02f838bcf7ba51f219470c636"
     }
   ],
   "route": "menu",
-  "commit": "f2b75e6",
+  "commit": "ebae15c",
   "viewports": [
     "375x667",
     "390x844",
@@ -24,7 +24,7 @@
   ],
   "mechanical": {
     "owner": "qa-automation-engineer",
-    "ranAt": "2026-10-29T23:12:03.555Z",
+    "ranAt": "2026-10-30T19:20:24.040Z",
     "checks": [
       {
         "id": "AB-C1",
@@ -160,7 +160,7 @@
   },
   "human": {
     "owner": "Ben McCusker (@SixStringBny)",
-    "reviewedAt": "2026-10-30T16:16:31.935Z",
+    "reviewedAt": "2026-10-30T19:20:24.040Z",
     "viewports": [
       "390x844",
       "768x1024",
@@ -180,7 +180,7 @@
       {
         "id": "H-P1",
         "status": "pass",
-        "note": "At 375/390 Play Solo sits inside the thumb envelope and the menu never scrolls sideways; the tall hero field is accepted."
+        "note": "At 375/390 Play Solo sits inside the thumb envelope and the menu never scrolls sideways; the tall hero field is accepted. Real 375px device pass attested by the owner on 2026-10-30."
       },
       {
         "id": "H-T1",
