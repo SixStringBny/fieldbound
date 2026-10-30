@@ -50,6 +50,10 @@ ul {
   padding: 1.5rem 1rem 2.5rem;
 }
 
+/*
+ * The legacy fallback column. Every route that names its own width overrides
+ * this in its component sheet (menu, solo, document, result).
+ */
 .shell {
   width: 100%;
   max-width: var(--fb-document-max);
@@ -160,64 +164,9 @@ ul {
   margin-top: 0.6rem;
 }
 
-.shell__copy {
-  margin-top: 0.5rem;
-  color: var(--fb-text-soft);
-}
-
-.rules {
-  display: grid;
-  gap: 1rem;
-  margin-top: 1.25rem;
-}
-
-.rules__steps {
-  display: grid;
-  gap: 0.5rem;
-  margin: 0.75rem 0 0;
-  padding-left: 1.25rem;
-}
-
-.rules__cycle {
-  display: grid;
-  gap: 0.35rem;
-  margin: 0.9rem 0;
-  padding: 0;
-  list-style: none;
-}
-
-.rules__cycle li {
-  padding: 0.5rem 0.75rem;
-  border-left: var(--fb-rule-width-strong) solid var(--fb-rule-strong-color);
-  border-radius: 0 var(--fb-radius-md) var(--fb-radius-md) 0;
-  background-color: var(--fb-surface-inset);
-  font-weight: var(--fb-weight-ui);
-}
-
-.rules__statuses {
-  display: grid;
-  gap: 0.75rem;
-  margin: 0.85rem 0 0;
-}
-
-.rules__status dt {
-  font-weight: 600;
-}
-
-.rules__status dd {
-  margin: 0.15rem 0 0;
-  color: var(--fb-text-soft);
-}
-
-.rules__heading {
-  margin-top: 1.1rem;
-  font-size: 1.0625rem;
-}
-
-.rules__footer {
-  margin-top: 1.5rem;
-  text-align: center;
-}
+/* -------------------------------------------------------------------------- */
+/* Battle surface shell                                                       */
+/* -------------------------------------------------------------------------- */
 
 .battle-screen {
   display: grid;
@@ -246,91 +195,6 @@ ul {
   font-weight: var(--fb-weight-ui);
 }
 
-.settings__list {
-  display: grid;
-  gap: 0.75rem;
-  margin: 1.25rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.settings__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 1rem;
-  align-items: center;
-  padding: 0.9rem 1rem;
-  border: var(--fb-rule-subtle);
-  border-radius: var(--fb-radius-md);
-  background-color: var(--fb-surface-raised);
-}
-
-.settings__name {
-  font-size: 1.0625rem;
-}
-
-.settings__hint {
-  margin-top: 0.2rem;
-  color: var(--fb-text-soft);
-  font-size: 0.9375rem;
-}
-
-.settings__switch {
-  display: inline-flex;
-  min-width: 4.75rem;
-  min-height: var(--fb-target);
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 0.9rem;
-  border: var(--fb-rule);
-  border-radius: var(--fb-radius-pill);
-  background-color: var(--fb-surface-raised);
-  color: var(--fb-text);
-  font: inherit;
-  font-weight: var(--fb-weight-ui);
-  cursor: pointer;
-  transition:
-    background-color var(--fb-dur-lift) var(--fb-ease),
-    border-color var(--fb-dur-lift) var(--fb-ease);
-}
-
-.settings__switch[aria-checked='true'] {
-  border-color: var(--fb-selected);
-  background-color: var(--fb-selected);
-  background-image: var(--fb-material-brass);
-  color: var(--fb-selected-ink);
-}
-
-.settings__switch-label {
-  min-width: 1.75rem;
-  text-align: center;
-}
-
-.settings__notice {
-  margin-top: 1rem;
-  padding: 0.65rem 0.9rem;
-  border: var(--fb-rule);
-  border-radius: var(--fb-radius-md);
-  background-color: var(--fb-surface-inset);
-  font-size: 0.9375rem;
-}
-
-.settings__footer {
-  margin-top: 1.25rem;
-}
-
-[data-reduced-motion='true'] .settings__switch {
-  transition: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .shell__button,
-  .shell__back,
-  .settings__switch {
-    transition-duration: var(--fb-dur-instant);
-  }
-}
-
 @media (min-width: 640px) {
   .app-root {
     justify-content: center;
@@ -346,74 +210,4 @@ ul {
   html {
     scroll-behavior: auto;
   }
-}
-/* -------------------------------------------------------------------------- */
-/* Run result surface                                                          */
-/* -------------------------------------------------------------------------- */
-
-/* The detailed verdict and ledger treatment belongs to the reading-screens
-   ticket; the solo ticket keeps the shared shell and actions unchanged. */
-.run-result {
-  display: grid;
-  gap: 1rem;
-  width: 100%;
-  min-width: 0;
-}
-
-.run-result__head {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.run-result__head .shell__eyebrow {
-  margin: 0;
-}
-
-.run-result__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.run-result__stats {
-  display: grid;
-  gap: 0.55rem;
-  margin: 1rem 0 0;
-}
-
-.run-result__stat {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.45rem 0;
-  border-bottom: var(--fb-rule-subtle);
-}
-
-.run-result__stat dt {
-  color: var(--fb-text-soft);
-}
-
-.run-result__stat dd {
-  margin: 0;
-  font-weight: 700;
-}
-
-.run-result__outcome {
-  font-size: 1.0625rem;
-  font-weight: 600;
-}
-
-.run-result__best {
-  margin-top: 0.75rem;
-  font-weight: 700;
-  color: var(--fb-success);
-}
-
-.run-result__notice {
-  margin-top: 0.75rem;
-  color: var(--fb-text-soft);
-  font-size: 0.9375rem;
 }

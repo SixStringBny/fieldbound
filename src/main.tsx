@@ -9,6 +9,8 @@ import './styles/base.css';
 import './styles/primitives.css';
 import './styles/menu.css';
 import './styles/solo.css';
+import './styles/document.css';
+import './styles/result.css';
 
 const rootElement = document.getElementById('root');
 
