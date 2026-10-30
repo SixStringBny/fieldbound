@@ -136,7 +136,7 @@ row narrows them.
 | `AB-G3` | every route | No text or focusable control is clipped: each text node's `scrollWidth ≤ clientWidth + 1` unless it lives in a designated scroller; the detail sheet's last control is reachable by scrolling; no `overflow: hidden` traps focusable content. |
 | `AB-G4` | every route, all five viewports (bis) | `document.scrollWidth ≤ innerWidth + 1`; no horizontal page scroll anywhere. |
 | `AB-G5` | every route, all five viewports (bis) | Every rendered interactive element measures ≥44×44 CSS px. |
-| `AB-G6` | every route | Route change moves focus to the destination `h1`; focus is visible as the two-tone ring (2px gold plus inner edge, 2px offset) on slate and on paper; detail and privacy dialogs trap focus and return it to the invoker or the documented survivor. |
+| `AB-G6` | every route | Route change moves focus to the destination `h1`; focus is visible as the two-tone ring (2px gold plus inner edge, 2px offset) on slate and on paper after keyboard navigation, while a pointer route change focuses the `h1` without the ring and the cold first paint (no input yet) focuses it without the ring too; detail and privacy dialogs trap focus and return it to the invoker or the documented survivor. |
 
 ### 4.5 Accessibility — `AB-A`
 
@@ -424,7 +424,7 @@ reported under that id. Files marked *new* land with the ticket shown in §7.3 o
 | `AB-G3` | `tests/e2e/ui-bar.spec.ts` | `AB-G3 no text or focusable control is clipped` |
 | `AB-G4` | `tests/e2e/responsive-a11y.spec.ts` | `AB-G4 no horizontal page scroll` |
 | `AB-G5` | `tests/e2e/responsive-a11y.spec.ts` | `AB-G5 every target is at least 44px` |
-| `AB-G6` | `tests/e2e/responsive-a11y.spec.ts` | `AB-G6 route focus, ring and dialog focus return` |
+| `AB-G6` | `tests/e2e/ui-bar.spec.ts` | `AB-G6 route focus follows the input modality` |
 | `AB-A1` | `tests/e2e/ui-bar.spec.ts` | `AB-A1 axe reports zero WCAG 2.1 A/AA violations` |
 | `AB-A2` | `tests/e2e/ui-bar.spec.ts` | `AB-A2 every stateful control is glyph plus word` |
 | `AB-A3` | `src/styles/tokens.test.ts` *(new, ticket 1)* | `AB-A3 token pairs meet the contrast floors` |
@@ -456,6 +456,15 @@ Notes:
   same pass/fail evidence as a spec.
 - A check whose owning file is listed as *new* is red until its ticket lands; the
   screen ticket that consumes it may not close before it is green.
+- `AB-G6` was amended on 2026-10-30 (UI polish, #28). The ring is keyboard-only
+  now: a pointer route change and the cold first paint move focus to the
+  destination `h1` but paint no ring, because the ring arriving under a pointer
+  read as a selection box. `App.tsx` records the input modality on the heading
+  (`data-route-focus="keyboard" | "pointer" | "initial"`), since `:focus-visible`
+  cannot tell a script focus after a click from one after Tab+Enter reliably
+  across Chromium, Firefox and WebKit. The owning test moved to `ui-bar.spec.ts`
+  in the same amendment; the `responsive-a11y.spec.ts` row it replaces named a
+  test that never carried the check.
 
 ### 13.4 Route surface widths
 

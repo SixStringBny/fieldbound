@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { App, SCREEN_KINDS } from './App';
 import { RUN_SAVE_STORAGE_KEY } from './persistence/run-save';
@@ -27,7 +27,7 @@ describe('App', () => {
     ).toBe('#main-content');
   });
 
-  it('focuses the menu h1 on mount and marks it as the route focus target', () => {
+  it('focuses the menu h1 on mount and marks a cold route as the initial modality', () => {
     render(<App />);
 
     const heading = screen.getByRole('heading', {
@@ -37,7 +37,46 @@ describe('App', () => {
 
     expect(document.activeElement).toBe(heading);
     expect(heading.getAttribute('tabindex')).toBe('-1');
-    expect(heading.hasAttribute('data-route-focus')).toBe(true);
+    expect(
+      heading.getAttribute('data-route-focus'),
+      'no input has happened yet, so there is no ring modality to claim',
+    ).toBe('initial');
+  });
+
+  it('marks the route heading with the modality that caused the change', () => {
+    render(<App />);
+
+    const playSolo = screen.getByRole('button', { name: 'Play Solo' });
+
+    fireEvent.pointerDown(playSolo);
+    fireEvent.click(playSolo);
+
+    const pointerHeading = screen.getByRole('heading', {
+      level: 1,
+      name: 'Solo Run',
+    });
+
+    expect(document.activeElement).toBe(pointerHeading);
+    expect(
+      pointerHeading.getAttribute('data-route-focus'),
+      'a pointer route change paints no ring',
+    ).toBe('pointer');
+
+    const back = screen.getByRole('button', { name: 'Back to menu' });
+
+    fireEvent.keyDown(back, { key: 'Enter' });
+    fireEvent.click(back);
+
+    const keyboardHeading = screen.getByRole('heading', {
+      level: 1,
+      name: 'Fieldbound',
+    });
+
+    expect(document.activeElement).toBe(keyboardHeading);
+    expect(
+      keyboardHeading.getAttribute('data-route-focus'),
+      'a keyboard route change paints the ring',
+    ).toBe('keyboard');
   });
 
   it('exposes the five-entry hub contract without form furniture', () => {

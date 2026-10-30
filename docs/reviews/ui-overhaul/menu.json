@@ -89,7 +89,7 @@
       {
         "id": "AB-G6",
         "status": "pass",
-        "test": "tests/e2e/ui-bar.spec.ts › AB-G6 route focus lands on the h1 with the two-tone ring",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-G6 route focus follows the input modality",
         "message": ""
       },
       {

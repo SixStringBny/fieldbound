@@ -360,7 +360,10 @@ describe('How to Play rules reference', () => {
 
     expect(document.activeElement).toBe(heading);
     expect(heading.getAttribute('tabindex')).toBe('-1');
-    expect(heading.hasAttribute('data-route-focus')).toBe(true);
+    expect(
+      heading.getAttribute('data-route-focus'),
+      'a route mounted with no input yet is the cold first paint',
+    ).toBe('initial');
   });
 });
 

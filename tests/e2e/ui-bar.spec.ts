@@ -230,6 +230,43 @@ async function readTargets(page: Page): Promise<readonly RenderedTarget[]> {
   );
 }
 
+interface RouteFocusShape {
+  readonly tag: string;
+  readonly text: string;
+  /** The modality `App.tsx` recorded on the heading (AB-G6). */
+  readonly modality: string | null;
+  readonly outlineStyle: string;
+  readonly outlineWidth: string;
+  readonly outlineOffset: string;
+  readonly shadow: string;
+}
+
+/**
+ * The focused element and the ring the route-focus rule would paint on it.
+ * `modality` is the marker `App.tsx` writes, not a `:focus-visible` guess.
+ */
+async function readRouteFocus(page: Page): Promise<RouteFocusShape | null> {
+  return page.evaluate(() => {
+    const active = document.activeElement;
+
+    if (!(active instanceof HTMLElement)) {
+      return null;
+    }
+
+    const style = window.getComputedStyle(active);
+
+    return {
+      tag: active.tagName,
+      text: (active.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      modality: active.getAttribute('data-route-focus'),
+      outlineStyle: style.outlineStyle,
+      outlineWidth: style.outlineWidth,
+      outlineOffset: style.outlineOffset,
+      shadow: style.boxShadow,
+    };
+  });
+}
+
 interface StateCue {
   readonly selector: string;
   readonly text: string;
@@ -936,38 +973,60 @@ test.describe('menu', () => {
     expect(Math.abs(leftGap - rightGap), 'the column is centred').toBeLessThanOrEqual(2);
   });
 
-  test('AB-G6 route focus lands on the h1 with the two-tone ring', async ({ page }) => {
+  test('AB-G6 route focus follows the input modality', async ({ page }) => {
     await openApp(page, SEED);
 
-    const focus = await page.evaluate(() => {
-      const element = document.activeElement;
-      if (!(element instanceof HTMLElement)) {
-        return null;
-      }
-      const style = getComputedStyle(element);
-      return {
-        tag: element.tagName,
-        text: element.textContent?.trim() ?? '',
-        outlineWidth: style.outlineWidth,
-        outlineStyle: style.outlineStyle,
-        outlineOffset: style.outlineOffset,
-        shadow: style.boxShadow,
-      };
-    });
+    // Cold first paint: the heading takes focus, but no input has happened, so
+    // there is no ring (and nothing that looks like a selection outline).
+    const cold = await readRouteFocus(page);
 
-    expect(focus).not.toBeNull();
-    expect(focus!.tag).toBe('H1');
-    expect(focus!.text).toBe('Fieldbound');
-    expect(focus!.outlineWidth).toBe('2px');
-    expect(focus!.outlineStyle).toBe('solid');
-    expect(focus!.outlineOffset).toBe('2px');
-    expect(focus!.shadow, 'the two-tone ring includes the inner halo').not.toBe('none');
+    expect(cold).not.toBeNull();
+    expect(cold!.tag).toBe('H1');
+    expect(cold!.text).toBe('Fieldbound');
+    expect(cold!.modality, 'the cold route records no input').toBe('initial');
+    expect(cold!.outlineStyle, 'the cold route paints no ring').toBe('none');
+    expect(cold!.shadow, 'the cold route paints no halo').toBe('none');
 
+    // Keyboard navigation: Tab to Play Solo, Enter. The destination heading
+    // reports the modality and shows the two-tone ring.
     await page.keyboard.press('Tab');
     expect(
       await page.evaluate(() => document.activeElement?.getAttribute('aria-labelledby')),
       'the first tab stop after the route heading is Play Solo',
     ).toBe('menu-play-solo-label');
+
+    await page.keyboard.press('Enter');
+    await expectScreen(page, 'solo-setup', 'the keyboard route change');
+
+    const keyboard = await readRouteFocus(page);
+
+    expect(keyboard!.tag).toBe('H1');
+    expect(keyboard!.text).toBe('Solo Run');
+    expect(
+      keyboard!.modality,
+      'a keyboard route change records the keyboard',
+    ).toBe('keyboard');
+    expect(keyboard!.outlineStyle).toBe('solid');
+    expect(keyboard!.outlineWidth).toBe('2px');
+    expect(keyboard!.outlineOffset).toBe('2px');
+    expect(keyboard!.shadow, 'the two-tone ring includes the inner halo').not.toBe('none');
+
+    // Pointer navigation: Back to menu lands on the menu with no ring, while
+    // the heading still holds focus for assistive technology.
+    await page.getByRole('button', { name: 'Back to menu', exact: true }).click();
+    await expectScreen(page, 'menu', 'the pointer route change');
+
+    const pointer = await readRouteFocus(page);
+
+    expect(pointer!.tag).toBe('H1');
+    expect(pointer!.text).toBe('Fieldbound');
+    expect(pointer!.modality, 'a pointer route change records the pointer').toBe('pointer');
+    expect(pointer!.outlineStyle, 'a pointer route change paints no ring').toBe('none');
+    expect(pointer!.shadow, 'a pointer route change paints no halo').toBe('none');
+    expect(
+      await page.evaluate(() => document.activeElement?.tagName),
+      'focus still lands on the destination heading for assistive technology',
+    ).toBe('H1');
   });
 
   test('AB-A4 exactly one polite live region and no menu announcement', async ({ page }) => {
@@ -1351,30 +1410,18 @@ for (const viewport of VIEWPORTS) {
         await route.visit(page);
         await expectScreen(page, route.name, viewport.label);
 
-        // AB-G6 - the route change lands on the destination h1 with the ring.
-        const focus = await page.evaluate(() => {
-          const active = document.activeElement;
-
-          if (!(active instanceof HTMLElement)) {
-            return null;
-          }
-
-          const style = window.getComputedStyle(active);
-
-          return {
-            tag: active.tagName,
-            text: (active.textContent ?? '').trim(),
-            marked: active.hasAttribute('data-route-focus'),
-            outline: style.outlineStyle,
-            outlineWidth: style.outlineWidth,
-          };
-        });
+        // AB-G6 - the route change lands on the destination h1; this journey is
+        // pointer-driven, so the heading carries the pointer marker and no ring.
+        const focus = await readRouteFocus(page);
 
         expect(focus, `${route.name}: focus must land on the route heading`).not.toBeNull();
         expect(focus?.tag, `${route.name}: the route heading is the focused element`).toBe('H1');
-        expect(focus?.marked, `${route.name}: the heading carries data-route-focus`).toBe(true);
-        expect(focus?.outline, `${route.name}: the focus ring is visible`).not.toBe('none');
-        expect(focus?.outlineWidth, `${route.name}: the ring is 2px`).toBe('2px');
+        expect(focus?.modality, `${route.name}: the route change came from the pointer`).toBe(
+          'pointer',
+        );
+        expect(focus?.outlineStyle, `${route.name}: a pointer route change paints no ring`).toBe(
+          'none',
+        );
 
         // AB-C1 - the route's named objects.
         if (route.name === 'solo-setup') {
@@ -1766,28 +1813,17 @@ for (const viewport of VIEWPORTS) {
           await expect(page.getByRole('switch')).toHaveCount(2);
         }
 
-        // AB-G6 - the route change lands on the destination h1 with the ring.
-        const focus = await page.evaluate(() => {
-          const active = document.activeElement;
-
-          if (!(active instanceof HTMLElement)) {
-            return null;
-          }
-
-          const style = getComputedStyle(active);
-
-          return {
-            tag: active.tagName,
-            marked: active.hasAttribute('data-route-focus'),
-            outline: style.outlineStyle,
-            width: style.outlineWidth,
-          };
-        });
+        // AB-G6 - the route change lands on the destination h1; this journey is
+        // pointer-driven, so the heading carries the pointer marker and no ring.
+        const focus = await readRouteFocus(page);
 
         expect(focus?.tag, `${route.name}: the route heading takes focus`).toBe('H1');
-        expect(focus?.marked).toBe(true);
-        expect(focus?.outline).toBe('solid');
-        expect(focus?.width).toBe('2px');
+        expect(focus?.modality, `${route.name}: the route change came from the pointer`).toBe(
+          'pointer',
+        );
+        expect(focus?.outlineStyle, `${route.name}: a pointer route change paints no ring`).toBe(
+          'none',
+        );
 
         // AB-C2 - one ember action seal on How to Play, none on Settings (its
         // only action is the quiet masthead Back).
