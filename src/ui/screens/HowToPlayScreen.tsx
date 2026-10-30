@@ -1,55 +1,200 @@
 /**
- * The rules reference.
+ * The rules reference (reading-screens section 3).
  *
  * This screen is prose, not logic: it explains the turn sequence, the three
  * energy rule, the shared field cycle, persistent defense, the three statuses
  * and both modes. Every number here is documentation of the engine contract; no
  * damage, draw or affordability computation lives in the component.
+ *
+ * Presentation only. The document is one 42rem parchment sheet on the slate
+ * table; the masthead sits above it, never on paper. The copy is verbatim: the
+ * redesign changes how the same facts look, never what they say.
+ *
+ * The contents surface is the one deliberate interaction addition. At 1024px and
+ * above it is a sticky rail in column one; below that it is a 44px sticky
+ * `Contents` disclosure that pushes the sheet down rather than covering it.
+ * Activating a link prevents the hash, focuses the target `h2` and closes the
+ * disclosure; Escape closes it and returns focus to the button. There is no
+ * scroll-spy and no `aria-current`: the contents describe the page, they do not
+ * track it.
  */
+import { useRef, useState } from 'react';
+import type { KeyboardEvent, MouseEvent } from 'react';
+import { ELEMENT_DISPLAY } from '../components/ElementCue';
+import type { Element } from '../../engine/types';
+import '../../styles/document.css';
 
 export interface HowToPlayScreenProps {
   readonly onBack: () => void;
 }
 
-export function HowToPlayScreen({ onBack }: HowToPlayScreenProps) {
+interface SectionLink {
+  readonly id: string;
+  readonly label: string;
+}
+
+/** The six anchored sections, in reading order. */
+const SECTIONS: readonly SectionLink[] = [
+  { id: 'rules-turn-title', label: 'A turn in three steps' },
+  { id: 'rules-energy-title', label: 'Energy' },
+  { id: 'rules-field-title', label: 'The field cycle' },
+  { id: 'rules-defense-title', label: 'Defense' },
+  { id: 'rules-status-title', label: 'Statuses' },
+  { id: 'rules-modes-title', label: 'Modes' },
+];
+
+interface CycleStep {
+  readonly from: Element;
+  readonly to: Element;
+}
+
+/** Ember beats Frost, Frost beats Gale, Gale beats Stone, Stone beats Ember. */
+const CYCLE: readonly CycleStep[] = [
+  { from: 'ember', to: 'frost' },
+  { from: 'frost', to: 'gale' },
+  { from: 'gale', to: 'stone' },
+  { from: 'stone', to: 'ember' },
+];
+
+function ElementSeal({ element }: { readonly element: Element }) {
+  const display = ELEMENT_DISPLAY[element];
+
   return (
-    <>
-      <header className="shell__header shell__header--compact">
-        <p className="shell__eyebrow">Rules reference</p>
-        <h1 className="shell__title shell__title--page">How to Play</h1>
-        <p className="shell__tagline">
+    <span className="field-cycle__seal" data-element={element}>
+      <span className="field-cycle__glyph">{display.glyph}</span>
+      <span className="field-cycle__name">{display.label}</span>
+    </span>
+  );
+}
+
+export function HowToPlayScreen({ onBack }: HowToPlayScreenProps) {
+  const [contentsOpen, setContentsOpen] = useState(false);
+  const toggle = useRef<HTMLButtonElement>(null);
+
+  /**
+   * Jump, do not navigate: the hash is never written, no history entry is
+   * created and the router is not involved. Focus is what scrolls the heading
+   * into view, and `scroll-margin-top` keeps it clear of the sticky strip.
+   */
+  const jumpTo = (event: MouseEvent<HTMLAnchorElement>, id: string) => {
+    event.preventDefault();
+    setContentsOpen(false);
+
+    const heading = document.getElementById(id);
+
+    if (heading !== null) {
+      heading.focus();
+    }
+  };
+
+  const handleContentsKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== 'Escape' || !contentsOpen) {
+      return;
+    }
+
+    event.preventDefault();
+    setContentsOpen(false);
+    toggle.current?.focus();
+  };
+
+  return (
+    <div className="document">
+      <header className="document__masthead">
+        <div className="document__masthead-line">
+          <p className="document__eyebrow">Rules reference</p>
+          <button type="button" className="document__back" onClick={onBack}>
+            Back
+          </button>
+        </div>
+        <h1 className="document__title">How to Play</h1>
+        <p className="document__tagline">
           Take your opponent to 0 health. The shared field decides how hard that
           is.
         </p>
       </header>
 
-      <button type="button" className="shell__back" onClick={onBack}>
-        Back
-      </button>
+      <nav
+        className="contents"
+        aria-label="On this page"
+        data-open={contentsOpen ? 'true' : 'false'}
+        onKeyDown={handleContentsKeyDown}
+      >
+        <div className="contents__bar">
+          <button
+            type="button"
+            className="contents__toggle"
+            aria-expanded={contentsOpen}
+            aria-controls="how-to-play-contents"
+            ref={toggle}
+            onClick={() => setContentsOpen((open) => !open)}
+          >
+            <span className="contents__toggle-glyph" aria-hidden="true">
+              ☰
+            </span>
+            Contents
+          </button>
+          <span className="contents__count">6 sections</span>
+        </div>
 
-      <div className="rules">
-        <section className="shell__panel" aria-labelledby="rules-turn-title">
-          <h2 className="shell__panel-title" id="rules-turn-title">
+        <ol className="contents__list" id="how-to-play-contents">
+          {SECTIONS.map((section) => (
+            <li className="contents__item" key={section.id}>
+              <a
+                className="contents__link"
+                href={`#${section.id}`}
+                onClick={(event) => jumpTo(event, section.id)}
+              >
+                <span className="contents__bullet" aria-hidden="true">
+                  ◆
+                </span>
+                {section.label}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+
+      <div className="document__sheet">
+        <section className="document__section" aria-labelledby="rules-turn-title">
+          <h2 className="document__heading" id="rules-turn-title" tabIndex={-1}>
             A turn in three steps
           </h2>
           <ol className="rules__steps">
-            <li>
-              <strong>Turn start.</strong> Your energy resets to three, Regen
-              heals 2, and you draw back up to five cards.
+            <li className="rules__step">
+              <span className="rules__step-seal" aria-hidden="true">
+                1
+              </span>
+              <span className="rules__step-body">
+                <strong>Turn start.</strong> Your energy resets to three, Regen
+                heals 2, and you draw back up to five cards.
+              </span>
             </li>
-            <li>
-              <strong>Actions.</strong> Play any affordable cards in any order.
-              Energy is spent the moment a card resolves.
+            <li className="rules__step">
+              <span className="rules__step-seal" aria-hidden="true">
+                2
+              </span>
+              <span className="rules__step-body">
+                <strong>Actions.</strong> Play any affordable cards in any order.
+                Energy is spent the moment a card resolves.
+              </span>
             </li>
-            <li>
-              <strong>Turn end.</strong> Your remaining hand is discarded and
-              the other side takes over.
+            <li className="rules__step">
+              <span className="rules__step-seal" aria-hidden="true">
+                3
+              </span>
+              <span className="rules__step-body">
+                <strong>Turn end.</strong> Your remaining hand is discarded and
+                the other side takes over.
+              </span>
             </li>
           </ol>
         </section>
 
-        <section className="shell__panel" aria-labelledby="rules-energy-title">
-          <h2 className="shell__panel-title" id="rules-energy-title">
+        <section
+          className="document__section document__section--drop"
+          aria-labelledby="rules-energy-title"
+        >
+          <h2 className="document__heading" id="rules-energy-title" tabIndex={-1}>
             Energy
           </h2>
           <p>
@@ -64,8 +209,8 @@ export function HowToPlayScreen({ onBack }: HowToPlayScreenProps) {
           </p>
         </section>
 
-        <section className="shell__panel" aria-labelledby="rules-field-title">
-          <h2 className="shell__panel-title" id="rules-field-title">
+        <section className="document__section" aria-labelledby="rules-field-title">
+          <h2 className="document__heading" id="rules-field-title" tabIndex={-1}>
             The field cycle
           </h2>
           <p>
@@ -73,10 +218,23 @@ export function HowToPlayScreen({ onBack }: HowToPlayScreenProps) {
             only Shift cards change it.
           </p>
           <ul className="rules__cycle">
-            <li>Ember beats Frost</li>
-            <li>Frost beats Gale</li>
-            <li>Gale beats Stone</li>
-            <li>Stone beats Ember</li>
+            {CYCLE.map((step) => (
+              <li
+                className="rules__cycle-step"
+                key={`${step.from}-${step.to}`}
+                data-element={step.from}
+              >
+                <span className="field-cycle__pair" aria-hidden="true">
+                  <ElementSeal element={step.from} />
+                  <span className="field-cycle__arrow">→</span>
+                  <ElementSeal element={step.to} />
+                </span>
+                <span className="rules__cycle-beats">
+                  {ELEMENT_DISPLAY[step.from].label} beats{' '}
+                  {ELEMENT_DISPLAY[step.to].label}
+                </span>
+              </li>
+            ))}
           </ul>
           <p>
             Ember, Frost, Gale and Stone form the four-step cycle. Neutral sits
@@ -94,15 +252,21 @@ export function HowToPlayScreen({ onBack }: HowToPlayScreenProps) {
           </p>
         </section>
 
-        <section className="shell__panel" aria-labelledby="rules-defense-title">
-          <h2 className="shell__panel-title" id="rules-defense-title">
+        <section className="document__section" aria-labelledby="rules-defense-title">
+          <h2
+            className="document__heading"
+            id="rules-defense-title"
+            tabIndex={-1}
+          >
             Defense
           </h2>
           <p>
             Defense is flat damage reduction that stays for the whole battle.
             Incoming attacks are reduced by its value and the armor itself is not
-            worn down. It caps at 8 and resets between encounters and duel
-            rounds.
+            worn down.
+          </p>
+          <p className="rules__callout">
+            It caps at 8 and resets between encounters and duel rounds.
           </p>
           <p>
             Wards add defense, and a Ward that matches the field adds 2 more.
@@ -111,8 +275,8 @@ export function HowToPlayScreen({ onBack }: HowToPlayScreenProps) {
           </p>
         </section>
 
-        <section className="shell__panel" aria-labelledby="rules-status-title">
-          <h2 className="shell__panel-title" id="rules-status-title">
+        <section className="document__section" aria-labelledby="rules-status-title">
+          <h2 className="document__heading" id="rules-status-title" tabIndex={-1}>
             Statuses
           </h2>
           <dl className="rules__statuses">
@@ -144,8 +308,8 @@ export function HowToPlayScreen({ onBack }: HowToPlayScreenProps) {
           </p>
         </section>
 
-        <section className="shell__panel" aria-labelledby="rules-modes-title">
-          <h2 className="shell__panel-title" id="rules-modes-title">
+        <section className="document__section" aria-labelledby="rules-modes-title">
+          <h2 className="document__heading" id="rules-modes-title" tabIndex={-1}>
             Modes
           </h2>
 
@@ -181,11 +345,15 @@ export function HowToPlayScreen({ onBack }: HowToPlayScreenProps) {
         </section>
       </div>
 
-      <p className="rules__footer">
-        <button type="button" className="shell__button" onClick={onBack}>
+      <p className="document__footer">
+        <button
+          type="button"
+          className="shell__button document__footer-action"
+          onClick={onBack}
+        >
           Back to menu
         </button>
       </p>
-    </>
+    </div>
   );
 }

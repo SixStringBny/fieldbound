@@ -379,7 +379,9 @@ describe('BattleLog layout contract', () => {
     expect(osReduced).toMatch(
       /\.battle-log__item\s*\{[^}]*transform:\s*none/,
     );
-    expect(osReduced).toMatch(/transition-duration:\s*1ms/);
+    expect(osReduced).toMatch(
+      /transition-duration:\s*var\(--fb-dur-instant\)/,
+    );
 
     expect(css).toMatch(
       /\[data-reduced-motion='true'\]\s+\.battle-log__item\s*\{[^}]*animation:\s*none/,

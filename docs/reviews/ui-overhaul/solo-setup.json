@@ -1,0 +1,154 @@
+{
+  "taskId": "UI-5-solo-setup",
+  "reviewer": "Ben McCusker (@SixStringBny)",
+  "reviewedAt": "2026-10-30T04:29:13.956Z",
+  "decision": "approved",
+  "evidence": [
+    {
+      "path": "docs/reviews/ui-overhaul/solo-flow.md",
+      "sha256": "5352cf66a236bb039122f171af77c2f99395fef846df5eb6dfb373ea83fcb5a9"
+    }
+  ],
+  "route": "solo-setup",
+  "commit": "6ab998e",
+  "viewports": [
+    "375x667",
+    "390x844",
+    "768x1024",
+    "1024x768",
+    "1280x800"
+  ],
+  "mechanical": {
+    "owner": "qa-automation-engineer",
+    "ranAt": "2026-10-30T04:29:13.956Z",
+    "checks": [
+      {
+        "id": "AB-C1",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo solo-setup at 375x667: objects, seal, focus, text and targets",
+        "message": ""
+      },
+      {
+        "id": "AB-C2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo solo-setup at 375x667: objects, seal, focus, text and targets",
+        "message": ""
+      },
+      {
+        "id": "AB-C3",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-C3 no form furniture on play routes (solo-setup at 375x667)",
+        "message": "All five viewports."
+      },
+      {
+        "id": "AB-G4",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-G4 no horizontal page scroll on solo-setup at 375x667",
+        "message": "All five viewports."
+      },
+      {
+        "id": "AB-G5",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-G5 every target is at least 44px on solo-setup at 375x667",
+        "message": "All five viewports."
+      },
+      {
+        "id": "AB-A1",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-A1 axe reports zero WCAG 2.1 A/AA violations on solo-setup at 375x667",
+        "message": "Recorded label-in-name exemption for the deck/reward cards."
+      },
+      {
+        "id": "AB-A2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-A2 every stateful control is glyph plus word (solo-setup at 375x667)",
+        "message": "All five viewports."
+      },
+      {
+        "id": "AB-P1",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo solo-setup at 375x667: objects, seal, focus, text and targets",
+        "message": "Start Run is inside the thumb envelope at 375 and 390."
+      },
+      {
+        "id": "AB-P4",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo solo-setup at 375x667: objects, seal, focus, text and targets",
+        "message": "All ten names and the Shift tags at the 12px floor."
+      },
+      {
+        "id": "AB-T2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo solo-setup at 375x667: objects, seal, focus, text and targets",
+        "message": "Deck cards 460/512 wide inside the capped column."
+      },
+      {
+        "id": "AB-G6",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo solo-setup at 375x667: objects, seal, focus, text and targets",
+        "message": ""
+      },
+      {
+        "id": "AB-A3",
+        "status": "pass",
+        "test": "src/styles/tokens.test.ts › AB-A3 token pairs meet the contrast floors",
+        "message": ""
+      },
+      {
+        "id": "AB-V1",
+        "status": "pass",
+        "test": "src/styles/tokens.test.ts › AB-V1 components consume semantic tokens",
+        "message": ""
+      },
+      {
+        "id": "AB-V2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-V2 one slate table and one parchment material on every route",
+        "message": ""
+      },
+      {
+        "id": "AB-V4",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-V4 self-hosted display face and system UI stack",
+        "message": ""
+      }
+    ],
+    "summary": {
+      "passed": 15,
+      "failed": 0
+    }
+  },
+  "human": {
+    "owner": "Ben McCusker (@SixStringBny)",
+    "reviewedAt": "2026-10-30T04:29:13.956Z",
+    "viewports": [
+      "390x844",
+      "768x1024",
+      "1280x800"
+    ],
+    "checks": [
+      {
+        "id": "H-C1",
+        "status": "pass",
+        "note": "Four deck cards with every printed name visible; Start Run is the single physical action."
+      },
+      {
+        "id": "H-C2",
+        "status": "pass",
+        "note": "Warm slate, parchment objects, brass rules and the seal language; the placeholder art does not clash."
+      },
+      {
+        "id": "H-P1",
+        "status": "pass",
+        "note": "All four decks readable at 375 without zoom; Start Run and Back sit in the sticky bar above the thumb line."
+      },
+      {
+        "id": "H-T1",
+        "status": "pass",
+        "note": "The 2x2 deck table uses the table width with the sticky action bar; nothing is boxed in a phone frame here."
+      }
+    ],
+    "decision": "approved"
+  },
+  "issues": []
+}

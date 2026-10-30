@@ -89,7 +89,7 @@ describe('CardView', () => {
     expect(onInspect).toHaveBeenCalledWith('player:hand:0:test');
   });
 
-  it('keeps an unaffordable card focusable but rejects activation', () => {
+  it('keeps an unaffordable card focusable and opens inspection without playing', () => {
     const { onInspect } = renderCard(card('ember-inferno'), {
       affordable: false,
     });
@@ -104,10 +104,15 @@ describe('CardView', () => {
     button.focus();
     expect(document.activeElement).toBe(button);
 
+    // Inspection is allowed; the detail sheet owns the disabled Play action.
     fireEvent.click(button);
+    expect(onInspect).toHaveBeenCalledWith('player:hand:0:test');
+
     fireEvent.keyDown(button, { key: 'Enter' });
+    expect(onInspect).toHaveBeenCalledTimes(2);
+
     fireEvent.keyDown(button, { key: ' ' });
-    expect(onInspect).not.toHaveBeenCalled();
+    expect(onInspect).toHaveBeenCalledTimes(3);
   });
 
   it('opens inspection from Enter and Space on the focused card', () => {

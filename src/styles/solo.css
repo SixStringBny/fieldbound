@@ -1,0 +1,1159 @@
+/**
+ * Solo flow — setup, run overview and reward (solo-flow sections 3–5, OVERHAUL
+ * sections 6.4, 6.5 and 6.7).
+ *
+ * Three scrollable table surfaces, one content cap. Each is a single column
+ * below 768, the documented 2×2 / four-across compositions at 768, and the
+ * game-table pair (ladder plus status column) at 1024. The page scrolls
+ * vertically and never horizontally; the action bars are fixed and the page
+ * reserves their height, so the last card or offer is never covered.
+ *
+ * Every surface consumes semantic tokens: no raw hex, `rgb()`, shadow, radius
+ * or duration literal lives here (AB-V1). Element colours reach the deck seal
+ * only through the `--fb-<element>-*` bridge, mapped onto the local
+ * `--fb-solo-seal-*` pair so paper text keeps its own ink.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Route shell                                                                */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * The legacy shell left ordinary routes centred and narrow (42rem). The solo
+ * surfaces use the 1080px table cap and scroll from the top, and every one of
+ * them reserves the fixed action bar's height at the bottom.
+ */
+.shell[data-screen='solo-setup'],
+.shell[data-screen='run-overview'],
+.shell[data-screen='reward'] {
+  max-width: var(--fb-board-max);
+}
+
+.app-root:has(> #main-content[data-screen='solo-setup']),
+.app-root:has(> #main-content[data-screen='run-overview']),
+.app-root:has(> #main-content[data-screen='reward']) {
+  justify-content: flex-start;
+  padding: 0.75rem 0.625rem 8rem; /* 375x667: 12px 10px 128px */
+}
+
+.solo-setup,
+.run-overview,
+.reward {
+  display: grid;
+  gap: var(--fb-space-4);
+  width: 100%;
+  min-width: 0;
+}
+
+.solo-setup__head,
+.run-overview__head,
+.reward__head {
+  display: grid;
+  gap: var(--fb-space-1);
+  justify-items: start;
+}
+
+.solo-setup__head .shell__eyebrow,
+.run-overview__head .shell__eyebrow,
+.reward__head .shell__eyebrow {
+  margin: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Deck table (shared with the duel setup ticket)                             */
+/* -------------------------------------------------------------------------- */
+
+.solo-decks {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.625rem; /* 375x667: 10px */
+  width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+/* The item owns the offset parchment edges so they paint behind the button. */
+.solo-decks__item {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.solo-decks__item::before,
+.solo-decks__item::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-document-raised);
+}
+
+.solo-decks__item::before {
+  inset: 3px -3px -3px 3px;
+}
+
+.solo-decks__item::after {
+  inset: 6px -6px -6px 6px;
+}
+
+.solo-deck {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 100%;
+  min-height: 17.5rem; /* 280px */
+  align-content: start;
+  gap: var(--fb-space-2);
+  padding: var(--fb-space-3);
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
+  color: var(--fb-text-on-paper);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color var(--fb-dur-lift) var(--fb-ease),
+    background-color var(--fb-dur-lift) var(--fb-ease),
+    transform var(--fb-dur-lift) var(--fb-ease);
+}
+
+/* Element bridge → the wax seal only; paper text keeps the paper ink. */
+.solo-deck {
+  --fb-solo-seal-bg: var(--fb-neutral-bg);
+  --fb-solo-seal-ink: var(--fb-neutral-ink);
+}
+
+.solo-deck[data-element='ember'] {
+  --fb-solo-seal-bg: var(--fb-ember-bg);
+  --fb-solo-seal-ink: var(--fb-ember-ink);
+}
+
+.solo-deck[data-element='frost'] {
+  --fb-solo-seal-bg: var(--fb-frost-bg);
+  --fb-solo-seal-ink: var(--fb-frost-ink);
+}
+
+.solo-deck[data-element='gale'] {
+  --fb-solo-seal-bg: var(--fb-gale-bg);
+  --fb-solo-seal-ink: var(--fb-gale-ink);
+}
+
+.solo-deck[data-element='stone'] {
+  --fb-solo-seal-bg: var(--fb-stone-bg);
+  --fb-solo-seal-ink: var(--fb-stone-ink);
+}
+
+.solo-deck[aria-pressed='true'] {
+  border: var(--fb-rule-width-strong) solid var(--fb-rule-on-paper-color);
+  background-color: var(--fb-surface-document-raised);
+  transform: translateY(-2px);
+}
+
+.solo-deck[data-available='false'] {
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+.solo-deck__head {
+  display: flex;
+  align-items: center;
+  gap: var(--fb-space-2);
+}
+
+.solo-deck__seal {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-solo-seal-bg);
+  color: var(--fb-solo-seal-ink);
+  font-family: var(--fb-font-glyph);
+  font-size: var(--fb-text-md);
+  line-height: 1;
+  box-shadow: var(--fb-rim);
+}
+
+.solo-deck__name {
+  min-width: 0;
+  flex: 1 1 auto;
+  color: var(--fb-text-on-paper);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-xl);
+  font-weight: var(--fb-weight-display);
+  letter-spacing: var(--fb-tracking-display);
+  line-height: var(--fb-leading-ui);
+}
+
+.solo-deck__state {
+  flex: 0 0 auto;
+  color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
+}
+
+.solo-deck__state-glyph {
+  color: var(--fb-text-on-paper-muted);
+  font-family: var(--fb-font-glyph);
+}
+
+.solo-deck__identity {
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-sm);
+  font-weight: var(--fb-weight-ui);
+  line-height: var(--fb-leading-ui);
+}
+
+.solo-deck__contents {
+  display: grid;
+  gap: var(--fb-space-1);
+  min-width: 0;
+}
+
+.solo-deck__unavailable {
+  color: var(--fb-text-on-paper-danger);
+  font-size: var(--fb-text-xs);
+  font-weight: var(--fb-weight-ui);
+}
+
+.solo-deck__counts {
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--fb-leading-ui);
+}
+
+.solo-deck__cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--fb-space-1) var(--fb-space-2);
+  color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-leading-ui);
+}
+
+.solo-deck__card {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--fb-space-1);
+}
+
+.solo-deck__card-name {
+  overflow-wrap: anywhere;
+}
+
+.solo-deck__tag {
+  padding: 0 var(--fb-space-1);
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-xs);
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-label);
+  line-height: var(--fb-leading-ui);
+  text-transform: uppercase;
+}
+
+.solo-deck__tag-glyph {
+  font-family: var(--fb-font-glyph);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Action bars (setup, overview phone, reward confirm)                        */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Fixed, not sticky: the bar is out of the page flow, so the page reserves its
+ * height with the `.app-root` padding above and the last card always scrolls
+ * clear of it (AB-P1, solo-flow section 3.1).
+ */
+.solo-bar {
+  position: fixed;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-top: var(--fb-rule);
+  background-color: var(--fb-surface-board);
+  background-image: var(--fb-material-slate);
+  box-shadow: var(--fb-rim);
+  color: var(--fb-text);
+}
+
+.solo-bar__inner {
+  display: flex;
+  max-width: var(--fb-board-max);
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--fb-space-1);
+  margin: 0 auto;
+  padding: var(--fb-space-2) var(--fb-gutter)
+    calc(var(--fb-space-2) + env(safe-area-inset-bottom, 0px));
+}
+
+.solo-bar__status {
+  margin: 0;
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-leading-ui);
+}
+
+.solo-bar__status strong {
+  color: var(--fb-text);
+  font-weight: var(--fb-weight-ui);
+}
+
+.solo-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--fb-space-2);
+}
+
+.solo-bar__primary {
+  flex: 1 1 auto;
+  min-height: 3rem; /* 48px */
+}
+
+.solo-bar .shell__back {
+  flex: 0 0 auto;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Run overview                                                               */
+/* -------------------------------------------------------------------------- */
+
+.run-overview__progress {
+  color: var(--fb-rule-strong-color);
+  font-size: var(--fb-text-2xl);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-ui);
+}
+
+.run-overview__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--fb-space-4);
+  width: 100%;
+  min-width: 0;
+}
+
+.run-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  align-self: start;
+  gap: var(--fb-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.run-progress__step {
+  position: relative;
+  display: grid;
+  grid-template-areas: 'number portrait body';
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--fb-space-2);
+  min-height: 4.25rem; /* 68px phone row */
+  padding: var(--fb-space-1) var(--fb-space-2);
+  border: var(--fb-rule-width-strong) solid var(--fb-rule-subtle-color);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  color: var(--fb-text-on-paper);
+}
+
+/* The brass connector: each step owns the gap to the next one. */
+.run-progress__step::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: var(--fb-rule-width-strong);
+  height: var(--fb-space-2);
+  background-color: var(--fb-rule-strong-color);
+  transform: translateX(-1px);
+}
+
+.run-progress__step:last-child::after {
+  display: none;
+}
+
+.run-progress__step--current {
+  border-color: var(--fb-rule-strong-color);
+  background-color: var(--fb-surface-document-raised);
+}
+
+/* Paper text: the element colour of the cue is decorative, so the paper ink
+   carries the words at full contrast. */
+.run-progress__step .element-cue {
+  color: var(--fb-text-on-paper);
+  font-weight: var(--fb-weight-ui);
+}
+
+.run-progress__number {
+  display: inline-flex;
+  width: 1.5rem;
+  height: 1.5rem;
+  grid-area: number;
+  align-items: center;
+  justify-content: center;
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-pill);
+  color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-xs);
+  font-weight: var(--fb-weight-ui);
+  line-height: 1;
+}
+
+.run-progress__portrait {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  grid-area: portrait;
+  overflow: hidden;
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-sm);
+  background-color: var(--fb-surface-inset);
+}
+
+.run-progress__portrait .asset-image {
+  height: 100%;
+}
+
+.run-progress__portrait img {
+  object-position: var(--fb-art-enemy-position);
+}
+
+.run-progress__body {
+  display: grid;
+  min-width: 0;
+  grid-area: body;
+  gap: 0;
+}
+
+.run-progress__name {
+  color: var(--fb-text-on-paper);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-sm);
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-ui);
+  overflow-wrap: anywhere;
+}
+
+.run-progress__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--fb-space-1);
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-leading-ui);
+}
+
+.run-progress__status {
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-label);
+  line-height: var(--fb-leading-ui);
+  text-transform: uppercase;
+}
+
+.run-progress__step--current .run-progress__status {
+  color: var(--fb-text-on-paper);
+}
+
+.run-progress__status-glyph {
+  font-family: var(--fb-font-glyph);
+}
+
+.run-overview__side {
+  display: grid;
+  gap: var(--fb-space-4);
+  align-content: start;
+  min-width: 0;
+}
+
+.run-overview__panel-title {
+  margin: 0 0 var(--fb-space-2);
+  color: var(--fb-text);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-lg);
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-ui);
+}
+
+/* The meter value is body text on this route, so it holds the 12px floor. */
+.run-overview .stat-meter__value {
+  font-size: var(--fb-text-xs);
+}
+
+/*
+ * The battle board hides the meter word on short phone screens and prints an
+ * "HP" abbreviation instead. The overview is a reading surface: the label stays
+ * the word "Health" at the 11px label floor, with no abbreviation.
+ */
+.run-overview .stat-meter__label {
+  font-size: var(--fb-text-2xs);
+  letter-spacing: var(--fb-tracking-label);
+}
+
+.run-overview .stat-meter__label::before {
+  content: none;
+}
+
+.run-overview__stats {
+  display: grid;
+  gap: 0;
+  margin: var(--fb-space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.run-overview__stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fb-space-2);
+  padding: var(--fb-space-1) 0;
+  border-top: var(--fb-rule-subtle);
+}
+
+.run-overview__stat-label {
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
+}
+
+.run-overview__stat-value {
+  color: var(--fb-text);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fb-weight-ui);
+}
+
+.run-overview__enemy {
+  display: flex;
+  align-items: center;
+  gap: var(--fb-space-3);
+}
+
+.run-overview__enemy-portrait {
+  display: block;
+  width: 4rem;
+  height: 4rem;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: var(--fb-rule);
+  border-radius: var(--fb-radius-sm);
+  background-color: var(--fb-surface-inset);
+}
+
+.run-overview__enemy-portrait .asset-image {
+  height: 100%;
+}
+
+.run-overview__enemy-portrait img {
+  object-position: var(--fb-art-enemy-position);
+}
+
+.run-overview__enemy-body {
+  display: grid;
+  min-width: 0;
+}
+
+.run-overview__enemy-name {
+  color: var(--fb-text);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-lg);
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-ui);
+}
+
+.run-overview__enemy-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--fb-space-1);
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-leading-ui);
+}
+
+.run-overview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fb-space-2);
+}
+
+/*
+ * Below 768 the actions leave the column and sit in a fixed bar so the primary
+ * action is always inside the thumb envelope (AB-P1); the page already reserves
+ * 128px at its foot for it.
+ */
+@media (max-width: 767px) {
+  .run-overview__actions {
+    position: fixed;
+    z-index: 2;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    flex-wrap: nowrap;
+    padding: var(--fb-space-2) 0.625rem
+      calc(var(--fb-space-2) + env(safe-area-inset-bottom, 0px));
+    border-top: var(--fb-rule);
+    background-color: var(--fb-surface-board);
+    background-image: var(--fb-material-slate);
+    box-shadow: var(--fb-rim);
+  }
+
+  .run-overview__actions .shell__button {
+    flex: 1 1 auto;
+    min-height: 3rem; /* 48px */
+  }
+}
+
+@media (min-width: 390px) and (max-width: 767px) {
+  .run-overview__actions {
+    padding-inline: 0.75rem;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reward                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.reward__health {
+  color: var(--fb-text);
+  font-size: var(--fb-text-md);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fb-weight-ui);
+}
+
+.reward__options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.375rem; /* 375x667: 6px */
+  width: 100%;
+  max-width: 20.25rem; /* 3x104 + 2x6 */
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.reward__item {
+  display: flex;
+  min-width: 0;
+}
+
+.reward-option {
+  display: grid;
+  width: 100%;
+  min-height: 9.125rem; /* 146px phone card */
+  align-content: start;
+  gap: var(--fb-space-1);
+  padding: var(--fb-space-1);
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-sm);
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  box-shadow: var(--fb-rim), var(--fb-elev-1);
+  color: var(--fb-text-on-paper);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color var(--fb-dur-lift) var(--fb-ease),
+    background-color var(--fb-dur-lift) var(--fb-ease),
+    transform var(--fb-dur-lift) var(--fb-ease);
+}
+
+.reward-option[aria-pressed='true'] {
+  border: var(--fb-rule-width-strong) solid var(--fb-rule-on-paper-color);
+  background-color: var(--fb-surface-document-raised);
+  transform: translateY(-2px);
+}
+
+.reward-option--heal {
+  border-style: dashed;
+  background-color: var(--fb-surface-document-raised);
+}
+
+.reward-option[aria-pressed='true'].reward-option--heal {
+  border-style: solid;
+}
+
+.reward-option[disabled] {
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+.reward-option__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fb-space-1);
+}
+
+.reward-option__cost {
+  display: inline-flex;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-selected);
+  background-image: var(--fb-material-brass);
+  color: var(--fb-selected-ink);
+  font-size: var(--fb-text-xs);
+  font-weight: var(--fb-weight-ui);
+  line-height: 1;
+}
+
+.reward-option__title {
+  min-width: 0;
+  flex: 1 1 auto;
+  color: var(--fb-text-on-paper);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-xs);
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-ui);
+  overflow-wrap: anywhere;
+}
+
+.reward-option__art {
+  display: none;
+}
+
+.reward-option__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--fb-space-1);
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-leading-ui);
+}
+
+/* The deal is on parchment: the element cue keeps its glyph and word but takes
+   the paper ink so it stays above the 4.5:1 text floor. */
+.reward-option .element-cue {
+  color: var(--fb-text-on-paper);
+  font-weight: var(--fb-weight-ui);
+}
+
+.reward-option__seal {
+  display: inline-flex;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-selected);
+  background-image: var(--fb-material-brass);
+  color: var(--fb-selected-ink);
+  font-family: var(--fb-font-glyph);
+  font-size: var(--fb-text-xs);
+  line-height: 1;
+}
+
+.reward-option__primary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fb-space-1);
+  color: var(--fb-text-on-paper);
+}
+
+.reward-option__primary-value {
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-xl);
+  font-weight: var(--fb-weight-display);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.reward-option__primary-label {
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-2xs);
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
+}
+
+.reward-option__effect {
+  display: none;
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-leading-body);
+  overflow-wrap: anywhere;
+}
+
+.reward-option__state {
+  color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-label);
+  line-height: var(--fb-leading-ui);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.reward-option__state-glyph {
+  font-family: var(--fb-font-glyph);
+}
+
+.reward-option--seal .reward-option__title {
+  font-size: var(--fb-text-md);
+}
+
+.reward__error {
+  padding: var(--fb-space-3) var(--fb-space-4);
+  border: var(--fb-rule);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-inset);
+  color: var(--fb-text);
+  font-size: var(--fb-text-md);
+  font-weight: var(--fb-weight-ui);
+}
+
+.reward__summary {
+  margin: 0;
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-leading-ui);
+}
+
+.reward__summary strong {
+  color: var(--fb-text);
+  font-weight: var(--fb-weight-ui);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Widths                                                                     */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 390px) {
+  .app-root:has(> #main-content[data-screen='solo-setup']),
+  .app-root:has(> #main-content[data-screen='run-overview']),
+  .app-root:has(> #main-content[data-screen='reward']) {
+    padding: 1rem 0.75rem 8rem; /* 390x844: 16px 12px */
+  }
+
+  .solo-decks {
+    gap: 0.75rem; /* 12px */
+  }
+
+  .reward__options {
+    gap: var(--fb-space-2);
+    max-width: 21.25rem; /* 3x108 + 2x8 */
+  }
+
+  .reward-option {
+    min-height: 9.5rem; /* 152px */
+  }
+
+  .solo-bar {
+    padding: 0 0.75rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .app-root:has(> #main-content[data-screen='solo-setup']),
+  .app-root:has(> #main-content[data-screen='run-overview']),
+  .app-root:has(> #main-content[data-screen='reward']) {
+    padding: 1.25rem 1rem 8.5rem; /* 768x1024: 20px 16px 136px */
+  }
+
+  .solo-bar {
+    padding: 0 1rem;
+  }
+
+  .solo-bar__inner {
+    min-height: 4.5rem; /* 72px */
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--fb-space-3);
+  }
+
+  .solo-bar__status {
+    flex: 1 1 auto;
+    font-size: var(--fb-text-sm);
+  }
+
+  .solo-bar__actions {
+    flex: 0 0 auto;
+  }
+
+  .solo-bar__primary {
+    flex: 0 0 auto;
+    padding-inline: var(--fb-space-5);
+  }
+
+  .solo-decks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.875rem; /* 14px */
+    max-width: 43.375rem; /* 2x340 + 14 = 694 */
+  }
+
+  .solo-deck {
+    padding: var(--fb-space-4);
+  }
+
+  .solo-deck__name {
+    font-size: var(--fb-text-2xl);
+  }
+
+  .run-progress {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--fb-space-3);
+  }
+
+  .run-progress__step {
+    grid-template-areas:
+      'number'
+      'portrait'
+      'body';
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    align-items: start;
+    gap: var(--fb-space-1);
+    min-height: 9.5rem; /* 152px stone; the content needs 134px */
+    padding: var(--fb-space-2);
+  }
+
+  .run-progress__step::after {
+    top: 50%;
+    left: 100%;
+    width: var(--fb-space-3);
+    height: var(--fb-rule-width-strong);
+    transform: translateY(-1px);
+  }
+
+  .run-progress__portrait {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .run-progress__number {
+    position: absolute;
+    top: var(--fb-space-1);
+    right: var(--fb-space-1);
+  }
+
+  .run-progress__body {
+    gap: var(--fb-space-1);
+  }
+
+  .run-progress__name {
+    font-size: var(--fb-text-md);
+  }
+
+  .reward__options {
+    gap: var(--fb-space-4);
+    max-width: 35.75rem; /* 3x180 + 2x16 = 572 */
+  }
+
+  .reward-option {
+    min-height: 15.625rem; /* 250px */
+    gap: var(--fb-space-2);
+    padding: var(--fb-space-2);
+  }
+
+  .reward-option__art {
+    display: block;
+    height: 6rem;
+    overflow: hidden;
+    border: var(--fb-rule);
+    border-radius: var(--fb-radius-sm);
+    background-color: var(--fb-surface-inset);
+  }
+
+  .reward-option__art .asset-image {
+    height: 100%;
+  }
+
+  .reward-option__art img {
+    object-position: var(--fb-art-card-position);
+  }
+
+  .reward-option__title {
+    font-size: var(--fb-text-md);
+  }
+
+  .reward-option__effect {
+    display: block;
+  }
+
+  .reward-option--seal .reward-option__title {
+    font-size: var(--fb-text-xl);
+  }
+
+  .reward-option__primary-value {
+    font-size: var(--fb-text-2xl);
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-root:has(> #main-content[data-screen='solo-setup']),
+  .app-root:has(> #main-content[data-screen='run-overview']),
+  .app-root:has(> #main-content[data-screen='reward']) {
+    padding: 1.5rem 1.25rem 8rem; /* 1024x768: 24px 20px */
+  }
+
+  .solo-bar {
+    padding: 0 1.25rem;
+  }
+
+  .solo-decks {
+    gap: var(--fb-space-4); /* 16px */
+    max-width: 58.5rem; /* 2x460 + 16 = 936 */
+  }
+
+  .solo-deck {
+    min-height: 15.625rem; /* 250px */
+  }
+
+  .run-overview__body {
+    grid-template-columns: minmax(0, 1fr) 18.75rem; /* pair 660 + 20 + 300 */
+    max-width: 61.25rem; /* 980 */
+    margin-inline: auto;
+    gap: var(--fb-space-5);
+  }
+  .run-progress {
+    gap: var(--fb-space-2);
+  }
+
+  .run-progress__step {
+    min-height: 11.25rem;
+  }
+
+  .run-progress__step::after {
+    width: var(--fb-space-2);
+  }
+
+  .run-overview__actions {
+    flex-direction: row;
+  }
+
+  .run-overview__actions .shell__button {
+    flex: 1 1 auto;
+  }
+
+  .reward__options {
+    gap: var(--fb-space-5); /* 20px */
+    max-width: 40rem; /* 3x200 + 2x20 = 640 */
+  }
+
+  .reward-option {
+    min-height: 17.5rem; /* 280px */
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-root:has(> #main-content[data-screen='solo-setup']),
+  .app-root:has(> #main-content[data-screen='run-overview']),
+  .app-root:has(> #main-content[data-screen='reward']) {
+    padding: 2rem 1.5rem 8.5rem; /* 1280x800: 32px 24px 136px */
+  }
+
+  .solo-bar {
+    padding: 0 1.5rem;
+  }
+
+  .solo-decks {
+    gap: var(--fb-space-5); /* 20px */
+    max-width: 65.25rem; /* 2x512 + 20 = 1044 */
+  }
+
+  .solo-deck {
+    min-height: 16.25rem; /* 260px */
+  }
+
+  .run-overview__body {
+    grid-template-columns: minmax(0, 1fr) 20rem; /* pair 720 + 24 + 320 */
+    max-width: 66.5rem; /* 1064 */
+    gap: var(--fb-space-5);
+  }
+
+  .reward__options {
+    gap: var(--fb-space-5);
+    max-width: 44.25rem; /* 3x220 + 2x24 = 708 */
+  }
+
+  .reward-option {
+    min-height: 18.75rem; /* 300px */
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Interaction states                                                         */
+/* -------------------------------------------------------------------------- */
+
+@media (hover: hover) {
+  .solo-deck:hover {
+    border-color: var(--fb-rule-strong-color);
+  }
+
+  .reward-option:not([disabled]):hover {
+    border-color: var(--fb-rule-strong-color);
+  }
+}
+
+.solo-deck:active,
+.reward-option:not([disabled]):active {
+  transform: translateY(var(--fb-press-y));
+}
+
+.solo-deck:focus-visible,
+.reward-option:focus-visible {
+  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
+  outline-offset: var(--fb-focus-offset);
+  box-shadow: var(--fb-focus-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .solo-deck,
+  .reward-option {
+    transition-duration: var(--fb-dur-instant);
+  }
+
+  .solo-deck[aria-pressed='true'],
+  .reward-option[aria-pressed='true'],
+  .solo-deck:active,
+  .reward-option:not([disabled]):active {
+    transform: none;
+  }
+}
+
+[data-reduced-motion='true'] .solo-deck,
+[data-reduced-motion='true'] .reward-option {
+  transition-duration: var(--fb-dur-instant);
+}
+
+[data-reduced-motion='true'] .solo-deck[aria-pressed='true'],
+[data-reduced-motion='true'] .reward-option[aria-pressed='true'],
+[data-reduced-motion='true'] .solo-deck:active,
+[data-reduced-motion='true'] .reward-option:not([disabled]):active {
+  transform: none;
+}

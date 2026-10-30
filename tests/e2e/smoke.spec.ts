@@ -71,6 +71,23 @@ test.describe('smoke', () => {
     ).toBeVisible();
     await expectNoHorizontalScroll(page);
 
+    // A contents jump moves focus to the section heading and writes no hash
+    // (reading-screens §3.3); the rail is open at the default desktop width.
+    const contents = page.getByRole('navigation', { name: 'On this page' });
+
+    if (!(await contents.getByRole('link').first().isVisible())) {
+      await page.getByRole('button', { name: 'Contents', exact: true }).click();
+    }
+
+    await page.getByRole('link', { name: 'Defense', exact: true }).click();
+
+    expect(
+      await page.evaluate(() => document.activeElement?.id),
+      'the contents jump must focus the section heading',
+    ).toBe('rules-defense-title');
+    expect(new URL(page.url()).hash).toBe('');
+    await expectNoHorizontalScroll(page);
+
     await page.getByRole('button', { name: 'Back', exact: true }).click();
     await expectScreen(page, 'menu', `returning from How to Play`);
     await expect(

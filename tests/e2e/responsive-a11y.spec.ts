@@ -32,11 +32,14 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import {
+  assertPrivacyInvariant,
   collectConsoleErrors,
+  dismissPrivacy,
   expectNoConsoleErrors,
   expectNoHorizontalScroll,
   expectScreen,
   openApp,
+  playGreedyTurn,
   startSolo,
 } from './helpers';
 
@@ -49,7 +52,9 @@ interface ViewportCase {
 
 const VIEWPORTS: readonly ViewportCase[] = [
   { label: '375x667', width: 375, height: 667 },
+  { label: '390x844', width: 390, height: 844 },
   { label: '768x1024', width: 768, height: 1024 },
+  { label: '1024x768', width: 1024, height: 768 },
   { label: '1280x800', width: 1280, height: 800 },
 ];
 
@@ -113,6 +118,9 @@ interface MotionSnapshot {
   readonly handItem: MotionSample | null;
   readonly fieldBanner: MotionSample | null;
   readonly playerPanel: MotionSample | null;
+  readonly intent: MotionSample | null;
+  readonly feedbackLayer: MotionSample | null;
+  readonly impactNumber: MotionSample | null;
 }
 
 function stopDescription(stop: FocusStop): string {
@@ -292,6 +300,28 @@ async function readRenderedTargets(page: Page): Promise<readonly RenderedTarget[
   });
 }
 
+/** Battle locks to 100svh: neither axis may scroll the document. */
+async function expectNoPageScroll(
+  page: Page,
+  context: string,
+): Promise<void> {
+  const metrics = await page.evaluate(() => ({
+    innerHeight: window.innerHeight,
+    innerWidth: window.innerWidth,
+    scrollHeight: document.documentElement.scrollHeight,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+
+  expect(
+    metrics.scrollHeight,
+    `${context}: the battle document scrolls vertically (${metrics.scrollHeight}px content in a ${metrics.innerHeight}px viewport).`,
+  ).toBeLessThanOrEqual(metrics.innerHeight + 1);
+  expect(
+    metrics.scrollWidth,
+    `${context}: the battle document scrolls horizontally (${metrics.scrollWidth}px content in a ${metrics.innerWidth}px viewport).`,
+  ).toBeLessThanOrEqual(metrics.innerWidth + 1);
+}
+
 /** Assert the 44x44 minimum on every rendered interactive element. */
 async function expectMinimumTargets(
   page: Page,
@@ -348,6 +378,9 @@ async function readMotionSnapshot(page: Page): Promise<MotionSnapshot> {
       handItem: pick('.hand__item'),
       fieldBanner: pick('.field-banner'),
       playerPanel: pick('.player-panel'),
+      intent: pick('.enemy-panel__intent'),
+      feedbackLayer: pick('.battle-feedback'),
+      impactNumber: pick('[data-impact-number]'),
     };
   });
 }
@@ -440,6 +473,7 @@ for (const [index, viewport] of VIEWPORTS.entries()) {
 
       await startSolo(page, 'ember');
       await expectScreen(page, 'battle', layoutContext);
+      await expectNoPageScroll(page, `${layoutContext} battle`);
 
       const hand = page.locator('.hand .card-view');
       await expect(
@@ -556,17 +590,16 @@ for (const [index, viewport] of VIEWPORTS.entries()) {
 
       await expectMinimumTargets(page, `${layoutContext} battle`);
 
-      if (viewport.width >= 1080) {
+      if (viewport.width >= 1024) {
         // AB-T2: the interactive board content is capped at 1080px and centred
-        // as a whole. The log rail makes the arena deliberately asymmetric
-        // inside that cap, so measure the arena-plus-rail content box rather
-        // than centring the arena in the viewport (battle-screen §1.2). The
-        // rail's exact 240/288px width is AB-T3 and lands with the battle
-        // screen; here it must exist as the right-hand column.
+        // as a whole. The board *contains* the log rail in the new composition,
+        // so the rail is inside the board's right edge and the board box itself
+        // must be centred (battle-screen section 1.2).
         const board = await page.locator('.battle-board').boundingBox();
         const rail = await page
           .locator('[data-battle-log="true"]')
           .boundingBox();
+        const hand = await page.locator('.battle-hand, .hand').boundingBox();
 
         if (board === null || rail === null) {
           throw new Error(
@@ -579,37 +612,40 @@ for (const [index, viewport] of VIEWPORTS.entries()) {
           `${layoutContext}: the battle board is ${board.width}px wide, above the ${BOARD_MAX_WIDTH_PX}px contract.`,
         ).toBeLessThanOrEqual(BOARD_MAX_WIDTH_PX + 1);
 
-        const contentLeft = Math.min(board.x, rail.x);
-        const contentRight = Math.max(board.x + board.width, rail.x + rail.width);
-        const contentWidth = contentRight - contentLeft;
-
-        expect(
-          contentWidth,
-          `${layoutContext}: the board content is ${contentWidth}px wide, above the ${BOARD_MAX_WIDTH_PX}px contract.`,
-        ).toBeLessThanOrEqual(BOARD_MAX_WIDTH_PX + 1);
-
-        const leftGap = contentLeft;
-        const rightGap = viewport.width - contentRight;
+        const leftGap = board.x;
+        const rightGap = viewport.width - (board.x + board.width);
 
         expect(
           Math.abs(leftGap - rightGap),
-          `${layoutContext}: the board content is not centred (left gap ${leftGap}px, right gap ${rightGap}px).`,
+          `${layoutContext}: the battle board is not centred (left gap ${leftGap}px, right gap ${rightGap}px).`,
         ).toBeLessThanOrEqual(2);
 
-        const gapBetween = rail.x - (board.x + board.width);
+        const expectedRail = viewport.width >= 1280 ? 288 : 240;
+
+        expect(
+          rail.width,
+          `${layoutContext}: the log rail is ${rail.width}px wide; the spec fixes ${expectedRail}px at this width.`,
+        ).toBeGreaterThanOrEqual(expectedRail - 1);
+        expect(
+          rail.width,
+          `${layoutContext}: the log rail is ${rail.width}px wide; the spec fixes ${expectedRail}px at this width.`,
+        ).toBeLessThanOrEqual(expectedRail + 1);
 
         expect(
           rail.x,
-          `${layoutContext}: the log rail is not the board's right-hand column (board ends at ${board.x + board.width}px, rail starts at ${rail.x}px).`,
-        ).toBeGreaterThanOrEqual(board.x + board.width - 1);
+          `${layoutContext}: the log rail must sit inside the board's right column (rail x=${rail.x}, board right=${board.x + board.width}).`,
+        ).toBeGreaterThan(board.x + board.width / 2);
         expect(
-          gapBetween,
-          `${layoutContext}: the empty gutter between the board and its rail is ${gapBetween}px, above the 240px limit.`,
-        ).toBeLessThanOrEqual(240);
-        expect(
-          rail.width,
-          `${layoutContext}: the log rail (${rail.width}px) must be the narrow column beside the board (${board.width}px).`,
-        ).toBeLessThan(board.width);
+          rail.x + rail.width,
+          `${layoutContext}: the log rail must stop at the board's right edge (rail right=${rail.x + rail.width}, board right=${board.x + board.width}).`,
+        ).toBeLessThanOrEqual(board.x + board.width + 1);
+
+        if (hand !== null) {
+          expect(
+            rail.y + rail.height,
+            `${layoutContext}: the log rail runs ${rail.y + rail.height - hand.y}px past the hand line (hand top ${hand.y}).`,
+          ).toBeLessThanOrEqual(hand.y + 1);
+        }
       }
 
       // Keyboard-only card play. The fifth card currently owns focus from the
@@ -771,6 +807,76 @@ for (const [index, viewport] of VIEWPORTS.entries()) {
       expectStilled('the hand row item', motion.handItem, motionContext);
       expectStilled('the field banner', motion.fieldBanner, motionContext);
       expectStilled('the player panel', motion.playerPanel, motionContext);
+      expectStilled('the intent block', motion.intent, motionContext);
+
+      /*
+       * Motion-and-feedback section 10: the beat is an absolute branch. No
+       * impact number, chip, flash, shift ring, handoff or feedback layer may
+       * exist in the DOM — not hidden, not transparent, absent — so there is
+       * nothing to still.
+       */
+      expect(
+        motion.feedbackLayer,
+        `${motionContext}: a feedback layer was rendered under reduced motion.`,
+      ).toBeNull();
+      expect(
+        motion.impactNumber,
+        `${motionContext}: an impact number was rendered under reduced motion.`,
+      ).toBeNull();
+      await expect(page.locator('[data-impact-flash]')).toHaveCount(0);
+      await expect(page.locator('[data-defense-chip]')).toHaveCount(0);
+      await expect(page.locator('[data-field-shift]')).toHaveCount(0);
+      await expect(page.locator('[data-feedback-handoff]')).toHaveCount(0);
+
+      // The same facts stay visible: play a card and read the value, the log
+      // entry and the one polite sentence.
+      const enemyHealth = page.getByRole('meter', {
+        name: 'Cinder Warden health',
+        exact: true,
+      });
+      const healthBefore = await enemyHealth.getAttribute('aria-valuenow');
+      const affordable = page.locator('.hand .card-view[data-affordable="true"]');
+      const affordableCount = await affordable.count();
+      let attack = null;
+
+      for (let index = 0; index < affordableCount; index += 1) {
+        const candidate = affordable.nth(index);
+        const label = (await candidate.getAttribute('aria-label')) ?? '';
+
+        if (/\battack,/.test(label)) {
+          attack = candidate;
+          break;
+        }
+      }
+
+      if (attack === null) {
+        throw new Error(
+          `${motionContext}: no affordable attack was on screen under reduced motion, so the settled transition cannot be measured.`,
+        );
+      }
+
+      await attack.click();
+      await page.getByRole('button', { name: 'Play card', exact: true }).click();
+      await expect(
+        page.locator('[data-card-detail-layer="true"]'),
+        `${motionContext}: the detail sheet did not close after Play card.`,
+      ).toBeHidden();
+
+      await expect
+        .poll(async () => enemyHealth.getAttribute('aria-valuenow'), {
+          message: `${motionContext}: the settled transition did not change the meter.`,
+          timeout: 5_000,
+        })
+        .not.toBe(healthBefore);
+
+      await expect(page.locator('[data-impact-number]')).toHaveCount(0);
+      await expect(page.locator('[data-feedback-key]')).toHaveCount(0);
+      await expect(
+        page.locator('[data-battle-log-entry]').last(),
+        `${motionContext}: the log did not record the settled transition.`,
+      ).toBeAttached();
+      await expect(page.getByRole('status')).toHaveCount(1);
+      await expect(page.getByRole('status')).not.toHaveText('');
 
       await expectNoHorizontalScroll(page);
 
@@ -778,3 +884,468 @@ for (const [index, viewport] of VIEWPORTS.entries()) {
     });
   });
 }
+
+/* -------------------------------------------------------------------------- */
+/* Reading screens (reading-screens �2��6, �8.4; ticket 6)                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The reading routes are documents: they scroll vertically, never horizontally,
+ * and nothing on them is pinned except the phone `Contents` strip. The five
+ * viewports prove the rail/strip swap, the 44px targets and the reduced-motion
+ * branch from both sources; the result surfaces are reached once and resized
+ * across the same five targets rather than replayed five times.
+ */
+function readingViewports() {
+  return VIEWPORTS;
+}
+
+async function openHowToPlay(page: Page): Promise<void> {
+  await openApp(page, 20261102);
+  await page.getByRole('button', { name: 'How to Play', exact: true }).click();
+  await expectScreen(page, 'how-to-play', 'reading layout');
+  await page.evaluate(() => document.fonts.ready);
+}
+
+async function openSettings(page: Page): Promise<void> {
+  await openApp(page, 20261102);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expectScreen(page, 'settings', 'reading layout');
+  await page.evaluate(() => document.fonts.ready);
+}
+
+for (const viewport of readingViewports()) {
+  test.describe(`reading ${viewport.label}`, () => {
+    test.use({
+      viewport: { width: viewport.width, height: viewport.height },
+      reducedMotion: 'no-preference',
+    });
+
+    test(`the documents scroll one way, keep 44px targets and swap the contents surface at ${viewport.label}`, async ({
+      page,
+    }) => {
+      const context = `${viewport.label} reading documents`;
+      const errors = collectConsoleErrors(page);
+
+      await openHowToPlay(page);
+
+      await expectNoHorizontalScroll(page);
+      await expectMinimumTargets(page, `${context} how-to-play`);
+
+      const contents = await page.evaluate(() => {
+        const nav = document.querySelector<HTMLElement>('.contents');
+        const bar = document.querySelector<HTMLElement>('.contents__bar');
+        const list = document.querySelector<HTMLElement>('.contents__list');
+
+        if (nav === null || bar === null || list === null) {
+          return null;
+        }
+
+        return {
+          position: getComputedStyle(nav).position,
+          barDisplay: getComputedStyle(bar).display,
+          listDisplay: getComputedStyle(list).display,
+          railLinks: Array.from(list.querySelectorAll('a')).filter(
+            (link) => link.getClientRects().length > 0,
+          ).length,
+        };
+      });
+
+      expect(contents, `${context}: the contents surface is missing`).not.toBeNull();
+      expect(contents!.position, `${context}: the contents never pins?`).toBe('sticky');
+      expect(
+        contents!.barDisplay === 'none',
+        `${context}: the phone strip must be gone at 1024 and above`,
+      ).toBe(viewport.width >= 1024);
+      expect(
+        contents!.railLinks,
+        `${context}: the rail is the contents below 1024 and above it`,
+      ).toBe(viewport.width >= 1024 ? 6 : 0);
+
+      await openSettings(page);
+
+      await expectNoHorizontalScroll(page);
+      await expectMinimumTargets(page, `${context} settings`);
+      await expect(page.getByRole('switch')).toHaveCount(2);
+      expectNoConsoleErrors(errors, context);
+    });
+
+    test(`the switch is stilled by the OS preference and by the stored override at ${viewport.label}`, async ({
+      page,
+    }) => {
+      const context = `${viewport.label} reading motion`;
+
+      // Source 1: the operating system asks for reduced motion.
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await openSettings(page);
+
+      const os = await page.evaluate(() => {
+        const thumb = document.querySelector<HTMLElement>('.settings__switch-thumb');
+        return thumb === null
+          ? null
+          : { transition: getComputedStyle(thumb).transitionDuration, transform: getComputedStyle(thumb).transform };
+      });
+
+      expect(os, `${context}: the switch thumb is missing`).not.toBeNull();
+      expectWithinReducedMotionCap('the switch thumb transition', os!.transition, context);
+
+      // Source 2: the in-app Reduce motion switch writes the explicit override.
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      await openSettings(page);
+
+      const toggle = page.getByRole('switch', { name: 'Reduce motion' });
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-checked', 'true');
+      await expect(page.locator('#app-root')).toHaveAttribute('data-reduced-motion', 'true');
+
+      const stored = await page.evaluate(() => {
+        const thumb = document.querySelector<HTMLElement>('.settings__switch-thumb');
+        return thumb === null ? null : getComputedStyle(thumb).transitionDuration;
+      });
+
+      expectWithinReducedMotionCap('the switch thumb transition', stored ?? '', context);
+      await expectNoHorizontalScroll(page);
+    });
+  });
+}
+
+test.describe('reading results', () => {
+  test.use({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+
+  test('the run result holds at all five widths', async ({ page }) => {
+    test.setTimeout(300_000);
+
+    const errors = collectConsoleErrors(page);
+
+    await openApp(page, 20261102);
+    await startSolo(page, 'ember');
+
+    for (let turn = 0; turn < 30; turn += 1) {
+      if ((await page.locator('#main-content').getAttribute('data-screen')) === 'run-result') {
+        break;
+      }
+
+      await page.getByRole('button', { name: 'End Turn', exact: true }).click();
+    }
+
+    await expectScreen(page, 'run-result', 'reading result layout');
+
+    for (const viewport of VIEWPORTS) {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await expectNoHorizontalScroll(page);
+      await expectMinimumTargets(page, `${viewport.label} run result`);
+    }
+
+    expectNoConsoleErrors(errors, 'the run result at five widths');
+  });
+
+  test('the round and match plaques hold at all five widths', async ({ page }) => {
+    test.setTimeout(300_000);
+
+    const errors = collectConsoleErrors(page);
+
+    await openApp(page, 20261103);
+    await page.getByRole('button', { name: 'Local Duel', exact: true }).click();
+
+    for (const [player, deck] of [
+      ['1', 'Ember'],
+      ['2', 'Frost'],
+    ] as const) {
+      await page
+        .getByRole('button', { name: `Choose the ${deck} deck`, exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: `Confirm Player ${player} deck`, exact: true })
+        .click();
+    }
+
+    await page.getByRole('button', { name: 'Start Match', exact: true }).click();
+    await page.getByRole('button', { name: "I'm ready", exact: true }).click();
+    await expectScreen(page, 'battle', 'the first duel round');
+
+    let screen = 'battle';
+
+    for (let step = 0; step < 160 && screen !== 'match-result'; step += 1) {
+      screen = (await page.locator('#main-content').getAttribute('data-screen')) ?? '';
+
+      if (screen === 'round-result' || screen === 'match-result') {
+        const variant = screen === 'round-result' ? '[data-duel-result="round"]' : '[data-duel-result="match"]';
+
+        for (const viewport of VIEWPORTS) {
+          await page.setViewportSize({ width: viewport.width, height: viewport.height });
+          await expect(page.locator(variant), `${viewport.label}: ${screen} is missing`).toBeVisible();
+          await expectNoHorizontalScroll(page);
+          await expectMinimumTargets(page, `${viewport.label} ${screen}`);
+        }
+
+        await page.setViewportSize({ width: 390, height: 844 });
+
+        if (screen === 'match-result') {
+          break;
+        }
+
+        await page.getByRole('button', { name: 'Next Round', exact: true }).click();
+        await page.getByRole('button', { name: "I'm ready", exact: true }).click();
+        await expectScreen(page, 'battle', 'the next duel round');
+        continue;
+      }
+
+      if (screen === 'privacy') {
+        const heading = await page.getByRole('heading', { level: 1 }).innerText();
+        await dismissPrivacy(page, heading.includes('Player 2') ? 'Player 2' : 'Player 1');
+        continue;
+      }
+
+      if (screen === 'battle') {
+        await playGreedyTurn(page);
+        continue;
+      }
+
+      throw new Error(`the duel left the known surfaces at "${screen}".`);
+    }
+
+    await expectScreen(page, 'match-result', 'the settled duel series');
+    expectNoConsoleErrors(errors, 'the duel plaques at five widths');
+  });
+});
+
+
+/* -------------------------------------------------------------------------- */
+/* Duel flow: setup, privacy and board at all five widths                     */
+/* -------------------------------------------------------------------------- */
+
+async function chooseDuelDeck(
+  page: Page,
+  player: '1' | '2',
+  deckName: string,
+): Promise<void> {
+  await page
+    .getByRole('button', { name: `Choose the ${deckName} deck`, exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: `Confirm Player ${player} deck`, exact: true })
+    .click();
+}
+
+async function openDuelPrivacy(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Local Duel', exact: true }).click();
+  await chooseDuelDeck(page, '1', 'Ember');
+  await chooseDuelDeck(page, '2', 'Frost');
+  await page.getByRole('button', { name: 'Start Match', exact: true }).click();
+  await expectScreen(page, 'privacy', 'the duel privacy handoff');
+}
+
+test.describe('duel flow', () => {
+  test.use({ reducedMotion: 'reduce' });
+
+  test('setup, privacy and the board hold at all five widths', async ({
+    page,
+  }) => {
+    test.setTimeout(180_000);
+
+    const errors = collectConsoleErrors(page);
+
+    await openApp(page, LAYOUT_SEED_BASE);
+    await page.getByRole('button', { name: 'Local Duel', exact: true }).click();
+    await expectScreen(page, 'duel-setup', 'the duel setup');
+
+    // Setup step 1 on every width: no sideways scroll, 44px targets.
+    for (const viewport of VIEWPORTS) {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await expectNoHorizontalScroll(page);
+      await expectMinimumTargets(page, `${viewport.label} duel setup`);
+      await expect(
+        page.getByRole('heading', {
+          level: 2,
+          name: 'Player 1, choose your deck',
+          exact: true,
+        }),
+        `${viewport.label}: the duel setup deck question is missing.`,
+      ).toBeVisible();
+    }
+
+    await page.setViewportSize({ width: 375, height: 667 });
+    await chooseDuelDeck(page, '1', 'Ember');
+    await chooseDuelDeck(page, '2', 'Frost');
+    await expectScreen(page, 'duel-setup', 'the locked summary');
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Both decks are locked', exact: true }),
+      'The locked summary is missing after both confirmations.',
+    ).toBeVisible();
+
+    // Privacy: fixed, opaque, no page scroll, one 44px action.
+    await page.getByRole('button', { name: 'Start Match', exact: true }).click();
+    await expectScreen(page, 'privacy', 'Start Match');
+
+    for (const viewport of VIEWPORTS) {
+      const context = `${viewport.label} duel privacy`;
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+
+      await assertPrivacyInvariant(page, 'Player 1', context);
+      await expectNoHorizontalScroll(page);
+      await expectNoPageScroll(page, context);
+      await expectMinimumTargets(page, context);
+
+      const style = await page
+        .locator('.duel-privacy')
+        .evaluate((node) => {
+          const rect = node.getBoundingClientRect();
+          const computed = getComputedStyle(node);
+          return {
+            position: computed.position,
+            width: rect.width,
+            height: rect.height,
+            background: computed.backgroundColor,
+          };
+        });
+
+      expect(style.position, `${context}: privacy must be a fixed route.`).toBe('fixed');
+      expect(style.width, `${context}: privacy must cover the width.`).toBeGreaterThanOrEqual(
+        viewport.width - 1,
+      );
+      expect(style.height, `${context}: privacy must cover the height.`).toBeGreaterThanOrEqual(
+        viewport.height - 1,
+      );
+      expect(style.background, `${context}: privacy must be opaque.`).toMatch(/^rgb\(/);
+    }
+
+    // The board locks to 100svh at every width.
+    await dismissPrivacy(page, 'Player 1');
+
+    for (const viewport of VIEWPORTS) {
+      const context = `${viewport.label} duel board`;
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await expectScreen(page, 'battle', context);
+      await expectNoPageScroll(page, context);
+      await expectNoHorizontalScroll(page);
+      await expectMinimumTargets(page, context);
+      await expect(
+        page.locator('.hand'),
+        `${context}: exactly one hand may exist.`,
+      ).toHaveCount(1);
+      await expect(
+        page.locator('.hand button.card-view'),
+        `${context}: the active hand must hold five card buttons.`,
+      ).toHaveCount(5);
+      await expect(
+        page.locator('.duel-panel--opponent button.card-view'),
+        `${context}: the opponent hand must never render card faces.`,
+      ).toHaveCount(0);
+      await expect(
+        page.locator('.duel-panel--opponent [data-hand-count]'),
+        `${context}: the opponent must show a hand count.`,
+      ).toHaveText(/^\d+ cards? in hand$/);
+
+      if (viewport.width >= 1024) {
+        const rail = await page.locator('[data-battle-log="true"]').boundingBox();
+        const expected = viewport.width >= 1280 ? 288 : 240;
+
+        expect(
+          Math.abs((rail?.width ?? 0) - expected),
+          `${context}: the log rail measured ${String(rail?.width)}px, expected ${String(
+            expected,
+          )}.`,
+        ).toBeLessThanOrEqual(1);
+      }
+    }
+
+    // Focus lands on the first incoming card with a visible ring, once.
+    const focused = await page.evaluate(() => {
+      const active = document.activeElement;
+      const computed = active === null ? null : getComputedStyle(active);
+      return {
+        isCard: active instanceof HTMLElement && active.classList.contains('card-view'),
+        inHand: active instanceof HTMLElement && active.closest('.hand') !== null,
+        outlineWidth: computed?.outlineWidth ?? '0px',
+        outlineStyle: computed?.outlineStyle ?? 'none',
+      };
+    });
+
+    expect(focused.isCard, 'The incoming turn must focus the first card.').toBe(true);
+    expect(focused.inHand, 'The focused card must belong to the active hand.').toBe(true);
+    expect(
+      focused.outlineWidth,
+      'The focused card must show the two-tone focus ring.',
+    ).not.toBe('0px');
+    expect(focused.outlineStyle, 'The focus ring must be drawn.').not.toBe('none');
+
+    expectNoConsoleErrors(errors, 'the five-viewport duel flow');
+  });
+});
+
+test.describe('duel privacy motion: OS preference', () => {
+  test.use({ reducedMotion: 'reduce' });
+
+  test('the OS reduced-motion preference stills the privacy plaque', async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openApp(page, MOTION_SEED_BASE);
+    await openDuelPrivacy(page);
+
+    const motion = await page.evaluate(() => {
+      const plaque = document.querySelector('.duel-privacy__plaque');
+      const app = document.querySelector('#app-root');
+
+      return {
+        attribute: app?.getAttribute('data-reduced-motion') ?? null,
+        animationName: plaque === null ? '' : getComputedStyle(plaque).animationName,
+      };
+    });
+
+    expect(motion.attribute, 'The OS preference must set data-reduced-motion').toBe(
+      'true',
+    );
+    expect(motion.animationName, 'The plaque must not animate under OS reduce').toBe(
+      'none',
+    );
+  });
+});
+
+test.describe('duel privacy motion: explicit override', () => {
+  test.use({ reducedMotion: 'no-preference' });
+
+  test('the explicit reduce-motion override stills the privacy plaque', async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openApp(page, MOTION_SEED_BASE);
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+
+    const motionSwitch = page.getByRole('switch', { name: 'Reduce motion' });
+
+    await expect(motionSwitch, 'The Reduce motion switch is missing.').toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+    await motionSwitch.click();
+    await expect(motionSwitch, 'The override did not switch on.').toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+
+    await openDuelPrivacy(page);
+
+    const motion = await page.evaluate(() => {
+      const plaque = document.querySelector('.duel-privacy__plaque');
+      const app = document.querySelector('#app-root');
+
+      return {
+        attribute: app?.getAttribute('data-reduced-motion') ?? null,
+        animationName: plaque === null ? '' : getComputedStyle(plaque).animationName,
+      };
+    });
+
+    expect(motion.attribute, 'The explicit override must set data-reduced-motion').toBe(
+      'true',
+    );
+    expect(motion.animationName, 'The plaque must not animate under the override').toBe(
+      'none',
+    );
+  });
+});

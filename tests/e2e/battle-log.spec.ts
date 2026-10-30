@@ -772,6 +772,18 @@ test.describe('battle log in the local duel', () => {
     await dismissPrivacy(page, 'Player 1');
     await expectLogRegion(page, `${context} active turn`);
 
+    // At 1280 the log is the 288px right-hand rail, not a footer block.
+    const duelRail = await page.locator(LOG_REGION_SELECTOR).boundingBox();
+
+    expect(
+      duelRail?.width ?? 0,
+      `${context}: the duel log rail must measure 288px at 1280.`,
+    ).toBeGreaterThanOrEqual(287);
+    expect(
+      duelRail?.width ?? 0,
+      `${context}: the duel log rail must measure 288px at 1280.`,
+    ).toBeLessThanOrEqual(289);
+
     const openingLatest = await readLatestText(page, context);
     expect(
       openingLatest,
@@ -993,7 +1005,7 @@ test.describe('battle log at 1280x800', () => {
       `${context}: the latest-entry strip must remain visible at 1280px.`,
     ).toBeVisible();
 
-    // The column sits to the right of the board, not stacked under it.
+    // The rail is the board's right-hand column, inside the board cap.
     const boardBox = await page.locator('.battle-board').boundingBox();
     const regionBox = await region.boundingBox();
 
@@ -1005,13 +1017,127 @@ test.describe('battle log at 1280x800', () => {
 
     expect(
       regionBox.x,
-      `${context}: the log starts at x=${regionBox.x}, left of the board's right edge ${
-        boardBox.x + boardBox.width
-      }; it must be the right-hand column.`,
-    ).toBeGreaterThanOrEqual(boardBox.x + boardBox.width - 1);
+      `${context}: the log starts at x=${regionBox.x}; it must sit in the board's right-hand column (board ${boardBox.x}..${boardBox.x + boardBox.width}).`,
+    ).toBeGreaterThan(boardBox.x + boardBox.width / 2);
+    expect(
+      regionBox.x + regionBox.width,
+      `${context}: the log rail overruns the board's right edge.`,
+    ).toBeLessThanOrEqual(boardBox.x + boardBox.width + 1);
+    expect(
+      regionBox.width,
+      `${context}: the rail is ${regionBox.width}px; the 1280 spec fixes 288px.`,
+    ).toBeGreaterThanOrEqual(287);
+    expect(
+      regionBox.width,
+      `${context}: the rail is ${regionBox.width}px; the 1280 spec fixes 288px.`,
+    ).toBeLessThanOrEqual(289);
 
     await expectNoHorizontalScroll(page);
 
     expectNoConsoleErrors(errors, context);
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* 5. Duel log footer strip and drawer below 1024 (all projects)               */
+/* -------------------------------------------------------------------------- */
+
+for (const width of [375, 768] as const) {
+  test.describe(`duel log at ${String(width)}`, () => {
+    test.use({
+      viewport: { width, height: width === 375 ? 667 : 1024 },
+      reducedMotion: 'reduce',
+    });
+
+    test('the footer strip and drawer hold without page scroll', async ({
+      page,
+    }) => {
+      test.setTimeout(90_000);
+
+      const context = `duel ${String(width)}x${
+        width === 375 ? '667' : '1024'
+      }`;
+      const errors = collectConsoleErrors(page);
+
+      await openApp(page, DUEL_SEED);
+      await startDuel(page, 'Ember', 'Frost');
+      await dismissPrivacy(page, 'Player 1');
+      await expectLogRegion(page, context);
+      await expectScreen(page, 'battle', context);
+
+      // Below 1024 the log element dissolves into the footer: the latest line
+      // and the Log toggle are direct grid items and the history is a drawer.
+      await expect(
+        page.locator(LOG_REGION_SELECTOR),
+        `${context}: the log element must join the footer grid below 1024.`,
+      ).toHaveCSS('display', 'contents');
+
+      const latest = page.locator(LATEST_SELECTOR);
+
+      await expect(
+        latest,
+        `${context}: the latest public line is missing.`,
+      ).toBeVisible();
+      await expect(
+        latest,
+        `${context}: a fresh round starts with the battle-start line.`,
+      ).toContainText('The battle begins');
+
+      const toggle = page.locator(TOGGLE_SELECTOR);
+
+      await expect(
+        toggle,
+        `${context}: the Log toggle must be visible below 1024.`,
+      ).toBeVisible();
+      await expect(
+        toggle,
+        `${context}: the Log toggle must be a 44px target.`,
+      ).toHaveCSS('min-height', /(?:44|2\.75rem|43\.5)px/);
+
+      await expect(
+        page.locator(HISTORY_SELECTOR),
+        `${context}: the history drawer starts closed.`,
+      ).toHaveAttribute('data-open', 'false');
+
+      await expectNoHorizontalScroll(page);
+
+      await toggle.click();
+      await expect(
+        page.locator(HISTORY_SELECTOR),
+        `${context}: the drawer did not open.`,
+      ).toHaveAttribute('data-open', 'true');
+      await expect(
+        page.locator(LIST_SELECTOR),
+        `${context}: the public history list is missing.`,
+      ).toBeVisible();
+      await expect(
+        page.locator(ITEM_SELECTOR).first(),
+        `${context}: the battle-start entry is missing from the history.`,
+      ).toContainText('The battle begins');
+
+      await expectNoHorizontalScroll(page);
+
+      await page.keyboard.press('Escape');
+      await expect(
+        page.locator(HISTORY_SELECTOR),
+        `${context}: Escape must close the drawer.`,
+      ).toHaveAttribute('data-open', 'false');
+      await expect(
+        toggle,
+        `${context}: Escape must return focus to the Log toggle.`,
+      ).toBeFocused();
+
+      // The log is never live and carries no hand count.
+      const liveInLog = await page
+        .locator(LOG_REGION_SELECTOR)
+        .evaluate((node) => node.querySelectorAll('[aria-live]').length);
+
+      expect(
+        liveInLog,
+        `${context}: the duel log must never be a live region.`,
+      ).toBe(0);
+
+      expectNoConsoleErrors(errors, context);
+    });
+  });
+}

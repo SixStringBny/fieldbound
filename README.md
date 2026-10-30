@@ -127,7 +127,9 @@ base-relative, the same artifact works on any host at the same subpath.
 `npx playwright install --with-deps chromium firefox webkit` →
 `npm run test:e2e` → `node scripts/check-build.mjs` →
 `node scripts/check-budget.mjs`. On failure it uploads `test-results/` as a
-workflow artifact. No secrets are required.
+workflow artifact; on every run it uploads the five-viewport sweep from
+`test-results/screenshots/` (`AB-E2`, retained 14 days). No secrets are
+required.
 
 ## Release audits
 

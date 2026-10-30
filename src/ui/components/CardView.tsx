@@ -1,14 +1,16 @@
 /**
- * One hand card as a native button (SHL-FR-03, VIS-NFR-03).
+ * One hand card as a native button (SHL-FR-03, VIS-NFR-03, battle-screen
+ * section 4).
  *
- * The face shows the cost, name, element glyph plus label, primary number and
- * the Pierce / field-bonus badges. The accessible name carries cost, name,
- * element and primary number, so it is meaningful without colour.
+ * The face shows the cost seal, art, name, element/type meta, printed summary
+ * (table only), primary number and the Pierce / field-bonus badges. The
+ * accessible name carries cost, name, element, type, primary number and badges,
+ * so it is meaningful without colour.
  *
  * Unaffordable cards stay in the tab order: the button is `aria-disabled`
  * (not `disabled`), which keeps keyboard users from being silently dropped out
- * of the hand. Activation is rejected, and the accessible name plus the visible
- * "Unaffordable" label explain the state without relying on dimming.
+ * of the hand. Activation is rejected, and the visible "Unaffordable" label
+ * plus the accessible name explain the state without relying on dimming.
  *
  * This component is props-only: it reports an inspect intent and imports no
  * engine mutator, controller or storage module.
@@ -20,9 +22,10 @@ import {
   cardAccessibleName,
   cardAltText,
   cardBadges,
+  cardEffectLines,
   cardPrimary,
 } from './card-presentation';
-import { ElementCue } from './ElementCue';
+import { CARD_TYPE_LABELS, ElementCue } from './ElementCue';
 
 export interface CardViewProps {
   readonly card: CardDefinition;
@@ -30,7 +33,10 @@ export interface CardViewProps {
   readonly affordable: boolean;
   /** App base URL used to resolve the manifest image. */
   readonly baseUrl: string;
-  /** Called only when an affordable card is activated. */
+  /**
+   * Called when a card is activated to inspect it. An unaffordable card still
+   * opens the detail (battle-screen §4, §6); only its Play action is disabled.
+   */
   readonly onInspect: (instanceId: string) => void;
 }
 
@@ -43,11 +49,10 @@ export function CardView({
 }: CardViewProps) {
   const primary = cardPrimary(card);
   const badges = cardBadges(card);
+  const summary = cardEffectLines(card)[0] ?? '';
 
   const activate = () => {
-    if (affordable) {
-      onInspect(instanceId);
-    }
+    onInspect(instanceId);
   };
 
   /**
@@ -90,12 +95,15 @@ export function CardView({
 
       <span className="card-view__name">{card.name}</span>
 
-      <ElementCue element={card.element} />
+      <span className="card-view__meta">
+        <ElementCue element={card.element} />
+        <span className="card-view__type">{CARD_TYPE_LABELS[card.type]}</span>
+      </span>
+
+      <span className="card-view__summary">{summary}</span>
 
       <span className="card-view__primary">
-        <span className="card-view__primary-value" aria-hidden="true">
-          {primary.value}
-        </span>
+        <span className="card-view__primary-value">{primary.value}</span>
         <span className="card-view__primary-label">{primary.label}</span>
       </span>
 

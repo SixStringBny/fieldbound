@@ -42,6 +42,7 @@ import { enemyById } from './content/enemies';
 import { createMatch, matchWinner, recordRoundWinner, rematch } from './duel/match';
 import type { DuelMatch, DuelPlayer, DuelRound } from './duel/match';
 import {
+  canDuelAct,
   createDuelRound,
   dismissDuelPrivacy,
   duelRoundView,
@@ -58,6 +59,7 @@ import { resolveRunSeed } from './persistence/seed';
 import type { SeedSource } from './persistence/seed';
 import {
   RUN_ENCOUNTER_COUNT,
+  RUN_LADDER,
   RUN_MAX_HEALTH,
   currentEnemy,
   runSummary,
@@ -98,6 +100,7 @@ import { DuelBattleScreen } from './ui/screens/DuelBattleScreen';
 import type { DuelBattleScreenProps } from './ui/screens/DuelBattleScreen';
 import { DuelSetupScreen } from './ui/screens/DuelSetupScreen';
 import { duelPlayerName, duelScoreText } from './ui/screens/duel-copy';
+import { projectDuelBoardView } from './ui/screens/duel-view';
 import { HowToPlayScreen } from './ui/screens/HowToPlayScreen';
 import { MatchResultScreen } from './ui/screens/MatchResultScreen';
 import { MenuScreen } from './ui/screens/MenuScreen';
@@ -208,6 +211,18 @@ function continueRunHint(state: SoloRunState): string {
         RUN_ENCOUNTER_COUNT
       } · ${runCurrentHealth(state)} of ${RUN_MAX_HEALTH} health`;
   }
+}
+
+/**
+ * The deck line under the Continue hint. The menu never reads storage or the
+ * catalog itself; the composition root hands it the restored run's deck name
+ * and current size, and the screen renders exactly that.
+ */
+function continueDeckSummary(state: SoloRunState): string {
+  const deck = deckByElement(state.run.element);
+  const name = deck?.name ?? state.run.element;
+
+  return `${name} deck · ${state.run.deck.length} cards`;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -461,6 +476,47 @@ export function App({
     setAnnouncement('');
     emitCue('ui');
   }, []);
+
+  /*
+   * Route focus, once for every route (reading-screens §8.1).
+   *
+   * On mount, and only on a route change, focus the route's `h1`. The heading
+   * receives `tabindex="-1"` here rather than in twelve screen files, so the
+   * rule cannot drift per screen and no screen has to know about it. `data-route-focus`
+   * gives the heading the same visible two-tone ring a control gets (AB-G6),
+   * even when the navigation came from a pointer.
+   *
+   * The rule must never fight focus a screen already owns: the privacy handoff
+   * focuses `I'm ready`, and the battle board owns its own focus path. If the
+   * mounted route has already moved focus inside the landmark, this leaves it
+   * alone. Re-renders and setting toggles do not re-run it, because the effect
+   * is keyed on the route.
+   */
+  useEffect(() => {
+    const main = document.getElementById('main-content');
+
+    if (main === null) {
+      return;
+    }
+
+    const focused = document.activeElement;
+
+    if (focused instanceof HTMLElement && focused !== main) {
+      if (main.contains(focused)) {
+        return;
+      }
+    }
+
+    const heading = main.querySelector('h1');
+
+    if (heading === null) {
+      return;
+    }
+
+    heading.setAttribute('tabindex', '-1');
+    heading.setAttribute('data-route-focus', '');
+    heading.focus();
+  }, [screen.kind]);
 
   /* ------------------------------------------------------------------------ */
   /* Duel intents                                                             */
@@ -818,6 +874,25 @@ export function App({
     [applyRunAttempt, chooseRunReward],
   );
 
+  /**
+   * One polite line per deliberate selection on the solo surfaces. The screens
+   * own their own selection state and only report the name they chose; the copy
+   * lives here with every other announcement so only one region ever speaks.
+   */
+  const handleSoloDeckSelected = useCallback(
+    (deckName: string) => {
+      announce(`${deckName} deck selected. Start Run is enabled.`);
+    },
+    [announce],
+  );
+
+  const handleRewardSelected = useCallback(
+    (name: string) => {
+      announce(`${name} selected. Take reward is enabled.`);
+    },
+    [announce],
+  );
+
   const handleRunOverview = useCallback(() => {
     navigate('run-overview');
 
@@ -914,8 +989,15 @@ export function App({
   const battle = battleConfig ?? PRACTICE_BATTLE_CONFIG;
 
   // Redacted view of the live duel round. `null` whenever no round is running,
-  // so every non-duel route keeps rendering its own surface.
+  // so every non-duel route keeps rendering its own surface. The board view is
+  // the controller's active-turn view widened with the two public presentation
+  // facts duel-flow section 8.2 allows: the locked deck names and the completed
+  // round history (projection only; the frozen controllers are untouched).
   const duelView = duel?.phase === 'round' ? duelRoundView(duel.round) : null;
+  const duelBoardView =
+    duel?.phase === 'round' && duelView?.kind === 'battle'
+      ? projectDuelBoardView(duelView, duel.match)
+      : null;
   // The round seed keys the shared public log's deterministic dialogue. Only
   // the active battle view consumes it; every other duel surface has no log.
   const duelLogSeed = duel?.phase === 'round' ? duel.match.roundSeed : 0;
@@ -939,7 +1021,12 @@ export function App({
     menu: (
       <MenuScreen
         hasSave={showContinueRun}
-        {...(runState === null ? {} : { resumeHint: continueRunHint(runState) })}
+        {...(runState === null
+          ? {}
+          : {
+              resumeHint: continueRunHint(runState),
+              deckSummary: continueDeckSummary(runState),
+            })}
         onPlaySolo={() => navigate('solo-setup')}
         onLocalDuel={beginDuelSetup}
         onContinueRun={handleContinueRun}
@@ -967,6 +1054,7 @@ export function App({
         cards={cardCatalog}
         onStart={handleStartRun}
         onBack={() => navigate('menu')}
+        onSelect={handleSoloDeckSelected}
       />
     ),
     'run-overview':
@@ -975,6 +1063,7 @@ export function App({
       ) : (
         <RunOverviewScreen
           progress={runProgress(runState.run)}
+          ladder={RUN_LADDER}
           encounterNumber={runEncounterNumber(runState.run)}
           encounterTotal={RUN_ENCOUNTER_COUNT}
           health={runCurrentHealth(runState)}
@@ -989,13 +1078,15 @@ export function App({
         />
       ),
     battle:
-      duelView?.kind === 'battle' ? (
+      duelBoardView !== null && duel?.phase === 'round' ? (
         <DuelBattleRoute
-          view={duelView}
+          view={duelBoardView}
           cards={cardCatalog}
           seed={duelLogSeed}
-          fieldMatchup={fieldMatchupFor(duelView.field)}
+          fieldMatchup={fieldMatchupFor(duelBoardView.field)}
           baseUrl={import.meta.env.BASE_URL}
+          live={canDuelAct(duel.round)}
+          reducedMotion={reducedMotion}
           onPlayCard={handleDuelPlay}
           onEndTurn={handleDuelEndTurn}
           onExit={leaveDuel}
@@ -1003,6 +1094,7 @@ export function App({
       ) : soloBattle !== null ? (
         <SoloBattleRoute
           state={soloBattle}
+          reducedMotion={reducedMotion}
           onPlayCard={handleRunPlayCard}
           onEndTurn={handleRunEndTurn}
           onAnnounce={announce}
@@ -1012,6 +1104,7 @@ export function App({
       ) : (
         <BattleRoute
           config={battle}
+          reducedMotion={reducedMotion}
           onAnnounce={announce}
           onExit={() => navigate('menu')}
         />
@@ -1029,6 +1122,7 @@ export function App({
           health={runState.run.health}
           maxHealth={RUN_MAX_HEALTH}
           onChoose={handleChooseReward}
+          onSelect={handleRewardSelected}
         />
       ),
     'run-result':
@@ -1045,13 +1139,20 @@ export function App({
     'duel-setup': (
       <DuelSetupScreen
         decks={STARTER_DECKS}
+        cards={cardCatalog}
         onStartMatch={handleStartMatch}
         onBack={leaveDuel}
+        onAnnounce={announce}
       />
     ),
     privacy:
       duelView?.kind === 'privacy' ? (
-        <PrivacyScreen viewer={duelView.viewer} onReady={handleDuelReady} />
+        <PrivacyScreen
+          viewer={duelView.viewer}
+          round={duelView.round}
+          wins={duelView.wins}
+          onReady={handleDuelReady}
+        />
       ) : (
         <DuelUnavailable title="Privacy handoff" onBack={leaveDuel} />
       ),
@@ -1061,6 +1162,8 @@ export function App({
           round={duel.round}
           winner={duel.winner}
           wins={duel.match.wins}
+          roundWinners={duel.match.roundWinners}
+          nextPlayer={duel.match.firstPlayer}
           onNextRound={handleNextRound}
         />
       ) : (
@@ -1071,6 +1174,7 @@ export function App({
         <MatchResultScreen
           winner={duelMatchWinner}
           wins={duel.match.wins}
+          roundWinners={duel.match.roundWinners}
           onRematch={handleRematch}
           onChangeDecks={beginDuelSetup}
           onMenu={leaveDuel}
@@ -1112,10 +1216,12 @@ function BattleRoute({
   config,
   onAnnounce,
   onExit,
+  reducedMotion,
 }: {
   readonly config: BattleControllerConfig | null;
   readonly onAnnounce: (message: string) => void;
   readonly onExit: () => void;
+  readonly reducedMotion: boolean;
 }) {
   const [initial] = useState<
     EngineResult<BattleControllerState> | null
@@ -1141,6 +1247,7 @@ function BattleRoute({
       initialState={initial.value}
       onAnnounce={onAnnounce}
       onExit={onExit}
+      reducedMotion={reducedMotion}
     />
   );
 }
@@ -1150,10 +1257,12 @@ function BattleSession({
   initialState,
   onAnnounce,
   onExit,
+  reducedMotion,
 }: {
   readonly initialState: BattleControllerState;
   readonly onAnnounce: (message: string) => void;
   readonly onExit: () => void;
+  readonly reducedMotion: boolean;
 }) {
   const controller = useBattleController(initialState);
   const { battle } = controller.state;
@@ -1175,6 +1284,7 @@ function BattleSession({
       onEndTurn={controller.endTurn}
       onAnnounce={onAnnounce}
       onExit={onExit}
+      reducedMotion={reducedMotion}
     />
   );
 }
@@ -1191,6 +1301,7 @@ function SoloBattleRoute({
   onAnnounce,
   onExit,
   onOverview,
+  reducedMotion,
 }: {
   readonly state: BattleControllerState;
   readonly onPlayCard: (instanceId: string) => void;
@@ -1198,6 +1309,7 @@ function SoloBattleRoute({
   readonly onAnnounce: (message: string) => void;
   readonly onExit: () => void;
   readonly onOverview: () => void;
+  readonly reducedMotion: boolean;
 }) {
   const { battle } = state;
   const canEndTurn =
@@ -1216,6 +1328,7 @@ function SoloBattleRoute({
       onAnnounce={onAnnounce}
       onExit={onExit}
       onOverview={onOverview}
+      reducedMotion={reducedMotion}
     />
   );
 }

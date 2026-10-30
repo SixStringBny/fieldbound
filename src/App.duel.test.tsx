@@ -16,6 +16,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { App, SCREENS } from './App';
+import { byId as cardCatalog } from './content/cards';
+import { STARTER_DECKS } from './content/decks';
 import { createMatch, recordRoundWinner } from './duel/match';
 import type { DuelMatch } from './duel/match';
 
@@ -175,7 +177,7 @@ function completedMatch(): DuelMatch {
 
 describe('App local duel setup', () => {
   it('walks from the menu through both deck confirmations to the handoff', () => {
-    render(<App />);
+    const { container } = render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Local Duel' }));
 
@@ -187,26 +189,66 @@ describe('App local duel setup', () => {
       screen.getByRole('heading', { level: 2, name: 'Player 1, choose your deck' }),
     ).toBeTruthy();
     expect(screen.getByText('Player 2, look away.')).toBeTruthy();
+    expect(screen.getByText('Step 1 of 2')).toBeTruthy();
+
+    // Four physical deck cards, each listing all ten printed names behind an
+    // aria-describedby contents block (duel-flow §2.1, §8.1).
+    const deckButtons = screen.getAllByRole('button', {
+      name: /^Choose the .* deck$/,
+    });
+    expect(deckButtons).toHaveLength(4);
+
+    for (const deck of STARTER_DECKS) {
+      const button = screen.getByRole('button', {
+        name: `Choose the ${deck.name} deck`,
+      });
+      const describedBy = button.getAttribute('aria-describedby');
+
+      expect(describedBy).toBeTruthy();
+      const contents = container.querySelector(`#${describedBy ?? ''}`);
+
+      expect(contents).not.toBeNull();
+
+      for (const cardId of deck.cards) {
+        expect(contents?.textContent).toContain(cardCatalog[cardId]?.name);
+      }
+    }
+
+    // The sticky action bar carries the confirm and the quiet back action.
     expect(
-      screen.getAllByRole('button', { name: /^Choose the .* deck$/ }),
-    ).toHaveLength(4);
+      screen.getByRole('button', { name: 'Back to menu' }),
+    ).toBeTruthy();
 
     const confirmPlayer1 = screen.getByRole('button', {
       name: 'Confirm Player 1 deck',
     }) as HTMLButtonElement;
     expect(confirmPlayer1.disabled).toBe(true);
+    expect(
+      document.getElementById('duel-setup-hint')?.textContent,
+    ).toContain('Select one of the four decks');
 
     chooseDeck('Ember');
     expect(confirmPlayer1.disabled).toBe(false);
+    expect(screen.getByRole('status').textContent).toBe(
+      'Ember deck selected. Confirm Player 1 deck is enabled.',
+    );
+
     fireEvent.click(confirmPlayer1);
 
     // Step 2 shows the deck list but no mark, summary or sentence that names
     // Player 1's choice. All four buttons are unselected.
-    expect(
-      screen.getByRole('heading', { level: 2, name: 'Player 2, choose your deck' }),
-    ).toBeTruthy();
+    const stepTwoHeading = screen.getByRole('heading', {
+      level: 2,
+      name: 'Player 2, choose your deck',
+    });
+    expect(stepTwoHeading).toBeTruthy();
     expect(screen.getByText('Player 1 has chosen.')).toBeTruthy();
+    expect(screen.getByText('Step 2 of 2')).toBeTruthy();
     expect(screen.queryByText('Player 1: Ember')).toBeNull();
+    expect(document.activeElement).toBe(stepTwoHeading);
+    expect(screen.getByRole('status').textContent).toBe(
+      'Player 2, choose your deck.',
+    );
 
     for (const button of screen.getAllByRole('button', {
       name: /^Choose the .* deck$/,
@@ -214,16 +256,38 @@ describe('App local duel setup', () => {
       expect(button.getAttribute('aria-pressed')).toBe('false');
     }
 
+    // The sealed marker: one card back, no name, element or naming data.
+    const sealed = container.querySelector<HTMLElement>(
+      '[data-duel-sealed="true"]',
+    );
+    expect(sealed).not.toBeNull();
+    expect(sealed?.textContent).toContain("Player 1's deck is locked");
+    expect(sealed?.textContent).toContain(
+      'No name is shown until both decks are locked.',
+    );
+    expect(sealed?.hasAttribute('data-element')).toBe(false);
+    expect(sealed?.querySelector('[aria-label]')).toBeNull();
+    expect(sealed?.querySelector('[data-card-id]')).toBeNull();
+    expect(sealed?.querySelector('[data-instance-id]')).toBeNull();
+    expect(sealed?.querySelectorAll('[data-duel-card-back]')).toHaveLength(1);
+
     chooseDeck('Frost');
     fireEvent.click(
       screen.getByRole('button', { name: 'Confirm Player 2 deck' }),
     );
 
-    expect(
-      screen.getByRole('heading', { level: 2, name: 'Both decks are locked' }),
-    ).toBeTruthy();
+    const summaryHeading = screen.getByRole('heading', {
+      level: 2,
+      name: 'Both decks are locked',
+    });
+    expect(summaryHeading).toBeTruthy();
+    expect(document.activeElement).toBe(summaryHeading);
+    expect(screen.getByRole('status').textContent).toBe(
+      'Both decks are locked. Start Match is ready.',
+    );
     expect(screen.getByText('Player 1: Ember')).toBeTruthy();
     expect(screen.getByText('Player 2: Frost')).toBeTruthy();
+    expect(container.querySelectorAll('.duel-locked')).toHaveLength(2);
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Match' }));
 
@@ -231,6 +295,9 @@ describe('App local duel setup', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Pass to Player 1' }),
     ).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toBe(
+      'Pass the device to Player 1.',
+    );
   });
 
   it('discards a partial choice when Back returns to the menu', () => {
@@ -274,22 +341,41 @@ describe('App duel privacy', () => {
     const dialog = screen.getByRole('dialog', { name: 'Pass to Player 1' });
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(screen.getByText('Other player, look away.')).toBeTruthy();
+    expect(screen.getByText('Local Duel · Round 1')).toBeTruthy();
+    expect(screen.getByText('Series 0–0')).toBeTruthy();
+
+    // Exactly one action: the keyboard trap has nothing else to cycle to.
+    expect(within(dialog).getAllByRole('button')).toHaveLength(1);
 
     // The board is gone, not covered: no battle subtree and no card hooks.
     expect(container.querySelector('[data-duel-battle]')).toBeNull();
+    expect(container.querySelector('.battle-board')).toBeNull();
+    expect(container.querySelector('.battle-arena')).toBeNull();
+    expect(container.querySelector('.duel-panel')).toBeNull();
+    expect(container.querySelector('.battle-log')).toBeNull();
+    expect(container.querySelector('.field-banner')).toBeNull();
+    expect(container.querySelector('.hand')).toBeNull();
     expect(container.querySelectorAll('[data-card-id]')).toHaveLength(0);
     expect(container.querySelectorAll('[data-instance-id]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-hand-count]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-duel-card-back]')).toHaveLength(0);
+    expect(container.querySelectorAll('[role="meter"]')).toHaveLength(0);
     expect(screen.queryByRole('region', { name: 'Your hand' })).toBeNull();
     expect(container.textContent).not.toContain('Cinder Jab');
     expect(container.textContent).not.toContain('Health');
   });
 
-  it('dismisses only on the explicit action; Escape does nothing', () => {
+  it('traps Tab on the one action and dismisses only on the explicit action', () => {
     render(<App />);
 
     startDuel();
 
     const ready = screen.getByRole('button', { name: "I'm ready" });
+    expect(document.activeElement).toBe(ready);
+
+    fireEvent.keyDown(ready, { key: 'Tab' });
+    expect(document.activeElement).toBe(ready);
+    fireEvent.keyDown(ready, { key: 'Tab', shiftKey: true });
     expect(document.activeElement).toBe(ready);
 
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -305,6 +391,14 @@ describe('App duel privacy', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: "Player 1's turn" }),
     ).toBeTruthy();
+
+    // The one-shot focus request lands on the first card of the incoming hand.
+    const hand = screen.getByRole('region', { name: 'Your hand' });
+    const cards = within(hand).getAllByRole('button');
+    expect(document.activeElement).toBe(cards[0]);
+    expect(screen.getByRole('status').textContent).toBe(
+      "Player 1's turn. Turn 1.",
+    );
   });
 });
 
@@ -321,6 +415,47 @@ describe('App duel battle', () => {
 
     expect(currentScreen()).toBe('battle');
     expect(battleElement()?.getAttribute('data-viewer')).toBe('player1');
+    expect(
+      screen.getByRole('heading', { level: 1, name: "Player 1's turn" }),
+    ).toBeTruthy();
+
+    // The header states the round, the public score and the three-pip strip.
+    const eyebrow = document.querySelector('.duel-header__eyebrow .shell__eyebrow');
+    expect(eyebrow?.textContent).toContain('Round 1 · Series 0–0');
+
+    const strip = screen.getByRole('list', { name: 'Series score' });
+    const pips = within(strip).getAllByRole('listitem');
+
+    expect(pips).toHaveLength(3);
+    expect(pips.map((pip) => pip.getAttribute('data-round-winner'))).toEqual([
+      'none',
+      'none',
+      'none',
+    ]);
+    expect(pips[0]?.textContent).toContain('Round 1: not played');
+
+    // Both panels name their public locked deck; the opponent is a count plus
+    // a decorative, aria-hidden card-back fan.
+    expect(
+      screen.getByRole('region', { name: 'Player 1 (you)' }).textContent,
+    ).toContain('Ember deck');
+    expect(
+      screen.getByRole('region', { name: 'Player 2' }).textContent,
+    ).toContain('Frost deck');
+
+    const opponentPanel = screen.getByRole('region', { name: 'Player 2' });
+    const backs = opponentPanel.querySelectorAll('[data-duel-card-back]');
+
+    expect(backs.length).toBeGreaterThan(0);
+    expect(backs.length).toBeLessThanOrEqual(5);
+
+    for (const back of Array.from(backs)) {
+      expect(back.getAttribute('aria-hidden')).toBe('true');
+      expect(back.hasAttribute('data-card-id')).toBe(false);
+      expect(back.hasAttribute('data-instance-id')).toBe(false);
+      expect(back.textContent).toBe('');
+      expect(back.tagName.toLowerCase()).not.toBe('button');
+    }
 
     const hand = screen.getByRole('region', { name: 'Your hand' });
     expect(within(hand).getAllByRole('button')).toHaveLength(5);
@@ -329,6 +464,7 @@ describe('App duel battle', () => {
     expect(within(opponent).getByText('5 cards in hand')).toBeTruthy();
     expect(opponent.querySelectorAll('[data-instance-id]')).toHaveLength(0);
     expect(opponent.querySelectorAll('[data-card-id]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-hand-count]')).toHaveLength(1);
 
     expect(screen.getAllByRole('region', { name: 'Your hand' })).toHaveLength(1);
     expect(container.querySelectorAll('[data-instance-id]')).toHaveLength(5);
@@ -386,6 +522,129 @@ describe('App duel battle', () => {
 });
 
 /* -------------------------------------------------------------------------- */
+/* Feedback beat                                                              */
+/* -------------------------------------------------------------------------- */
+
+describe('App duel feedback', () => {
+  function opponentRegion(): HTMLElement {
+    return screen.getByRole('region', { name: 'Player 2' });
+  }
+
+  function opponentHealth(): number {
+    return Number(
+      within(opponentRegion())
+        .getByRole('meter', { name: 'Player 2 health' })
+        .getAttribute('aria-valuenow'),
+    );
+  }
+
+  /** Play the first affordable card through its detail sheet. */
+  function playFirstAffordable(): boolean {
+    const hand = screen.queryByRole('region', { name: 'Your hand' });
+
+    if (hand === null) {
+      return false;
+    }
+
+    const playable = within(hand)
+      .queryAllByRole('button')
+      .find((button) => button.getAttribute('aria-disabled') !== 'true');
+
+    if (playable === undefined) {
+      return false;
+    }
+
+    fireEvent.click(playable);
+    const dialog = screen.queryByRole('dialog');
+
+    if (dialog === null) {
+      return false;
+    }
+
+    const play = within(dialog).getByRole('button', { name: 'Play card' });
+
+    if ((play as HTMLButtonElement).disabled) {
+      fireEvent.click(
+        within(dialog).getByRole('button', { name: 'Close card detail' }),
+      );
+      return false;
+    }
+
+    fireEvent.click(play);
+    return true;
+  }
+
+  it('shows the same signed number over the public health delta', () => {
+    const match = createMatch({
+      player1DeckId: 'deck-ember',
+      player2DeckId: 'deck-frost',
+      seed: 99,
+    });
+
+    if (!match.ok) {
+      throw new Error(match.error.message);
+    }
+
+    // A fixed round seed keeps the opening hand deterministic: it holds an
+    // affordable attack, so the first health change is a known one.
+    render(<App initialScreen={SCREENS.privacy} duelMatch={match.value} />);
+    pressReady();
+
+    expect(currentScreen()).toBe('battle');
+    expect(document.querySelector('[data-feedback-key]')).toBeNull();
+
+    let observed = false;
+
+    for (let step = 0; step < 6 && !observed; step += 1) {
+      if (currentScreen() !== 'battle') {
+        break;
+      }
+
+      const before = opponentHealth();
+
+      if (!playFirstAffordable()) {
+        break;
+      }
+
+      if (currentScreen() !== 'battle') {
+        break;
+      }
+
+      const after = opponentHealth();
+
+      if (after < before) {
+        const numbers = opponentRegion().querySelectorAll(
+          '[data-impact-number]',
+        );
+
+        expect(numbers).toHaveLength(1);
+        expect(numbers[0]?.textContent).toBe(`\u2212${before - after}`);
+        expect(numbers[0]?.getAttribute('data-side')).toBe('opponent');
+        expect(numbers[0]?.getAttribute('aria-hidden')).toBe('true');
+        observed = true;
+      }
+    }
+
+    expect(observed).toBe(true);
+
+    // A duel has no intent block at all, so nothing can be revealed.
+    expect(document.querySelector('[data-intent-reveal]')).toBeNull();
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+  });
+
+  it('renders no beat behind the privacy handoff', () => {
+    const { container } = render(<App />);
+
+    startDuel();
+
+    expect(currentScreen()).toBe('privacy');
+    expect(container.querySelector('[data-feedback-key]')).toBeNull();
+    expect(container.querySelector('[data-impact-number]')).toBeNull();
+    expect(container.querySelector('[data-duel-battle]')).toBeNull();
+  });
+});
+
+/* -------------------------------------------------------------------------- */
 /* Score progression and match result                                         */
 /* -------------------------------------------------------------------------- */
 
@@ -410,6 +669,27 @@ describe('App duel series', () => {
       ).toBeTruthy();
       expect(screen.getByText('Series 1\u20130')).toBeTruthy();
       expect(container.querySelectorAll('[data-instance-id]')).toHaveLength(0);
+
+      // The verdict owns focus, announces the score once and carries the public
+      // series strip plus the deterministic next opener (reading-screens §6.1).
+      expect(document.activeElement).toBe(
+        screen.getByRole('heading', { level: 1, name: 'Player 1 wins round 1' }),
+      );
+      expect(screen.getByRole('status').textContent).toBe(
+        'Player 1 wins round 1. 1\u20130.',
+      );
+      expect(screen.getAllByRole('status')).toHaveLength(1);
+
+      const roundStrip = screen.getByRole('list', { name: 'Series score' });
+      const roundPips = within(roundStrip).getAllByRole('listitem');
+
+      expect(roundPips).toHaveLength(3);
+      expect(
+        roundPips.map((pip) => pip.getAttribute('data-round-winner')),
+      ).toEqual(['player1', 'none', 'none']);
+      expect(roundPips[0]?.textContent).toContain('Round 1: Player 1');
+      expect(roundPips[2]?.textContent).toContain('Round 3: not played');
+      expect(screen.getByText('Next round: Player 2 opens.')).toBeTruthy();
 
       fireEvent.click(screen.getByRole('button', { name: 'Next Round' }));
 
@@ -439,6 +719,30 @@ describe('App duel series', () => {
       ).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
       expect(container.querySelectorAll('[data-instance-id]')).toHaveLength(0);
+
+      // The plaque owns focus, announces the final score once and names every
+      // played round in the strip (reading-screens §6.2).
+      expect(document.activeElement).toBe(
+        screen.getByRole('heading', {
+          level: 1,
+          name: 'Player 1 wins the match',
+        }),
+      );
+      expect(screen.getByRole('status').textContent).toBe(
+        'Player 1 wins the match. 2\u20130.',
+      );
+      expect(screen.getAllByRole('status')).toHaveLength(1);
+
+      const matchStrip = screen.getByRole('list', { name: 'Series score' });
+
+      expect(screen.getAllByRole('list', { name: 'Series score' })).toHaveLength(
+        1,
+      );
+      expect(
+        within(matchStrip)
+          .getAllByRole('listitem')
+          .map((pip) => pip.getAttribute('data-round-winner')),
+      ).toEqual(['player1', 'player1', 'none']);
     },
     30_000,
   );

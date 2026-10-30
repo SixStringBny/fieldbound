@@ -1,0 +1,430 @@
+/**
+ * Shared primitives for the UI overhaul (README section 7 "Interaction
+ * states" and section 8 "Component rules").
+ *
+ * Tickets 2-7 consume these classes instead of restating a recipe. The shell
+ * already renders three of them — `.shell__panel`, `.shell__button` and
+ * `.shell__back` are grouped with their primitive so the shell needs no markup
+ * change and later screens inherit the same tokens — and every other consumer
+ * arrives with the screen that owns it.
+ *
+ * Rules that hold for everything below:
+ *   - semantic tokens only: no hex, `rgb()`, shadow, radius or duration literal
+ *     (`src/styles/tokens.test.ts`, AB-V1);
+ *   - a surface sets `background-color` first and `background-image:
+ *     var(--fb-material-*)` second, so a contrast branch that sets the material
+ *     to `none` leaves the solid surface (README section 4);
+ *   - state is an attribute or a pseudo-class, never a colour alone: glyph plus
+ *     word for element, status and selection (AB-A2);
+ *   - every interactive box is at least `--fb-target` and focus is the two-tone
+ *     gold ring, never a border (README section 7).
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Panel                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.shell__panel,
+.fb-panel {
+  border: var(--fb-rule);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-panel);
+  background-image: var(--fb-material-panel);
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
+  padding: var(--fb-space-3);
+  color: var(--fb-text);
+}
+
+.fb-panel--inset {
+  border-color: var(--fb-rule-subtle-color);
+  background-color: var(--fb-surface-inset);
+  background-image: none;
+  box-shadow: none;
+}
+
+.fb-panel--document {
+  border: var(--fb-rule-on-paper);
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  box-shadow: var(--fb-elev-2);
+  color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-leading-reading);
+}
+
+.fb-panel--selected {
+  border-color: var(--fb-rule-strong-color);
+  background-color: var(--fb-surface-selected);
+}
+
+.fb-panel__title {
+  font-family: var(--fb-font-display);
+  font-weight: var(--fb-weight-display);
+  font-size: var(--fb-text-xl);
+  line-height: var(--fb-leading-ui);
+  letter-spacing: var(--fb-tracking-display);
+  color: inherit;
+}
+
+.fb-panel__label {
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
+  color: var(--fb-text-soft);
+}
+
+@media (min-width: 640px) {
+  .shell__panel,
+  .fb-panel {
+    padding: var(--fb-space-4);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Button                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.shell__button,
+.shell__back,
+.fb-button {
+  display: inline-flex;
+  min-width: var(--fb-target);
+  min-height: var(--fb-target);
+  align-items: center;
+  justify-content: center;
+  gap: var(--fb-space-1);
+  padding: var(--fb-space-2) var(--fb-space-4);
+  border: var(--fb-rule);
+  border-radius: var(--fb-radius-md);
+  background-color: transparent;
+  color: var(--fb-text);
+  font: inherit;
+  font-weight: var(--fb-weight-ui);
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color var(--fb-dur-lift) var(--fb-ease),
+    border-color var(--fb-dur-lift) var(--fb-ease),
+    color var(--fb-dur-lift) var(--fb-ease),
+    transform var(--fb-dur-lift) var(--fb-ease);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Primary: the ember fill, and the only large ember surface in the product. */
+.shell__button,
+.fb-button--primary {
+  border: var(--fb-rule-width) solid var(--fb-action);
+  background-color: var(--fb-action);
+  background-image: var(--fb-material-wax);
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
+  color: var(--fb-action-ink);
+}
+
+/* Secondary: transparent slate with a brass rule; the quiet action. */
+.shell__back,
+.fb-button--secondary {
+  border: var(--fb-rule);
+  border-radius: var(--fb-radius-pill);
+  background-color: transparent;
+  color: var(--fb-text-soft);
+}
+
+/* Icon: a circular 44px target with a glyph and an accessible name. */
+.fb-button--icon {
+  width: var(--fb-target);
+  padding: 0;
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-surface-raised);
+}
+
+/* Destructive: danger text on transparent, never a red fill. */
+.fb-button--danger {
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--fb-danger);
+}
+
+@media (hover: hover) {
+  .shell__button:not(:disabled):hover,
+  .fb-button--primary:not(:disabled):hover {
+    background-color: var(--fb-action-hover);
+  }
+
+  .shell__back:hover,
+  .fb-button--secondary:hover,
+  .fb-button:hover {
+    border-color: var(--fb-rule-strong-color);
+    color: var(--fb-text);
+  }
+
+  .fb-button--danger:hover {
+    border-color: var(--fb-danger);
+    color: var(--fb-danger);
+  }
+}
+
+.fb-button:active {
+  background-color: var(--fb-state-pressed);
+  box-shadow: var(--fb-elev-1);
+  transform: translateY(var(--fb-press-y));
+}
+
+.fb-button--primary:active {
+  background-color: var(--fb-action-pressed);
+}
+
+.fb-button:disabled,
+.fb-button[aria-disabled='true'],
+.shell__button:disabled,
+.shell__button[aria-disabled='true'] {
+  border-color: var(--fb-state-disabled-surface);
+  background-color: var(--fb-state-disabled-surface);
+  background-image: none;
+  box-shadow: none;
+  color: var(--fb-state-disabled-ink);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.fb-button[aria-pressed='true'],
+.fb-button[aria-selected='true'] {
+  border-color: var(--fb-rule-strong-color);
+  background-color: var(--fb-surface-selected);
+  color: var(--fb-text);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Chip                                                                       */
+/* -------------------------------------------------------------------------- */
+
+/* Element and status chips are glyph plus word, never colour alone (§11). */
+.fb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fb-space-1);
+  padding: 0 var(--fb-space-2);
+  border: var(--fb-rule-subtle);
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-surface-raised);
+  color: var(--fb-text);
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-label);
+  line-height: var(--fb-leading-ui);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.fb-chip__glyph {
+  font-family: var(--fb-font-glyph);
+  font-size: 0.9em;
+  letter-spacing: normal;
+}
+
+.fb-chip--focus {
+  border-color: var(--fb-status-focus);
+  color: var(--fb-status-focus);
+}
+
+.fb-chip--weaken {
+  border-color: var(--fb-status-weaken);
+  color: var(--fb-status-weaken);
+}
+
+.fb-chip--regen {
+  border-color: var(--fb-status-regen);
+  color: var(--fb-status-regen);
+}
+
+.fb-chip[aria-current='true'],
+.fb-chip--current {
+  border-color: var(--fb-rule-strong-color);
+  background-color: var(--fb-selected);
+  color: var(--fb-selected-ink);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Meter                                                                      */
+/* -------------------------------------------------------------------------- */
+
+/* A value is always text; the track only restates it (§8.6). */
+.fb-meter {
+  display: grid;
+  gap: var(--fb-space-1);
+}
+
+.fb-meter__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fb-space-2);
+}
+
+.fb-meter__label {
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
+  color: var(--fb-text-soft);
+}
+
+.fb-meter__value {
+  color: var(--fb-text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fb-meter__track {
+  height: 0.5625rem;
+  overflow: hidden;
+  border: var(--fb-rule-subtle);
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-surface-inset);
+}
+
+.fb-meter__fill {
+  display: block;
+  height: 100%;
+  background-color: var(--fb-stat-health);
+}
+
+.fb-meter--health .fb-meter__fill {
+  background-image: linear-gradient(
+    90deg,
+    var(--fb-stat-health-deep),
+    var(--fb-stat-health)
+  );
+}
+
+.fb-meter--defense .fb-meter__fill {
+  background-image: linear-gradient(
+    90deg,
+    var(--fb-stat-defense-deep),
+    var(--fb-stat-defense)
+  );
+}
+
+.fb-meter--energy .fb-meter__fill {
+  background-color: var(--fb-stat-energy);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Log frame                                                                  */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * The log is a card frame, not a list of cards: one rule per entry, no shadow,
+ * no live region. A screen places the same frame in a rail, a strip or a
+ * drawer (§8.8). The history is `aria-live="off"`; only the latest line belongs
+ * to the one app-wide polite status.
+ */
+.fb-log-frame {
+  display: grid;
+  gap: var(--fb-space-2);
+  min-width: 0;
+  padding: var(--fb-space-2) var(--fb-space-3);
+  border: var(--fb-rule);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-panel);
+  background-image: var(--fb-material-panel);
+  color: var(--fb-text);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-leading-body);
+}
+
+.fb-log-frame__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fb-space-1) var(--fb-space-2);
+}
+
+.fb-log-frame__title {
+  margin: 0;
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
+}
+
+.fb-log-frame__latest {
+  padding: var(--fb-space-1) var(--fb-space-2);
+  border-left: var(--fb-rule-width-strong) solid var(--fb-rule-strong-color);
+  background-color: var(--fb-surface-inset);
+}
+
+.fb-log-frame__list {
+  display: grid;
+  gap: var(--fb-space-1);
+  margin: 0;
+  padding: 0 0 0 1.4rem;
+  list-style: decimal;
+}
+
+.fb-log-frame__entry {
+  padding: var(--fb-space-1) var(--fb-space-2);
+  border-left: var(--fb-rule-width-strong) solid var(--fb-rule-subtle-color);
+  overflow-wrap: anywhere;
+}
+
+.fb-log-frame__entry[data-latest='true'] {
+  border-left-color: var(--fb-rule-strong-color);
+  background-color: var(--fb-state-selected);
+}
+
+.fb-log-frame__meta {
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
+}
+
+.fb-log-frame__dialogue {
+  margin: var(--fb-space-1) 0 0;
+  color: var(--fb-text-soft);
+  font-family: var(--fb-font-display);
+  font-style: italic;
+}
+
+.fb-log-frame__empty {
+  color: var(--fb-text-soft);
+  font-style: italic;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced motion                                                             */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .fb-button {
+    transition-duration: var(--fb-dur-instant);
+  }
+
+  .fb-button:active {
+    transform: none;
+  }
+}
+
+[data-reduced-motion='true'] .fb-button {
+  transition-duration: var(--fb-dur-instant);
+}
+
+[data-reduced-motion='true'] .fb-button:active {
+  transform: none;
+}
+
+[data-reduced-motion='false'] .fb-button {
+  transition-duration: var(--fb-dur-lift);
+}
+
+@media (hover: hover) {
+  [data-reduced-motion='false'] .fb-button:active {
+    transform: translateY(var(--fb-press-y));
+  }
+}

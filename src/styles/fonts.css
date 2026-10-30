@@ -1,0 +1,24 @@
+/**
+ * The self-hosted display face.
+ *
+ * `Fraunces Fieldbound` is a pinned, subsetted instance of Fraunces
+ * (SIL Open Font License 1.1, see `OFL.txt` in this directory and `CREDITS.md`
+ * for the derivation). It is one static WOFF2 at wght 700 / opsz 14 / SOFT 0 /
+ * WONK 0, subsetted to the code points the shipped copy actually renders, and
+ * renamed because a subset is a Modified Version under the OFL.
+ *
+ * Served from the same origin under `font-src 'self'`; Vite hashes the file and
+ * rewrites the URL for a subpath deployment. Font bytes are not part of the
+ * 300 KiB JavaScript and CSS budget (`scripts/check-budget.mjs` sums only
+ * `.js/.mjs/.cjs/.css`), and there is no remote font request anywhere.
+ *
+ * `font-display: swap` plus the display stack's metric-adjacent serif fallbacks
+ * keep the first paint readable while the face loads.
+ */
+@font-face {
+  font-family: "Fraunces Fieldbound";
+  src: url("./fonts/fraunces-fieldbound-700.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}

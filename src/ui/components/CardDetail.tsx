@@ -1,11 +1,12 @@
 /**
- * Full-effect card detail sheet (SHL-FR-03, VIS-NFR-03).
+ * Full-effect card detail sheet (SHL-FR-03, VIS-NFR-03, battle-screen
+ * section 2.7).
  *
  * A modal dialog that repeats the printed effect, the current-field sentence and
  * a Play button. It closes on a backdrop tap, the close button and Escape, moves
  * focus to the close button on open, traps Tab and Shift+Tab inside the sheet,
  * locks background scrolling and returns focus to the invoking card on close
- * (or the nearest surviving hand card when playing removed it).
+ * (or the documented survivor when playing removed it).
  *
  * It reports intents only: `onPlay` and `onClose`. No engine mutator, controller
  * or storage module is imported.
@@ -31,9 +32,13 @@ export interface CardDetailProps {
   readonly field: Element;
   readonly matchup: CardMatchup;
   readonly affordable: boolean;
+  /** False during the enemy turn and after the battle ends. Defaults to true. */
+  readonly playable?: boolean;
   readonly baseUrl: string;
   readonly onPlay: (instanceId: string) => void;
   readonly onClose: () => void;
+  /** Documented survivor when the invoking card was removed by a play. */
+  readonly fallbackFocus?: () => HTMLElement | null;
 }
 
 export function CardDetail({
@@ -42,26 +47,34 @@ export function CardDetail({
   field,
   matchup,
   affordable,
+  playable = true,
   baseUrl,
   onPlay,
   onClose,
+  fallbackFocus,
 }: CardDetailProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const canPlay = affordable && playable;
 
   useDialogFocusTrap({
     containerRef,
     onClose,
     initialFocusRef: closeRef,
-    fallbackFocus: () =>
-      document.querySelector<HTMLElement>('.hand .card-view') ??
-      document.querySelector<HTMLElement>('.battle-controls__end'),
+    fallbackFocus:
+      fallbackFocus ??
+      (() =>
+        document.querySelector<HTMLElement>('.hand .card-view') ??
+        document.querySelector<HTMLElement>('.battle-controls__end')),
   });
 
   const handlePlayKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
       event.preventDefault();
-      onPlay(instanceId);
+
+      if (canPlay) {
+        onPlay(instanceId);
+      }
     }
   };
 
@@ -145,16 +158,22 @@ export function CardDetail({
         <button
           type="button"
           className="card-detail__play"
-          disabled={!affordable}
-          onClick={() => onPlay(instanceId)}
+          disabled={!canPlay}
+          onClick={() => {
+            if (canPlay) {
+              onPlay(instanceId);
+            }
+          }}
           onKeyDown={handlePlayKeyDown}
         >
           Play card
         </button>
 
-        {affordable ? null : (
+        {canPlay ? null : (
           <p className="card-detail__note">
-            You need more energy to play this card.
+            {playable
+              ? 'You need more energy to play this card.'
+              : 'You cannot play a card right now.'}
           </p>
         )}
       </div>

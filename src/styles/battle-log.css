@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Battle log layout (LOG-FR-04, LOG-FR-07, LOG-NF-02).
  *
  * Three surfaces, one DOM copy:
@@ -45,13 +45,14 @@
   max-width: 100%;
   min-width: 0;
   padding: var(--fb-space-2) var(--fb-space-3);
-  border: var(--fb-border);
+  border: var(--fb-rule);
   border-radius: var(--fb-radius-md);
-  background: var(--fb-panel);
-  color: var(--fb-ink);
+  background-color: var(--fb-surface-panel);
+  background-image: var(--fb-material-panel);
+  color: var(--fb-text);
   font-family: var(--fb-font-ui);
-  font-size: var(--fb-text-body);
-  line-height: var(--fb-line-body);
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-leading-body);
 }
 
 .battle-log__head,
@@ -74,9 +75,9 @@
 
 .battle-log__title {
   margin: 0;
-  color: var(--fb-ink-soft);
+  color: var(--fb-text-soft);
   font-family: var(--fb-font-ui);
-  font-size: var(--fb-text-tiny);
+  font-size: var(--fb-text-2xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   line-height: 1.3;
@@ -95,34 +96,32 @@
   min-width: var(--fb-target);
   min-height: var(--fb-target);
   padding: 0.4rem 0.9rem;
-  border: 1px solid rgb(43 36 25 / 24%);
+  border: var(--fb-rule);
   border-radius: var(--fb-radius-pill);
-  background: var(--fb-paper);
-  color: var(--fb-ink);
+  background-color: var(--fb-surface-raised);
+  color: var(--fb-text);
   font: inherit;
   font-weight: 700;
   line-height: 1.2;
   cursor: pointer;
   touch-action: manipulation;
   transition:
-    background-color var(--fb-motion-lift, 120ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    border-color var(--fb-motion-lift, 120ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    color var(--fb-motion-lift, 120ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1));
+    background-color var(--fb-dur-lift) var(--fb-ease),
+    border-color var(--fb-dur-lift) var(--fb-ease),
+    color var(--fb-dur-lift) var(--fb-ease);
   -webkit-tap-highlight-color: transparent;
 }
 
 .battle-log__toggle[aria-expanded='true'] {
-  border-color: var(--fb-accent);
-  background: var(--fb-accent);
-  color: #fffaf0;
+  border-color: var(--fb-rule-strong-color);
+  background-color: var(--fb-surface-selected);
+  color: var(--fb-text);
 }
 
 .battle-log__toggle:focus-visible {
-  outline: var(--fb-focus-ring) solid var(--fb-focus);
-  outline-offset: 3px;
+  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
+  outline-offset: var(--fb-focus-offset);
+  box-shadow: var(--fb-focus-shadow);
 }
 
 .battle-log__toggle-glyph {
@@ -141,16 +140,16 @@
   min-height: calc(1.55em + 2 * var(--fb-space-1));
   padding: var(--fb-space-1) var(--fb-space-2);
   overflow: hidden;
-  border-left: 3px solid var(--fb-accent);
+  border-left: var(--fb-rule-width-strong) solid var(--fb-rule-strong-color);
   border-radius: 0 var(--fb-radius-sm) var(--fb-radius-sm) 0;
-  background: rgb(43 36 25 / 5%);
+  background-color: var(--fb-surface-inset);
 }
 
 .battle-log__latest-text {
   margin: 0;
   overflow: hidden;
-  font-size: var(--fb-text-body);
-  line-height: var(--fb-line-body);
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-leading-body);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -183,7 +182,7 @@
   max-height: min(40dvh, 22rem);
   padding-top: var(--fb-space-2);
   padding-right: var(--fb-space-1);
-  border-top: 1px dashed rgb(43 36 25 / 18%);
+  border-top: var(--fb-rule-width) dashed var(--fb-rule-subtle-color);
 }
 
 .battle-log__list {
@@ -196,22 +195,21 @@
 
 .battle-log__item {
   padding: var(--fb-space-1) var(--fb-space-2);
-  border-left: 2px solid rgb(43 36 25 / 13%);
+  border-left: var(--fb-rule-width-strong) solid var(--fb-rule-subtle-color);
   overflow-wrap: anywhere;
-  animation: fb-battle-log-entry var(--fb-motion-draw, 180ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+  animation: fb-battle-log-entry var(--fb-dur-draw) var(--fb-ease) both;
 }
 
 .battle-log__item:last-child {
-  border-left-color: var(--fb-accent);
-  background: rgb(122 63 29 / 7%);
+  border-left-color: var(--fb-rule-strong-color);
+  background-color: var(--fb-state-selected);
 }
 
 .battle-log__turn {
   display: inline-block;
   margin-right: 0.35em;
-  color: var(--fb-ink-soft);
-  font-size: var(--fb-text-tiny);
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-2xs);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -220,16 +218,16 @@
 
 .battle-log__factual {
   margin: 0;
-  font-size: var(--fb-text-body);
-  line-height: var(--fb-line-body);
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-leading-body);
   overflow-wrap: anywhere;
 }
 
 .battle-log__dialogue {
   margin: var(--fb-space-1) 0 0;
-  color: var(--fb-ink-soft);
-  font-family: var(--fb-font-body);
-  font-size: var(--fb-text-body);
+  color: var(--fb-text-soft);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-lg);
   font-style: italic;
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -245,12 +243,12 @@
 
 .battle-log__empty {
   padding: var(--fb-space-2);
-  color: var(--fb-ink-soft);
+  color: var(--fb-text-soft);
 }
 
 .battle-log__empty-text {
   margin: 0;
-  font-size: var(--fb-text-body);
+  font-size: var(--fb-text-lg);
   font-style: italic;
   overflow-wrap: anywhere;
 }
@@ -310,7 +308,7 @@
     max-height: min(60dvh, 34rem);
     padding-top: var(--fb-space-2);
     padding-right: 0;
-    border-top: 1px dashed rgb(43 36 25 / 18%);
+    border-top: var(--fb-rule-width) dashed var(--fb-rule-subtle-color);
   }
 }
 
@@ -325,7 +323,7 @@
   }
 
   .battle-log__toggle {
-    transition-duration: 1ms;
+    transition-duration: var(--fb-dur-instant);
   }
 }
 
@@ -339,7 +337,7 @@
 }
 
 [data-reduced-motion='true'] .battle-log__toggle {
-  transition-duration: 1ms;
+  transition-duration: var(--fb-dur-instant);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -347,10 +345,9 @@
 /* -------------------------------------------------------------------------- */
 
 [data-reduced-motion='false'] .battle-log__item {
-  animation: fb-battle-log-entry var(--fb-motion-draw, 180ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+  animation: fb-battle-log-entry var(--fb-dur-draw) var(--fb-ease) both;
 }
 
 [data-reduced-motion='false'] .battle-log__toggle {
-  transition-duration: var(--fb-motion-lift, 120ms);
+  transition-duration: var(--fb-dur-lift);
 }

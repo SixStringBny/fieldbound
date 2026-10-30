@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { act, render, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -234,11 +234,21 @@ describe('useReducedMotion', () => {
 /* Stylesheet contract                                                        */
 /* -------------------------------------------------------------------------- */
 
+function readStylesheet(file: string): string {
+  return readFileSync(resolve(process.cwd(), file), 'utf8');
+}
+
 function readMotionCss(): string {
-  return readFileSync(
-    resolve(process.cwd(), 'src/ui/motion/motion.css'),
-    'utf8',
-  );
+  return readStylesheet('src/ui/motion/motion.css');
+}
+
+/** Every component stylesheet: `src/styles/*.css` plus the motion layer. */
+function componentSheets(): readonly string[] {
+  const styles = readdirSync(resolve(process.cwd(), 'src/styles'))
+    .filter((file) => file.endsWith('.css'))
+    .map((file) => `src/styles/${file}`);
+
+  return [...styles, 'src/ui/motion/motion.css'];
 }
 
 /** Return the declarations inside the first block opened by `opener`. */
@@ -266,75 +276,219 @@ function cssBlock(css: string, opener: string): string {
   throw new Error(`Unclosed block for ${opener}`);
 }
 
+/** The property list of every `transition` / `transition-property` value. */
+function transitionedProperties(css: string): string[] {
+  const properties: string[] = [];
+  const pattern = /transition(?:-property)?\s*:\s*([^;}]+)/g;
+
+  for (const match of css.matchAll(pattern)) {
+    const value = match[1] ?? '';
+
+    for (const part of value.split(',')) {
+      const property = part.trim().split(/\s+/)[0] ?? '';
+
+      if (property !== '') {
+        properties.push(property);
+      }
+    }
+  }
+
+  return properties;
+}
+
+/** The animated properties of every `@keyframes` step. */
+function animatedProperties(css: string): string[] {
+  const properties: string[] = [];
+
+  for (const match of css.matchAll(/@keyframes\s+[\w-]+\s*\{/g)) {
+    const from = match.index ?? 0;
+    let depth = 0;
+    let end = from;
+
+    for (let index = css.indexOf('{', from); index < css.length; index += 1) {
+      if (css[index] === '{') {
+        depth += 1;
+      } else if (css[index] === '}') {
+        depth -= 1;
+
+        if (depth === 0) {
+          end = index;
+          break;
+        }
+      }
+    }
+
+    for (const declaration of css
+      .slice(from, end)
+      .matchAll(/([a-z-]+)\s*:\s*[^;}]+[;}]/g)) {
+      const property = declaration[1] ?? '';
+
+      if (property !== '' && property !== 'from' && property !== 'to') {
+        properties.push(property);
+      }
+    }
+  }
+
+  return properties;
+}
+
 describe('motion.css', () => {
-  it('defines all five documented durations on the normal branch', () => {
+  /*
+   * Motion-and-feedback section 4: one beat vocabulary, every part starting at
+   * t = 0 and ending by 400ms. The normal branch is everything before the first
+   * reduced-motion block.
+   */
+  it('declares the whole beat vocabulary with the documented duration tokens', () => {
     const css = readMotionCss();
     const reducedAt = css.indexOf('@media (prefers-reduced-motion: reduce)');
     expect(reducedAt).toBeGreaterThan(-1);
 
     const normal = css.slice(0, reducedAt);
-    const durations = [
-      ['--fb-motion-draw', '180ms'],
-      ['--fb-motion-play', '160ms'],
-      ['--fb-motion-damage', '400ms'],
-      ['--fb-motion-shift', '300ms'],
-      ['--fb-motion-lift', '120ms'],
-    ] as const;
+    const keyframes = [
+      'fb-feedback-draw',
+      'fb-feedback-flash',
+      'fb-feedback-impact',
+      'fb-feedback-chip',
+      'fb-feedback-shift',
+      'fb-feedback-intent',
+      'fb-feedback-handoff',
+    ];
 
-    for (const [token, duration] of durations) {
-      expect(normal).toMatch(
-        new RegExp(`var\\(${token},\\s*${duration}\\)`),
+    for (const name of keyframes) {
+      expect(normal, name).toMatch(new RegExp(`@keyframes ${name}`));
+      expect(normal, name).toMatch(
+        new RegExp(`animation:\\s*${name} var\\(--fb-dur-`),
       );
+    }
+
+    const tokens = [
+      '--fb-dur-draw',
+      '--fb-dur-play',
+      '--fb-dur-damage',
+      '--fb-dur-shift',
+      '--fb-dur-lift',
+    ];
+
+    for (const token of tokens) {
+      expect(normal, token).toMatch(new RegExp(`var\\(${token}\\)`));
     }
   });
 
-  it('animates draw, play, damage and field shift in the normal branch', () => {
+  it('binds every beat element to its data attribute', () => {
     const css = readMotionCss();
-    const reducedAt = css.indexOf('@media (prefers-reduced-motion: reduce)');
-    const normal = css.slice(0, reducedAt);
 
-    expect(normal).toMatch(/@keyframes fb-motion-draw/);
-    expect(normal).toMatch(/@keyframes fb-motion-play/);
-    expect(normal).toMatch(/@keyframes fb-motion-damage/);
-    expect(normal).toMatch(/@keyframes fb-motion-shift/);
-    expect(normal).toMatch(/\[data-motion='draw'\]/);
-    expect(normal).toMatch(/\[data-motion='play'\]/);
-    expect(normal).toMatch(/\[data-motion='damage'\]/);
-    expect(normal).toMatch(/\[data-motion='shift'\]/);
-    expect(normal).toMatch(/\.field-banner[^{]*\{[^}]*transition:/s);
+    expect(css).toMatch(/\.hand\[data-dealt='true'\] \.hand__item/);
+    expect(css).toMatch(/\.battle-feedback\s*\{/);
+    expect(css).toMatch(/\.battle-feedback__flash\s*\{/);
+    expect(css).toMatch(/\.battle-feedback__impact\s*\{/);
+    expect(css).toMatch(/\.battle-feedback__chip\s*\{/);
+    expect(css).toMatch(/\.field-banner__shift\s*\{/);
+    expect(css).toMatch(
+      /\.enemy-panel__intent\[data-intent-reveal='true'\]\s*\{/,
+    );
+    expect(css).toMatch(/\[data-feedback-handoff='true'\]\s*\{/);
+  });
+
+  it('retires the dead [data-motion] hooks', () => {
+    expect(readMotionCss()).not.toMatch(/data-motion/);
+  });
+
+  it('animates only transform and opacity (section 9.1 allowlist)', () => {
+    expect(animatedProperties(readMotionCss()).every((property) =>
+      ['opacity', 'transform'].includes(property),
+    )).toBe(true);
   });
 
   it('caps transitions and removes transforms under the OS preference', () => {
     const css = readMotionCss();
     const reduced = cssBlock(css, '@media (prefers-reduced-motion: reduce)');
+    const beatSelectors = [
+      '.hand__item',
+      '.battle-feedback',
+      '.battle-feedback__flash',
+      '.battle-feedback__impact',
+      '.battle-feedback__chip',
+      '.field-banner__shift',
+      ".enemy-panel__intent[data-intent-reveal='true']",
+      "[data-feedback-handoff='true']",
+    ];
 
-    expect(reduced).toMatch(/transition-duration:\s*1ms/);
+    for (const selector of beatSelectors) {
+      expect(reduced, selector).toContain(selector);
+    }
+
+    expect(reduced).toMatch(/transition-duration:\s*var\(--fb-dur-instant\)/);
     expect(reduced).toMatch(/transform:\s*none/);
     expect(reduced).toMatch(/animation:\s*none/);
+
+    // Nothing decorative renders in a reduced form at all.
     expect(reduced).toMatch(
-      /\[data-motion='damage'\]\s*\{[^}]*animation:\s*none[^}]*opacity:\s*1/,
+      /\.battle-feedback,\s*\.field-banner__shift\s*\{\s*display:\s*none/,
     );
   });
 
   it('gives the explicit override both directions, with reduced rules capped', () => {
     const css = readMotionCss();
-    const trueAt = css.indexOf("[data-reduced-motion='true']");
-    const falseAt = css.indexOf("[data-reduced-motion='false']");
+    const trueAt = css.indexOf("[data-reduced-motion='true'] .hand__item");
+    const falseAt = css.indexOf("[data-reduced-motion='false'] .hand");
 
     expect(trueAt).toBeGreaterThan(-1);
     expect(falseAt).toBeGreaterThan(trueAt);
 
     const forcedReduced = css.slice(trueAt, falseAt);
-    expect(forcedReduced).toMatch(/transition-duration:\s*1ms/);
+
+    expect(forcedReduced).toMatch(/transition-duration:\s*var\(--fb-dur-instant\)/);
     expect(forcedReduced).toMatch(/transform:\s*none/);
     expect(forcedReduced).toMatch(/animation:\s*none/);
+    expect(forcedReduced).toMatch(
+      /\.battle-feedback,\s*\[data-reduced-motion='true'\] \.field-banner__shift/,
+    );
 
     const forcedMotion = css.slice(falseAt);
-    expect(forcedMotion).toMatch(/animation:\s*fb-motion-draw/);
-    expect(forcedMotion).toMatch(/animation:\s*fb-motion-play/);
-    expect(forcedMotion).toMatch(/animation:\s*fb-motion-damage/);
-    expect(forcedMotion).toMatch(
-      /transition-duration:\s*var\(--fb-motion-shift,\s*300ms\)/,
+
+    expect(forcedMotion).toMatch(/animation:\s*fb-feedback-draw/);
+    expect(forcedMotion).toMatch(/animation:\s*fb-feedback-impact/);
+    expect(forcedMotion).toMatch(/animation:\s*fb-feedback-handoff/);
+    expect(forcedMotion).toMatch(/transition-duration:\s*var\(--fb-dur-shift\)/);
+
+    // "Motion on" is restored last, after every reduced block.
+    expect(css.lastIndexOf("[data-reduced-motion='false']")).toBeGreaterThan(
+      css.indexOf('[data-feedback-handoff=\'true\'] {\n  animation'),
     );
+  });
+});
+
+describe('the motion performance envelope', () => {
+  it('leaves no box-shadow transition in any component stylesheet', () => {
+    for (const sheet of componentSheets()) {
+      expect(transitionedProperties(readStylesheet(sheet)), sheet).not.toContain(
+        'box-shadow',
+      );
+    }
+  });
+
+  it('transitions no layout or filter property anywhere', () => {
+    const forbidden = [
+      'box-shadow',
+      'filter',
+      'background-position',
+      'width',
+      'height',
+      'top',
+      'left',
+      'right',
+      'bottom',
+      'margin',
+      'padding',
+      'font-size',
+    ];
+
+    for (const sheet of componentSheets()) {
+      for (const property of transitionedProperties(readStylesheet(sheet))) {
+        expect(forbidden, `${sheet}: transition on ${property}`).not.toContain(
+          property,
+        );
+      }
+    }
   });
 });

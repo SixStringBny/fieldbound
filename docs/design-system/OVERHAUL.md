@@ -483,6 +483,13 @@ Enforced twice: `scripts/check-frozen-paths.mjs` fails the integration PR when
 `git diff --name-only <merge-base>..HEAD` touches a frozen root, and every ticket
 pastes its own diff under gate G4. The script is created by ticket 1.
 
+**One recorded exception (motion ticket 4, 2026-10-30).** `src/battle-log/derive.ts`
+and `src/state/battle-controller.ts` are parity-guarded consumers of the shared
+`diffBattleState` required by `motion-and-feedback.md` §2.1. They may change
+*how* deltas map to log effects and cues, never the output; the guard is
+`src/ui/feedback/parity.test.ts`, which must exist and pass, and the gate marks
+them `PARITY`. No other file inside a frozen root may move.
+
 ### 7.2 Immutable contracts
 
 The role / accessible name / `data-*` tables are frozen string-for-string:

@@ -1,0 +1,440 @@
+/**
+ * Result surfaces - the run result and both duel results (reading-screens
+ * sections 5 and 6; OVERHAUL sections 6.8, 6.11 and 6.12).
+ *
+ * There is exactly one result idiom: a verdict on the warm slate table. A solo
+ * run adds parchment record ledgers beneath the verdict; a round and a match are
+ * plaques with no paper, because a round produces a winner and a score, not a
+ * record.
+ *
+ * The column is `min(100%, 45rem)` centred. Results scroll vertically and never
+ * horizontally, and nothing on them is sticky.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Route page                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.shell[data-screen='run-result'],
+.shell[data-screen='round-result'],
+.shell[data-screen='match-result'] {
+  max-width: 45rem;
+}
+
+.app-root:has(> #main-content[data-screen='run-result']),
+.app-root:has(> #main-content[data-screen='round-result']),
+.app-root:has(> #main-content[data-screen='match-result']) {
+  justify-content: flex-start;
+  padding: 1rem 0.625rem; /* 375x667: 16px 10px */
+}
+
+.result {
+  display: grid;
+  gap: var(--fb-space-5);
+  width: 100%;
+  min-width: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Verdict                                                                    */
+/* -------------------------------------------------------------------------- */
+
+.result__outcome {
+  display: grid;
+  grid-template-areas:
+    'seal eyebrow'
+    'title title'
+    'line line';
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--fb-space-2) var(--fb-space-4);
+  align-items: center;
+  padding: 1.25rem; /* 20px at phone */
+  border: var(--fb-rule);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-panel);
+  background-image: var(--fb-material-panel);
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
+}
+
+/* A wax seal is decorative: the heading and outcome line carry the verdict. */
+.result__seal {
+  display: inline-flex;
+  width: 4rem; /* 64px */
+  height: 4rem;
+  align-items: center;
+  justify-content: center;
+  padding: var(--fb-space-1);
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-action);
+  background-image: var(--fb-material-wax);
+  color: var(--fb-action-ink);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  line-height: var(--fb-leading-ui);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.result__eyebrow {
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-wide);
+  line-height: var(--fb-leading-ui);
+  text-transform: uppercase;
+}
+
+.result__title {
+  color: var(--fb-text);
+  font-family: var(--fb-font-display);
+  font-size: 2rem; /* 32px at 375 */
+  font-weight: var(--fb-weight-display);
+  letter-spacing: var(--fb-tracking-display);
+  line-height: var(--fb-leading-tight);
+}
+
+/* The seal sits beside the eyebrow, above the heading (reading-screens 5.1). */
+.result__outcome > .result__seal {
+  grid-area: seal;
+}
+
+.result__outcome > .result__eyebrow {
+  grid-area: eyebrow;
+}
+
+.result__outcome > .result__title {
+  grid-area: title;
+}
+
+.run-result__outcome {
+  grid-area: line;
+  max-width: 34rem;
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-leading-reading);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Record ledgers                                                             */
+/* -------------------------------------------------------------------------- */
+
+.result__ledger {
+  display: grid;
+  gap: var(--fb-space-3);
+  padding: 1.25rem; /* 20px at phone */
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  box-shadow: var(--fb-elev-3);
+  color: var(--fb-text-on-paper);
+}
+
+.result__ledger-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fb-space-2);
+}
+
+.result__ledger-title {
+  color: var(--fb-text-on-paper);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-xl);
+  font-weight: var(--fb-weight-display);
+  letter-spacing: var(--fb-tracking-display);
+  line-height: var(--fb-leading-ui);
+}
+
+.run-result__stats {
+  display: grid;
+  gap: 1px; /* the brass-on-paper hairline between cells */
+  margin: 0;
+  background-color: var(--fb-rule-on-paper-color);
+}
+
+.run-result__stats--totals {
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2x2 at phone */
+}
+
+.run-result__stats--best {
+  grid-template-columns: minmax(0, 1fr); /* three 56px rows at phone */
+}
+
+.run-result__stat {
+  display: grid;
+  gap: var(--fb-space-1);
+  align-content: start;
+  min-height: 3.5rem; /* 56px best-run row */
+  padding: var(--fb-space-2) var(--fb-space-3);
+  background-color: var(--fb-surface-document);
+}
+
+.run-result__stats--totals .run-result__stat {
+  min-height: 5.25rem; /* about 84px on a phone */
+}
+
+.run-result__stat dt {
+  color: var(--fb-text-on-paper-muted);
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-label);
+  line-height: var(--fb-leading-ui);
+  text-transform: uppercase;
+}
+
+.run-result__stat dd {
+  margin: 0;
+  color: var(--fb-text-on-paper);
+  font-family: var(--fb-font-display);
+  font-size: 1.625rem; /* 26px phone numeral */
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-ui);
+}
+
+/* The new-best marker is text on wax, so it survives forced colours. */
+.run-result__best {
+  min-height: 1.75rem; /* 28px */
+  padding: 0 var(--fb-space-2);
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-action);
+  background-image: var(--fb-material-wax);
+  color: var(--fb-action-ink);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  line-height: 1.75rem;
+  text-transform: uppercase;
+}
+
+/* Static text, not a live region: a save failure is a condition, not feedback. */
+.run-result__notice {
+  padding: var(--fb-space-3);
+  border-left: var(--fb-rule-width-strong) solid var(--fb-danger-on-paper);
+  background-color: var(--fb-surface-document-raised);
+  color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-leading-body);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Actions                                                                    */
+/* -------------------------------------------------------------------------- */
+
+.result__actions {
+  display: grid;
+  gap: var(--fb-space-3); /* 12px stacked at phone */
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.result__action {
+  display: flex;
+  min-width: 0;
+}
+
+.result__primary {
+  min-height: 3rem; /* 48px ember primary */
+  width: 100%;
+}
+
+.result__secondary {
+  width: 100%;
+}
+
+/* The documented brass secondary (duel-flow §5.2) sits above the quiet Menu. */
+.result__brass {
+  border-color: var(--fb-rule-strong-color);
+  color: var(--fb-text);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Duel plaques                                                               */
+/* -------------------------------------------------------------------------- */
+
+.duel-result {
+  display: grid;
+  gap: var(--fb-space-4);
+  padding: 1.25rem; /* 20px at phone */
+  border: var(--fb-rule);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-panel);
+  background-image: var(--fb-material-panel);
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
+  color: var(--fb-text);
+}
+
+.duel-result__score {
+  color: var(--fb-text);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-2xl);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--fb-weight-display);
+  letter-spacing: var(--fb-tracking-display);
+  line-height: var(--fb-leading-ui);
+}
+
+.duel-result__next-player {
+  color: var(--fb-text);
+  font-size: var(--fb-text-lg);
+  font-weight: var(--fb-weight-ui);
+  line-height: var(--fb-leading-body);
+}
+
+.duel-result__copy {
+  max-width: 34rem;
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-leading-reading);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Breakpoints                                                                */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 390px) {
+  .app-root:has(> #main-content[data-screen='run-result']),
+  .app-root:has(> #main-content[data-screen='round-result']),
+  .app-root:has(> #main-content[data-screen='match-result']) {
+    padding: 1rem 0.75rem; /* 390x844: 16px 12px */
+  }
+
+  .result__title {
+    font-size: 2.125rem; /* 34px */
+  }
+
+  .duel-result {
+    padding: 1.5rem; /* 24px */
+  }
+}
+
+@media (min-width: 640px) {
+  .result__actions {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: var(--fb-space-4); /* 16px side by side */
+  }
+
+  .result__actions--single {
+    grid-auto-columns: auto;
+    justify-content: start;
+  }
+
+  .result__actions--single .result__primary {
+    width: auto;
+    min-width: 12rem;
+  }
+
+  .result__primary {
+    width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .app-root:has(> #main-content[data-screen='run-result']),
+  .app-root:has(> #main-content[data-screen='round-result']),
+  .app-root:has(> #main-content[data-screen='match-result']) {
+    padding: 1.5rem 1rem; /* 768x1024: 24px 16px */
+  }
+
+  .result__outcome {
+    padding: 2rem; /* 32px */
+  }
+
+  .result__ledger {
+    padding: 2rem;
+  }
+
+  .result__title {
+    font-size: 2.5rem; /* 40px */
+  }
+
+  .duel-result {
+    padding: 2rem;
+  }
+
+  /* Run totals: four across; the best run: three across. */
+  .run-result__stats--totals {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .run-result__stats--best {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .run-result__stats--totals .run-result__stat {
+    min-height: 6rem; /* about 96px at 768 */
+  }
+
+  .run-result__stats--best .run-result__stat {
+    min-height: 4.5rem;
+  }
+
+  .run-result__stat dd {
+    font-size: 1.875rem; /* 30px table numeral */
+  }
+
+  .duel-result__score {
+    font-size: 1.75rem;
+  }
+
+  .result__actions {
+    gap: var(--fb-space-3); /* 12px at 768 */
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-root:has(> #main-content[data-screen='run-result']),
+  .app-root:has(> #main-content[data-screen='round-result']),
+  .app-root:has(> #main-content[data-screen='match-result']) {
+    padding: 2rem 1.25rem; /* 1024x768: 32px 20px */
+  }
+
+  .result__outcome {
+    padding: 2.5rem; /* 40px */
+  }
+
+  .result__ledger {
+    padding: 2.5rem;
+  }
+
+  .duel-result {
+    padding: 2.5rem;
+  }
+
+  .result__actions {
+    gap: var(--fb-space-4); /* 16px */
+  }
+
+  .run-result__stats--totals .run-result__stat {
+    min-height: 6rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-root:has(> #main-content[data-screen='run-result']),
+  .app-root:has(> #main-content[data-screen='round-result']),
+  .app-root:has(> #main-content[data-screen='match-result']) {
+    padding: 3rem 1.5rem; /* 1280x800: 48px 24px */
+  }
+
+  .result__outcome {
+    padding: 3rem; /* 48px */
+  }
+
+  .result__title {
+    font-size: 2.75rem; /* 44px */
+  }
+
+  .duel-result {
+    padding: 3rem;
+  }
+
+  .run-result__stats--totals .run-result__stat {
+    min-height: 6.5rem; /* about 104px at 1280 */
+  }
+}

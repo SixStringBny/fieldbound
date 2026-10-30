@@ -1,0 +1,872 @@
+/**
+ * Reading documents - How to Play and Settings (reading-screens sections 2-4;
+ * OVERHAUL sections 6.2 and 6.3).
+ *
+ * One idiom for both surfaces: a masthead on the warm slate table and a centred
+ * 42rem parchment sheet. The page scrolls vertically and never horizontally;
+ * nothing is pinned except the phone `Contents` strip on How to Play.
+ *
+ * At 1024px and above the sheet sits in column two beside a 224px sticky contents
+ * rail (224 + 24 + 672 = 920 inside the 1080 column). Below 1024 the contents is
+ * a 44px sticky disclosure that pushes the sheet down instead of covering it.
+ *
+ * Prose is 16px / 1.6 capped at 34rem; sections are separated by a parchment
+ * hairline at a 28-48px rhythm. Brass is the only rule colour.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Route page                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.shell[data-screen='how-to-play'],
+.shell[data-screen='settings'] {
+  max-width: var(--fb-board-max);
+}
+
+.app-root:has(> #main-content[data-screen='how-to-play']),
+.app-root:has(> #main-content[data-screen='settings']) {
+  justify-content: flex-start;
+  padding: 1rem 0.625rem 2rem; /* 375x667: 16px 10px 32px */
+}
+
+.document {
+  display: grid;
+  gap: var(--fb-space-5);
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+  padding-bottom: var(--fb-space-6);
+}
+
+/*
+ * Below 1024 the document is a plain block flow, so the sticky `Contents`
+ * strip's containing block is the whole document rather than a one-row grid
+ * area: it must keep pinning to the top for the length of the sheet.
+ */
+@media (max-width: 1023px) {
+  .document {
+    display: block;
+  }
+
+  .document > * + * {
+    margin-top: var(--fb-space-5);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Masthead                                                                   */
+/* -------------------------------------------------------------------------- */
+
+.document__masthead {
+  display: grid;
+  gap: var(--fb-space-1);
+  justify-items: start;
+  min-width: 0;
+}
+
+.document__masthead-line {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--fb-target);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fb-space-3);
+}
+
+.document__eyebrow {
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-wide);
+  line-height: var(--fb-leading-ui);
+  text-transform: uppercase;
+}
+
+/* A quiet brass action on the eyebrow line: never under the heading. */
+.document__back {
+  display: inline-flex;
+  min-width: var(--fb-target);
+  min-height: var(--fb-target);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--fb-space-2);
+  border: 0;
+  border-radius: var(--fb-radius-md);
+  background-color: transparent;
+  color: var(--fb-rule-strong-color);
+  font: inherit;
+  font-size: var(--fb-text-md);
+  font-weight: var(--fb-weight-ui);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.25em;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color var(--fb-dur-lift) var(--fb-ease),
+    text-decoration-color var(--fb-dur-lift) var(--fb-ease);
+}
+
+.document__title {
+  color: var(--fb-text);
+  font-family: var(--fb-font-display);
+  font-size: 2rem; /* 32px at 375 */
+  font-weight: var(--fb-weight-display);
+  letter-spacing: var(--fb-tracking-display);
+  line-height: var(--fb-leading-tight);
+}
+
+.document__tagline {
+  max-width: 34rem;
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-leading-reading);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Sheet                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.document__sheet {
+  display: grid;
+  width: 100%;
+  max-width: var(--fb-document-max);
+  margin-inline: auto;
+  padding: 1.25rem; /* 20px at phone */
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  box-shadow: var(--fb-elev-3);
+  color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-leading-reading);
+}
+
+.document__section {
+  display: grid;
+  gap: var(--fb-space-2); /* 8px above the first paragraph */
+  min-width: 0;
+  padding-block: 1.75rem; /* 28px rhythm at phone */
+}
+
+/* Paragraph rhythm keeps its 12px inside the 8px section gap. */
+.document__sheet p + p {
+  margin-top: var(--fb-space-1);
+}
+
+.document__section + .document__section {
+  border-top: var(--fb-rule-on-paper);
+}
+
+.document__section:first-child {
+  padding-block-start: 0;
+}
+
+.document__section:last-child {
+  padding-block-end: 0;
+}
+
+/* "A brass drop rule opens the section": decoration, no new copy. */
+.document__section--drop {
+  position: relative;
+}
+
+.document__section--drop::before {
+  content: '';
+  position: absolute;
+  top: var(--fb-space-5);
+  left: 0;
+  width: 2.5rem;
+  height: var(--fb-rule-width-strong);
+  background-color: var(--fb-text-on-paper-muted);
+}
+
+.document__section--drop .document__heading {
+  padding-top: var(--fb-space-4);
+}
+
+.document__heading {
+  color: var(--fb-text-on-paper);
+  font-family: var(--fb-font-display);
+  font-size: 1.375rem; /* 22px at phone */
+  font-weight: var(--fb-weight-display);
+  letter-spacing: var(--fb-tracking-display);
+  line-height: var(--fb-leading-ui);
+  scroll-margin-top: 56px; /* clears the 44px sticky Contents strip */
+}
+
+/* A contents jump focuses the heading; show where it landed. */
+.document__heading:focus {
+  outline: var(--fb-focus-ring-width) solid var(--fb-focus);
+  outline-offset: var(--fb-focus-offset);
+  box-shadow: var(--fb-focus-shadow);
+}
+
+/* Reading body: 16px / 1.6, capped so long paragraphs stay readable. */
+.document__sheet p,
+.document__sheet dd {
+  max-width: 34rem;
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-leading-reading);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Turn stones, callout, statuses, modes                                      */
+/* -------------------------------------------------------------------------- */
+
+.rules__steps {
+  display: grid;
+  gap: var(--fb-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rules__step {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--fb-space-3);
+  align-items: start;
+  padding: var(--fb-space-3);
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-sm);
+  background-color: var(--fb-surface-document-raised);
+  color: var(--fb-text-on-paper);
+}
+
+/* The 2px brass connector between stones: vertical on phone. */
+.rules__step + .rules__step::before {
+  content: '';
+  position: absolute;
+  top: calc(-1 * var(--fb-space-3));
+  left: calc(var(--fb-space-3) + 0.875rem - 1px);
+  width: var(--fb-rule-width-strong);
+  height: var(--fb-space-3);
+  background-color: var(--fb-text-on-paper-muted);
+}
+
+.rules__step-seal {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-action);
+  background-image: var(--fb-material-wax);
+  color: var(--fb-action-ink);
+  font-size: var(--fb-text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.rules__step-body {
+  display: block;
+  max-width: 34rem;
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-leading-reading);
+}
+
+.rules__callout {
+  padding: var(--fb-space-2) var(--fb-space-3);
+  border-left: var(--fb-rule-width-strong) solid var(--fb-text-on-paper-muted);
+  background-color: var(--fb-surface-document-raised);
+  color: var(--fb-text-on-paper);
+  font-weight: var(--fb-weight-ui);
+}
+
+.rules__heading {
+  margin-top: var(--fb-space-2);
+  color: var(--fb-text-on-paper);
+  font-family: var(--fb-font-display);
+  font-size: 1.125rem; /* 18px */
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-ui);
+}
+
+/* Modes are three display blocks, separated by brass rules. */
+.rules__heading:not(:first-of-type) {
+  margin-top: var(--fb-space-4);
+  padding-top: var(--fb-space-3);
+  border-top: var(--fb-rule-on-paper);
+}
+
+.rules__statuses {
+  display: grid;
+  gap: var(--fb-space-3);
+  margin: 0;
+}
+
+.rules__status {
+  display: grid;
+  gap: var(--fb-space-1);
+  padding-block: var(--fb-space-3);
+  border-top: var(--fb-rule-width) solid var(--fb-text-on-paper-muted);
+}
+
+.rules__status:last-child {
+  padding-bottom: 0;
+}
+
+.rules__status dt {
+  color: var(--fb-text-on-paper);
+  font-family: var(--fb-font-display);
+  font-size: 1.125rem; /* 18px display over the reading body */
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-ui);
+}
+
+.rules__status dd {
+  margin: 0;
+  color: var(--fb-text-on-paper-soft);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Field cycle — a CSS seal chain                                             */
+/* -------------------------------------------------------------------------- */
+
+.rules__cycle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2x2 at 375, never a scroll */
+  gap: var(--fb-space-3) var(--fb-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rules__cycle-step {
+  position: relative;
+  display: grid;
+  gap: var(--fb-space-2);
+  justify-items: center;
+  min-width: 0;
+  padding: var(--fb-space-2) var(--fb-space-1);
+  text-align: center;
+}
+
+.field-cycle__pair {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fb-space-1);
+}
+
+.field-cycle__seal {
+  display: inline-grid;
+  width: var(--fb-target);
+  height: var(--fb-target);
+  align-content: center;
+  justify-items: center;
+  border: var(--fb-rule-width-strong) solid var(--fb-rule-strong-color);
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-neutral-bg);
+  color: var(--fb-neutral-ink);
+  line-height: 1;
+}
+
+.field-cycle__seal[data-element='ember'] {
+  background-color: var(--fb-ember-bg);
+  color: var(--fb-ember-ink);
+}
+
+.field-cycle__seal[data-element='frost'] {
+  background-color: var(--fb-frost-bg);
+  color: var(--fb-frost-ink);
+}
+
+.field-cycle__seal[data-element='gale'] {
+  background-color: var(--fb-gale-bg);
+  color: var(--fb-gale-ink);
+}
+
+.field-cycle__seal[data-element='stone'] {
+  background-color: var(--fb-stone-bg);
+  color: var(--fb-stone-ink);
+}
+
+.field-cycle__glyph {
+  font-family: var(--fb-font-glyph);
+  font-size: var(--fb-text-md);
+  line-height: 1;
+}
+
+.field-cycle__name {
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: 0;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.field-cycle__arrow {
+  color: var(--fb-text-on-paper-muted);
+  font-family: var(--fb-font-glyph);
+  font-size: var(--fb-text-md);
+  line-height: 1;
+}
+
+.rules__cycle-beats {
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-leading-ui);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Contents — rail at 1024+, sticky disclosure below                          */
+/* -------------------------------------------------------------------------- */
+
+.contents {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  width: 100%;
+  max-width: var(--fb-document-max);
+  margin-inline: auto;
+  min-width: 0;
+}
+
+/* The parchment strip is the only pinned element in the app's documents. */
+.contents__bar {
+  display: flex;
+  min-height: var(--fb-target);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fb-space-3);
+  padding-inline: var(--fb-space-2);
+  border-bottom: var(--fb-rule-on-paper);
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  color: var(--fb-text-on-paper);
+}
+
+.contents__toggle {
+  display: inline-flex;
+  min-width: var(--fb-target);
+  min-height: var(--fb-target);
+  align-items: center;
+  gap: var(--fb-space-2);
+  padding: 0 var(--fb-space-1);
+  border: 0;
+  border-radius: var(--fb-radius-xs);
+  background-color: transparent;
+  color: var(--fb-text-on-paper);
+  font: inherit;
+  font-size: var(--fb-text-lg);
+  font-weight: var(--fb-weight-ui);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.contents__toggle-glyph {
+  font-family: var(--fb-font-glyph);
+  font-size: var(--fb-text-lg);
+  line-height: 1;
+}
+
+.contents__count {
+  color: var(--fb-text-on-paper-muted);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-leading-ui);
+}
+
+.contents__list {
+  display: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  color: var(--fb-text-on-paper);
+}
+
+.contents[data-open='true'] .contents__list {
+  display: grid;
+}
+
+.contents__link {
+  display: flex;
+  min-height: var(--fb-target);
+  align-items: center;
+  gap: var(--fb-space-2);
+  padding: 0 var(--fb-space-3);
+  color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-leading-ui);
+  text-decoration: none;
+}
+
+.contents__bullet {
+  color: var(--fb-text-on-paper-muted);
+  font-size: var(--fb-text-xs);
+  line-height: 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Footer                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.document__footer {
+  width: 100%;
+  max-width: var(--fb-document-max);
+  margin: 0 auto;
+}
+
+.document__footer-action {
+  min-height: 3rem; /* 48px ember primary */
+  width: 100%;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Settings                                                                   */
+/* -------------------------------------------------------------------------- */
+
+.settings__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--fb-space-4);
+  align-items: center;
+  min-height: 4.5rem; /* 72px at phone */
+  padding: var(--fb-space-3) 0;
+  border-bottom: var(--fb-rule-on-paper);
+}
+
+.settings__row:last-child {
+  border-bottom: 0;
+}
+
+.settings__label {
+  display: grid;
+  gap: var(--fb-space-1);
+  min-width: 0;
+}
+
+.settings__name {
+  color: var(--fb-text-on-paper);
+  font-family: var(--fb-font-ui);
+  font-size: var(--fb-text-lg);
+  font-weight: var(--fb-weight-ui);
+  line-height: var(--fb-leading-ui);
+}
+
+.settings__hint {
+  max-width: 34rem;
+  color: var(--fb-text-on-paper-muted);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-leading-body);
+}
+
+.settings__switch {
+  position: relative;
+  display: inline-flex;
+  width: 4.5rem; /* 72px */
+  height: var(--fb-target); /* 44px */
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 var(--fb-space-2) 0 2.375rem; /* thumb lane on the left when off */
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-surface-document);
+  box-shadow: var(--fb-rim);
+  color: var(--fb-text-on-paper);
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--fb-dur-lift) var(--fb-ease);
+}
+
+.settings__switch[aria-checked='true'] {
+  justify-content: flex-start;
+  padding: 0 2.375rem 0 var(--fb-space-2); /* thumb lane on the right when on */
+  background-color: var(--fb-selected);
+  background-image: var(--fb-material-brass);
+  color: var(--fb-text-on-paper);
+}
+
+/*
+ * The thumb travels on `transform`, the only animatable geometry the performance
+ * envelope allows; the reduced-motion branch places it with `left` instead so no
+ * state depends on a transform.
+ */
+.settings__switch-thumb {
+  position: absolute;
+  top: 0.4375rem;
+  left: 0.4375rem;
+  width: 1.75rem; /* 28px */
+  height: 1.75rem;
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-text-on-paper-soft);
+  box-shadow: var(--fb-elev-1);
+  transition:
+    transform var(--fb-dur-lift) var(--fb-ease),
+    background-color var(--fb-dur-lift) var(--fb-ease);
+}
+
+.settings__switch[aria-checked='true'] .settings__switch-thumb {
+  background-color: var(--fb-action);
+  background-image: var(--fb-material-wax);
+  transform: translateX(1.75rem);
+}
+
+.settings__switch-word {
+  font-size: var(--fb-text-sm);
+  font-weight: var(--fb-weight-ui);
+  line-height: 1;
+}
+
+/* The ring sits inside the row's hairline so it is never clipped (section 4.2). */
+.settings__switch:focus-visible {
+  outline-offset: -2px;
+}
+
+.settings__notice {
+  margin-top: var(--fb-space-4);
+  padding: var(--fb-space-3);
+  border-left: var(--fb-rule-width-strong) solid var(--fb-danger-on-paper);
+  background-color: var(--fb-surface-document-raised);
+  color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-sm);
+  line-height: var(--fb-leading-body);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Interaction states                                                         */
+/* -------------------------------------------------------------------------- */
+
+@media (hover: hover) and (max-width: 1023px) {
+  .contents__link:hover {
+    color: var(--fb-text-on-paper);
+    background-color: var(--fb-surface-document-raised);
+  }
+}
+
+@media (hover: hover) and (min-width: 1024px) {
+  .contents__link:hover {
+    color: var(--fb-text);
+    background-color: var(--fb-surface-hover);
+  }
+}
+
+@media (hover: hover) {
+  .document__back:hover {
+    color: var(--fb-text);
+    text-decoration-color: currentColor;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Breakpoints                                                                */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 390px) {
+  .app-root:has(> #main-content[data-screen='how-to-play']),
+  .app-root:has(> #main-content[data-screen='settings']) {
+    padding: 1rem 0.75rem 2rem; /* 390x844: 16px 12px 32px */
+  }
+
+  .document__title {
+    font-size: 2.125rem; /* 34px */
+  }
+}
+
+@media (min-width: 640px) {
+  .document__footer-action {
+    width: auto;
+    min-width: 12rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .app-root:has(> #main-content[data-screen='how-to-play']),
+  .app-root:has(> #main-content[data-screen='settings']) {
+    padding: 1.5rem 1rem 3rem; /* 768x1024: 24px 16px 48px */
+  }
+
+  .document__sheet {
+    padding: 2rem; /* 32px */
+  }
+
+  .document__section {
+    gap: var(--fb-space-2);
+    padding-block: 2rem; /* 32px rhythm */
+  }
+
+  .document__heading {
+    font-size: 1.5rem; /* 24px */
+  }
+
+  /* Three stones across, joined by the same 2px brass connector. */
+  .rules__steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .rules__step {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--fb-space-2);
+  }
+
+  .rules__step + .rules__step::before {
+    top: calc(var(--fb-space-3) + 0.875rem - 1px);
+    left: calc(-1 * var(--fb-space-3));
+    width: var(--fb-space-3);
+    height: var(--fb-rule-width-strong);
+  }
+
+  /* The four-step chain reads across, arrows between the seal pairs. */
+  .rules__cycle {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .rules__cycle-step + .rules__cycle-step::before {
+    content: '';
+    position: absolute;
+    top: calc(var(--fb-space-2) + 1.375rem);
+    left: calc(-1 * var(--fb-space-1));
+    width: var(--fb-space-2);
+    height: var(--fb-rule-width-strong);
+    background-color: var(--fb-text-on-paper-muted);
+  }
+
+  .settings__row {
+    min-height: 5.5rem; /* 88px */
+  }
+
+  .document__title {
+    font-size: 2.5rem; /* 40px */
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-root:has(> #main-content[data-screen='how-to-play']),
+  .app-root:has(> #main-content[data-screen='settings']) {
+    padding: 2rem 1.25rem 3rem; /* 1024x768: 32px 20px 48px */
+  }
+
+  .document {
+    grid-template-columns: 14rem minmax(0, var(--fb-document-max));
+    column-gap: var(--fb-space-5);
+  }
+
+  .document__masthead {
+    grid-column: 1 / -1;
+  }
+
+  .document__footer {
+    grid-column: 2;
+  }
+
+  .contents {
+    position: sticky;
+    top: var(--fb-space-5);
+    grid-column: 1;
+    align-self: start;
+  }
+
+  .document__sheet {
+    grid-column: 2;
+  }
+
+  /* Settings has no contents rail: its one 42rem column is centred. */
+  .document--settings {
+    grid-template-columns: minmax(0, var(--fb-document-max));
+    justify-content: center;
+  }
+
+  .document--settings .document__masthead,
+  .document--settings .document__sheet {
+    grid-column: 1;
+  }
+
+  .contents__bar {
+    display: none;
+  }
+
+  .contents__list,
+  .contents[data-open='true'] .contents__list {
+    display: grid;
+    gap: var(--fb-space-1);
+    padding: 0;
+    background-color: transparent;
+    background-image: none;
+  }
+
+  .contents__link {
+    padding: 0 var(--fb-space-2);
+    color: var(--fb-text-soft);
+    font-size: var(--fb-text-sm);
+    border-radius: var(--fb-radius-xs);
+  }
+
+  .contents__bullet {
+    color: var(--fb-rule-color);
+  }
+
+  .document__heading {
+    scroll-margin-top: 0;
+  }
+
+  .settings__row {
+    min-height: 5.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-root:has(> #main-content[data-screen='how-to-play']),
+  .app-root:has(> #main-content[data-screen='settings']) {
+    padding: 3rem 1.5rem 3rem; /* 1280x800: 48px 24px 48px */
+  }
+
+  .document__sheet {
+    padding: 2.5rem; /* 40px */
+  }
+
+  .document__section {
+    padding-block: 2.5rem; /* 40px rhythm */
+  }
+
+  .document__title {
+    font-size: 2.75rem; /* 44px */
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced motion                                                             */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .document__back,
+  .settings__switch,
+  .settings__switch-thumb {
+    transition-duration: var(--fb-dur-instant);
+  }
+
+  .settings__switch[aria-checked='true'] .settings__switch-thumb {
+    left: 2.1875rem; /* placed, not travelled */
+    transform: none;
+  }
+}
+
+[data-reduced-motion='true'] .document__back,
+[data-reduced-motion='true'] .settings__switch,
+[data-reduced-motion='true'] .settings__switch-thumb {
+  transition-duration: var(--fb-dur-instant);
+}
+
+[data-reduced-motion='true'] .settings__switch[aria-checked='true'] .settings__switch-thumb {
+  left: 2.1875rem; /* placed, not travelled */
+  transform: none;
+}

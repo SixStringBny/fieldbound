@@ -11,7 +11,15 @@ import { describe, expect, it } from 'vitest';
 import { App, SCREENS } from './App';
 import { byId as cardCatalog } from './content/cards';
 import { enemyById } from './content/enemies';
+import {
+  DEFAULT_SETTINGS,
+  SETTINGS_STORAGE_KEY,
+  serializeSettings,
+} from './persistence/settings';
+import type { SettingsStorage } from './persistence/settings';
 import type { BattleControllerConfig } from './state/battle-controller';
+import { createEncounterConfig } from './state/run-controller';
+import type { SoloEncounterFactory } from './state/run-controller';
 
 /* -------------------------------------------------------------------------- */
 /* Fixture                                                                    */
@@ -69,6 +77,36 @@ function renderBattle(config: BattleControllerConfig = battleConfig()) {
   return render(<App initialScreen={SCREENS.battle} battleConfig={config} />);
 }
 
+/**
+ * The same battle with an explicit in-app "reduce motion" choice, so the
+ * absolute reduced branch is exercised without a real OS preference.
+ */
+function renderBattleReduced(config: BattleControllerConfig = battleConfig()) {
+  const stored = new Map<string, string>([
+    [
+      SETTINGS_STORAGE_KEY,
+      serializeSettings({ ...DEFAULT_SETTINGS, reducedMotion: true }),
+    ],
+  ]);
+  const storage: SettingsStorage = {
+    getItem: (key) => stored.get(key) ?? null,
+    setItem: (key, value) => {
+      stored.set(key, value);
+    },
+    removeItem: (key) => {
+      stored.delete(key);
+    },
+  };
+
+  return render(
+    <App
+      initialScreen={SCREENS.battle}
+      battleConfig={config}
+      settingsStorage={storage}
+    />,
+  );
+}
+
 function mainRegion(): HTMLElement {
   return screen.getByRole('main');
 }
@@ -123,7 +161,7 @@ function openCard(name: RegExp): HTMLElement {
 /* -------------------------------------------------------------------------- */
 
 describe('App keyboard reachability', () => {
-  it('reaches every hand card and End Turn in visual order with no positive tabindex', () => {
+  it('reaches every hand card, Log and End Turn in visual order with no positive tabindex', () => {
     renderBattle();
 
     const hand = handRegion();
@@ -134,12 +172,20 @@ describe('App keyboard reachability', () => {
     const battleControls = Array.from(
       main.querySelectorAll<HTMLElement>('button'),
     ).filter(
-      (button) => hand.contains(button) || button.textContent === 'End Turn',
+      (button) =>
+        hand.contains(button) ||
+        button.classList.contains('battle-log__toggle') ||
+        button.classList.contains('battle-controls__end'),
     );
 
-    // The five cards keep their dealt order and End Turn follows them.
+    // The five cards keep their dealt order; Log precedes the primary action.
     expect(battleControls.slice(0, 5)).toEqual(cards);
-    expect(battleControls[5]?.textContent).toBe('End Turn');
+    expect(battleControls[5]?.classList.contains('battle-log__toggle')).toBe(
+      true,
+    );
+    expect(
+      battleControls[6]?.classList.contains('battle-controls__end'),
+    ).toBe(true);
 
     for (const control of battleControls) {
       expect(control.tabIndex).toBe(0);
@@ -300,9 +346,183 @@ describe('App live announcements', () => {
   });
 });
 
+describe('App feedback accessibility', () => {
+  it('keeps impact numbers out of the accessibility tree and adds no live region', () => {
+    renderBattle();
+
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+
+    openCard(/Cinder Jab/);
+    const dialog = screen.getByRole('dialog', { name: 'Cinder Jab' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Play card' }));
+
+    const number = document.querySelector('[data-impact-number]');
+
+    expect(number).not.toBeNull();
+    expect(number?.closest('[aria-hidden="true"]')).not.toBeNull();
+    expect(number?.getAttribute('tabindex')).toBeNull();
+
+    // Exactly one live region still, and it speaks the fact rather than the
+    // decoration.
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(liveRegion().textContent).toContain('Cinder Warden takes 3 damage');
+    expect(liveRegion().textContent).not.toContain('\u22123');
+    expect(screen.queryAllByRole('alert')).toHaveLength(0);
+  });
+
+  it('renders no beat at all under reduced motion and keeps every fact visible', () => {
+    renderBattleReduced();
+
+    openCard(/Cinder Jab/);
+    const dialog = screen.getByRole('dialog', { name: 'Cinder Jab' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Play card' }));
+
+    expect(document.querySelector('[data-impact-number]')).toBeNull();
+    expect(document.querySelector('[data-feedback-key]')).toBeNull();
+    expect(document.querySelector('[data-impact-flash]')).toBeNull();
+    expect(document.querySelector('[data-defense-chip]')).toBeNull();
+    expect(document.querySelector('[data-field-shift]')).toBeNull();
+    expect(document.querySelector('[data-feedback-handoff]')).toBeNull();
+
+    // The same facts remain: the meter value, the log entry and the sentence.
+    expect(enemyHealth()).toBe('27 of 30 health');
+    expect(
+      screen.getByRole('region', { name: 'Battle log' }).textContent,
+    ).toContain('Cinder Jab');
+    expect(liveRegion().textContent).toContain('Cinder Warden takes 3 damage');
+  });
+});
+
 /* -------------------------------------------------------------------------- */
 /* Escape, focus trap and skip link                                           */
 /* -------------------------------------------------------------------------- */
+describe('App solo route focus and announcements', () => {
+  const soloEncounter: SoloEncounterFactory = (run, enemy) => {
+    const base = createEncounterConfig(run, enemy);
+
+    return {
+      ...base,
+      opponent: { ...base.opponent, health: 1 },
+    };
+  };
+
+  function currentScreen(): string {
+    return mainRegion().getAttribute('data-screen') ?? '';
+  }
+
+  /** Play the deterministic one-health encounter until the route changes. */
+  function settleBattle(): void {
+    for (let step = 0; step < 30; step += 1) {
+      if (currentScreen() !== 'battle') {
+        return;
+      }
+
+      const hand = screen.queryByRole('region', { name: 'Your hand' });
+
+      if (hand === null) {
+        return;
+      }
+
+      const playable = within(hand)
+        .queryAllByRole('button')
+        .find((button) => button.getAttribute('aria-disabled') !== 'true');
+
+      if (playable === undefined) {
+        fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+        continue;
+      }
+
+      fireEvent.click(playable);
+      const dialog = screen.queryByRole('dialog');
+
+      if (dialog === null) {
+        continue;
+      }
+
+      const play = within(dialog).getByRole('button', { name: 'Play card' });
+
+      if ((play as HTMLButtonElement).disabled) {
+        fireEvent.click(
+          within(dialog).getByRole('button', { name: 'Close card detail' }),
+        );
+        return;
+      }
+
+      fireEvent.click(play);
+    }
+  }
+
+  function startSoloRun(): void {
+    fireEvent.click(screen.getByRole('button', { name: 'Play Solo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Choose the Ember deck' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Run' }));
+  }
+
+  it('focuses the Solo Run heading and announces one deck selection once', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play Solo' }));
+
+    expect(currentScreen()).toBe('solo-setup');
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { level: 1, name: 'Solo Run' }),
+    );
+
+    const status = screen.getByRole('status');
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(status.textContent).toBe('');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Choose the Frost deck' }));
+
+    expect(status.textContent).toBe(
+      'Frost deck selected. Start Run is enabled.',
+    );
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+
+    // Still the same route, and the selection does not steal or move focus.
+    expect(currentScreen()).toBe('solo-setup');
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { level: 1, name: 'Solo Run' }),
+    );
+  });
+
+  it('announces the reward selection and advances only on confirmation', () => {
+    render(<App soloEncounter={soloEncounter} />);
+    startSoloRun();
+
+    expect(currentScreen()).toBe('battle');
+    settleBattle();
+
+    expect(currentScreen()).toBe('reward');
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { level: 1, name: 'Choose a reward' }),
+    );
+
+    const status = screen.getByRole('status');
+    const option = screen.getAllByRole('button', {
+      name: /^Choose /,
+    })[0] as HTMLElement;
+    const name = (option.getAttribute('aria-label') ?? '').replace(
+      /^Choose /,
+      '',
+    );
+
+    fireEvent.click(option);
+
+    expect(status.textContent).toBe(
+      `${name} selected. Take reward is enabled.`,
+    );
+    expect(currentScreen()).toBe('reward');
+
+    fireEvent.click(screen.getByRole('button', { name: `Take ${name}` }));
+
+    expect(currentScreen()).toBe('run-overview');
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { level: 1, name: 'Run overview' }),
+    );
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+  });
+});
 
 describe('App dialogs and skip link', () => {
   it('traps focus in the card detail, ignores E there and restores the invoker on Escape', () => {
@@ -357,5 +577,163 @@ describe('App dialogs and skip link', () => {
     expect(
       within(main).getByRole('region', { name: 'Your hand' }),
     ).toBeTruthy();
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Reading routes (reading-screens §8)                                        */
+/* -------------------------------------------------------------------------- */
+
+describe('App reading routes', () => {
+  it('focuses the route heading on How to Play and Settings', () => {
+    const howToPlay = render(<App initialScreen={SCREENS['how-to-play']} />);
+    const howToPlayHeading = screen.getByRole('heading', {
+      level: 1,
+      name: 'How to Play',
+    });
+
+    expect(document.activeElement).toBe(howToPlayHeading);
+    expect(howToPlayHeading.getAttribute('tabindex')).toBe('-1');
+    howToPlay.unmount();
+
+    render(<App initialScreen={SCREENS.settings} />);
+
+    const settingsHeading = screen.getByRole('heading', {
+      level: 1,
+      name: 'Settings',
+    });
+
+    expect(document.activeElement).toBe(settingsHeading);
+    expect(settingsHeading.getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('opens the contents, focuses the section heading and closes the disclosure', () => {
+    render(<App initialScreen={SCREENS['how-to-play']} />);
+
+    const toggle = screen.getByRole('button', { name: 'Contents' });
+    const defense = screen.getByRole('heading', { level: 2, name: 'Defense' });
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.click(screen.getByRole('link', { name: 'Defense' }));
+
+    expect(document.activeElement).toBe(defense);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(window.location.hash).toBe('');
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(screen.getByRole('status').textContent).toBe('');
+  });
+
+  it('closes the contents with Escape and returns focus to the button', () => {
+    render(<App initialScreen={SCREENS['how-to-play']} />);
+
+    const contents = screen.getByRole('navigation', { name: 'On this page' });
+    const toggle = screen.getByRole('button', { name: 'Contents' });
+
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.keyDown(contents, { key: 'Escape' });
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(toggle);
+  });
+
+  it('keeps one live region while the storage notice is shown', () => {
+    render(<App initialScreen={SCREENS.settings} settingsStorage={null} />);
+
+    const notice = screen.getByText(/This browser cannot save settings/);
+
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { level: 1, name: 'Settings' }),
+    );
+    expect(notice.getAttribute('role')).toBeNull();
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(document.querySelectorAll('[aria-live]')).toHaveLength(1);
+    expect(screen.getByRole('status').textContent).toBe('');
+
+    // The switch still works in memory; nothing announces the failure.
+    const sound = screen.getByRole('switch', { name: 'Sound' });
+
+    fireEvent.click(sound);
+
+    expect(sound.getAttribute('aria-checked')).toBe('false');
+    expect(screen.getByRole('status').textContent).toBe('');
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Duel privacy and board keyboard                                            */
+/* -------------------------------------------------------------------------- */
+
+/** Menu -> Local Duel -> both decks -> Start Match; stops at the handoff. */
+function openDuelPrivacy(): void {
+  fireEvent.click(screen.getByRole('button', { name: 'Local Duel' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Choose the Ember deck' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Confirm Player 1 deck' }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Choose the Frost deck' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Confirm Player 2 deck' }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Start Match' }));
+}
+
+describe('App duel privacy and board keyboard', () => {
+  it('offers one trapped action, ignores Escape and E, and hands focus to the first card', () => {
+    render(<App />);
+
+    openDuelPrivacy();
+
+    expect(mainRegion().getAttribute('data-screen')).toBe('privacy');
+
+    const ready = screen.getByRole('button', { name: "I'm ready" });
+
+    // Exactly one action on the route; the skip link is not a button.
+    expect(screen.getAllByRole('button')).toEqual([ready]);
+    expect(document.activeElement).toBe(ready);
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+
+    fireEvent.keyDown(ready, { key: 'Tab' });
+    expect(document.activeElement).toBe(ready);
+    fireEvent.keyDown(ready, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(ready);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.keyDown(ready, { key: 'e' });
+    expect(mainRegion().getAttribute('data-screen')).toBe('privacy');
+
+    fireEvent.click(ready);
+
+    // The board mounts and focus lands on the first card of the incoming hand.
+    expect(mainRegion().getAttribute('data-screen')).toBe('battle');
+    const hand = handRegion();
+    const cards = within(hand).getAllByRole('button');
+    expect(document.activeElement).toBe(cards[0]);
+
+    // Phone/tablet DOM order: cards -> Log -> End Turn. At the table the rail
+    // toggle is display:none, so the same order collapses to cards -> End Turn.
+    const controls = Array.from(
+      mainRegion().querySelectorAll<HTMLElement>('button'),
+    ).filter(
+      (button) =>
+        hand.contains(button) ||
+        button.classList.contains('battle-log__toggle') ||
+        button.classList.contains('battle-controls__end'),
+    );
+
+    expect(controls.slice(0, 5)).toEqual(cards);
+    expect(controls[5]?.classList.contains('battle-log__toggle')).toBe(true);
+    expect(controls[6]?.classList.contains('battle-controls__end')).toBe(true);
+
+    // The duel log is not live and the app still has exactly one live region.
+    expect(
+      mainRegion().querySelectorAll('[data-battle-log="true"] [aria-live]'),
+    ).toHaveLength(0);
+    expect(screen.getAllByRole('status')).toHaveLength(1);
   });
 });

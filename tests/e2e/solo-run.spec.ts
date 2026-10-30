@@ -267,6 +267,12 @@ async function readResultStat(
  * Choose exactly one reward. The greedy policy prefers Heal when the run's
  * health is low enough for the offer to exist and otherwise takes the first
  * card, mirroring the order the release policy documents.
+ *
+ * Selection and confirmation are two deliberate steps (solo-flow §5.2): the
+ * option activation only marks it `aria-pressed`, and the labelled confirm
+ * action is what advances the run. The first click must leave the reward screen
+ * mounted, so a helper that expected an immediate advance would hide a
+ * regression in the one-dispatch contract.
  */
 async function chooseReward(page: Page, seed: number): Promise<void> {
   const context = `seed ${seed}: reward choice`;
@@ -284,12 +290,31 @@ async function chooseReward(page: Page, seed: number): Promise<void> {
   const healIndex = labels.findIndex((label) => /^Choose Heal \d+$/.test(label));
   const index = healIndex === -1 ? 0 : healIndex;
   const target = options.nth(index);
+  const label = labels[index] ?? '';
 
   await expect(
     target,
-    `${context}: no reward option "${String(labels[index])}" was found.`,
+    `${context}: no reward option "${label}" was found.`,
   ).toBeVisible();
   await target.click();
+
+  await expect(
+    target,
+    `${context}: the chosen reward did not report itself as selected.`,
+  ).toHaveAttribute('aria-pressed', 'true');
+  await expectScreen(page, 'reward', `${context} after selecting`);
+
+  const selectedName = label.replace(/^Choose /, '');
+  const take = page.getByRole('button', {
+    name: `Take ${selectedName}`,
+    exact: true,
+  });
+
+  await expect(
+    take,
+    `${context}: the confirm action for "${selectedName}" is missing.`,
+  ).toBeEnabled();
+  await take.click();
 
   await expectScreen(page, 'run-overview', `${context} settled`);
 }

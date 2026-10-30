@@ -1,95 +1,246 @@
 /**
- * Fieldbound motion layer (SHL-FR-04, game-shell section 4.5, PRD section 9).
+ * Fieldbound motion layer (SHL-FR-04, game-shell section 4.5, PRD section 9,
+ * motion-and-feedback sections 3, 4, 9 and 10).
  *
- * Normal branch durations from the documented motion table:
+ * One feedback beat per settled transition. Every part starts at t = 0 and ends
+ * by 400ms, and the whole language is CSS: keyframes and transitions keyed off
+ * the attributes the settled render already set. There is no timer, interval,
+ * frame callback, Web Animations API call or animation library anywhere in this
+ * path, so a stalled main thread can only drop frames — it can never
+ * desynchronise state, input or sound.
  *
- *   card draw          180ms  translate + fade
- *   card play          160ms  lift and fade
- *   damage number      400ms  float and fade
- *   field shift        300ms  palette crossfade
- *   hover/focus lift   120ms  transform
+ * The vocabulary, and the only elements that animate:
  *
- * Durations come from tokens.css. Each `var()` keeps the documented value as a
- * fallback so this stylesheet is self-contained if it is loaded without the
- * token file.
+ *   draw           180ms  opacity + translateY on a newly mounted hand card
+ *   impact flash   160ms  inset overlay, opacity only
+ *   impact number  400ms  opacity + translateY(--fb-damage-rise)
+ *   defense chip   300ms  opacity + translateY
+ *   field shift    300ms  brass ring scale 0.9→1 and fade (+ disc colour fade)
+ *   intent reveal  180ms  opacity + translateY(4px), one block
+ *   handoff        160ms  opacity cross-fade on the header label and energy text
  *
- * Reduced motion is a resolved state, not a lock: `prefers-reduced-motion` is
- * the initial value, `data-reduced-motion` on the app root can force either
- * direction, and the explicit `false` rules sit last so an in-app "motion on"
- * choice wins over a matching OS query. Reduced mode removes every transform
- * and caps transitions at 1ms. The damage number is not removed: it stays
- * visible for its full 400ms, it just stops moving.
+ * What never animates: layout, width/height, `box-shadow` (removed), `filter`,
+ * the log, the result and reading screens, and a played card's departure — a
+ * play is acknowledged by the target's impact, not by a ghost.
+ *
+ * Durations come from tokens.css; no leaf value is restated here.
+ *
+ * Reduced motion is an absolute branch, not a softened one: under
+ * `prefers-reduced-motion: reduce` or `[data-reduced-motion='true']` every beat
+ * selector sets `animation: none`, `transform: none` and a 1ms transition, and
+ * the decorative layer is not displayed at all. The React side additionally
+ * stops *rendering* impact numbers, chips and overlays, which is the only way to
+ * guarantee no impact-number element exists in the DOM. The facts stay visible
+ * in the meter values, the field name and matchup, the intent list, the log and
+ * the single polite announcement. The explicit `[data-reduced-motion='false']`
+ * rules sit last so an in-app "motion on" choice wins over a matching OS query.
  */
 
 /* -------------------------------------------------------------------------- */
 /* Normal branch                                                              */
 /* -------------------------------------------------------------------------- */
 
-/*
- * Draw: a hand card fades and rises into place when its list item mounts.
- * The generic `[data-motion]` hooks below let the controller mark a transient
- * element (a played card leaving the board, a damage float) without the
- * presentation layer owning the timing.
- */
-.hand__item,
-[data-motion='draw'] {
-  animation: fb-motion-draw var(--fb-motion-draw, 180ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+/* Draw: only a card that entered the hand on this beat fades and rises into
+   place — one block, no per-card stagger. The `data-dealt` gate keeps the
+   opening deal still, and `data-drawn` is per item, so a card already on the
+   table is never re-animated by a later draw. */
+.hand[data-dealt='true'] .hand__item[data-drawn='true'] {
+  animation: fb-feedback-draw var(--fb-dur-draw) var(--fb-ease) both;
 }
 
-[data-motion='play'] {
-  animation: fb-motion-play var(--fb-motion-play, 160ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
-}
-
-[data-motion='damage'] {
-  animation: fb-motion-damage var(--fb-motion-damage, 400ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
-}
-
-[data-motion='shift'] {
-  animation: fb-motion-shift var(--fb-motion-shift, 300ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
-}
-
-/*
- * Field shift: the field banner and the panels that borrow the element accent
- * crossfade their palette when `data-field` / `data-element` changes. The text
- * and glyphs still carry the meaning; this is decoration only.
- */
+/* Field shift: the panel, the roundel and the cycle step fade their palette
+   over 300ms. Colour only, small surfaces, and never the only signal — the
+   field name, the matchup sentence and `aria-current` change instantly. */
 .field-banner,
 .field-banner__cycle-step,
 .player-panel,
 .enemy-panel {
   transition:
-    border-color var(--fb-motion-shift, 300ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    background-color var(--fb-motion-shift, 300ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    color var(--fb-motion-shift, 300ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1));
+    border-color var(--fb-dur-shift) var(--fb-ease),
+    background-color var(--fb-dur-shift) var(--fb-ease),
+    color var(--fb-dur-shift) var(--fb-ease);
 }
 
-/* Hover/focus lift and the other short affordance transitions. */
+.field-banner__roundel {
+  transition:
+    border-color var(--fb-dur-shift) var(--fb-ease),
+    background-color var(--fb-dur-shift) var(--fb-ease);
+}
+
+/* Hover/focus lift and the other short affordance transitions. `box-shadow` is
+   deliberately absent: a hover or pressed shadow is now an instant change. */
 .card-view,
 .card-detail,
 .card-detail__close,
 .card-detail__play,
 .battle-controls__end {
   transition:
-    transform var(--fb-motion-lift, 120ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    box-shadow var(--fb-motion-lift, 120ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    border-color var(--fb-motion-lift, 120ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    background-color var(--fb-motion-lift, 120ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)),
-    color var(--fb-motion-lift, 120ms)
-      var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1));
+    transform var(--fb-dur-lift) var(--fb-ease),
+    border-color var(--fb-dur-lift) var(--fb-ease),
+    background-color var(--fb-dur-lift) var(--fb-ease),
+    color var(--fb-dur-lift) var(--fb-ease);
 }
 
-@keyframes fb-motion-draw {
+/* -------------------------------------------------------------------------- */
+/* The feedback layer                                                         */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * One absolutely positioned, aria-hidden layer per panel. It never affects
+ * layout, so a beat cannot change the document's scroll height or move a
+ * control. It sits under the log drawer (55) and the card detail sheet (60).
+ */
+.battle-feedback {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.battle-feedback__flash {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--fb-danger);
+  opacity: 0;
+  animation: fb-feedback-flash var(--fb-dur-play) var(--fb-ease) both;
+}
+
+.battle-feedback__flash[data-kind='heal'] {
+  background-color: var(--fb-success);
+}
+
+.battle-feedback__flash[data-kind='defense'] {
+  background-color: var(--fb-stat-defense);
+}
+
+/*
+ * The signed net number. Numeral plus sign only — no unit, no word — tabular so
+ * the figure cannot jitter, and clamped inside the panel it belongs to. The
+ * enemy figure sits over the portrait block, which is the one surface at the
+ * panel's leading edge that carries no meter text, no intent, no control and no
+ * roundel; the player figure sits over the stacked meters' empty middle, between
+ * the "HP"/"DEF" labels and their values, so no numeric text is ever covered.
+ */
+.battle-feedback__impact {
+  position: absolute;
+  color: var(--fb-danger);
+  font-family: var(--fb-font-display);
+  font-size: 1.625rem;
+  font-weight: var(--fb-weight-display);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: var(--fb-tracking-display);
+  animation: fb-feedback-impact var(--fb-dur-damage) var(--fb-ease) both;
+}
+
+.battle-feedback__impact[data-kind='heal'] {
+  color: var(--fb-success);
+}
+
+.battle-feedback[data-slot='enemy'] .battle-feedback__impact {
+  top: 34px;
+  left: 26px;
+}
+
+.battle-feedback[data-slot='player'] .battle-feedback__impact {
+  bottom: 6px;
+  left: calc(50% - 17px);
+}
+
+/* The defense chip: a different element, colour and word, so health and defense
+   can never be confused. It rises from the meter edge beside the figure. */
+.battle-feedback__chip {
+  position: absolute;
+  padding: 0 var(--fb-space-1);
+  border: var(--fb-rule-subtle);
+  border-radius: var(--fb-radius-pill);
+  background-color: var(--fb-surface-inset);
+  color: var(--fb-stat-defense);
+  font-size: var(--fb-text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  line-height: 1.4;
+  white-space: nowrap;
+  animation: fb-feedback-chip var(--fb-dur-shift) var(--fb-ease) both;
+}
+
+.battle-feedback[data-slot='enemy'] .battle-feedback__chip {
+  top: 64px;
+  left: 26px;
+}
+
+.battle-feedback[data-slot='player'] .battle-feedback__chip {
+  bottom: 34px;
+  left: calc(50% - 24px);
+}
+
+@media (min-width: 768px) {
+  .battle-feedback__impact {
+    font-size: 1.875rem;
+  }
+
+  .battle-feedback[data-slot='enemy'] .battle-feedback__impact {
+    top: 40px;
+    left: 28px;
+  }
+
+  .battle-feedback[data-slot='enemy'] .battle-feedback__chip {
+    top: 74px;
+    left: 28px;
+  }
+
+  .battle-feedback[data-slot='player'] .battle-feedback__impact {
+    right: 8px;
+    bottom: 6px;
+    left: auto;
+  }
+
+  .battle-feedback[data-slot='player'] .battle-feedback__chip {
+    right: 8px;
+    bottom: 34px;
+    left: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .battle-feedback[data-slot='enemy'] .battle-feedback__impact {
+    top: 52px;
+    left: 32px;
+  }
+
+  .battle-feedback[data-slot='enemy'] .battle-feedback__chip {
+    top: 88px;
+    left: 32px;
+  }
+}
+
+/* Field shift: one brass ring over the roundel, scaling 0.9→1 as it fades. */
+.field-banner__shift {
+  position: absolute;
+  inset: -2px;
+  z-index: 3;
+  border: var(--fb-rule-width-strong) solid var(--fb-rule-strong-color);
+  border-radius: 50%;
+  opacity: 0;
+  animation: fb-feedback-shift var(--fb-dur-shift) var(--fb-ease) both;
+}
+
+/* Intent reveal: the whole plan block fades and rises as one unit, once per new
+   plan. Expanding the step list never re-animates because the block is only
+   keyed on a reveal beat. */
+.enemy-panel__intent[data-intent-reveal='true'] {
+  animation: fb-feedback-intent var(--fb-dur-draw) var(--fb-ease) both;
+}
+
+/* Turn handoff: the header turn label and the footer energy text cross-fade in
+   place. Both commit their new text in the same frame. */
+[data-feedback-handoff='true'] {
+  animation: fb-feedback-handoff var(--fb-dur-play) var(--fb-ease) both;
+}
+
+@keyframes fb-feedback-draw {
   from {
     opacity: 0;
     transform: translateY(0.75rem);
@@ -101,38 +252,89 @@
   }
 }
 
-@keyframes fb-motion-play {
+@keyframes fb-feedback-flash {
   0% {
+    opacity: 0;
+  }
+
+  30% {
+    opacity: 0.35;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fb-feedback-impact {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateY(calc(var(--fb-damage-rise) * 0.6));
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(var(--fb-damage-rise));
+  }
+}
+
+@keyframes fb-feedback-chip {
+  0% {
+    opacity: 0;
+    transform: translateY(0.375rem);
+  }
+
+  25% {
     opacity: 1;
     transform: translateY(0);
   }
 
   100% {
     opacity: 0;
-    transform: translateY(-1rem);
+    transform: translateY(-0.375rem);
   }
 }
 
-@keyframes fb-motion-damage {
+@keyframes fb-feedback-shift {
   0% {
     opacity: 0;
-    transform: translateY(0.25rem);
+    transform: scale(0.9);
   }
 
-  20% {
+  35% {
     opacity: 1;
-    transform: translateY(0);
   }
 
   100% {
     opacity: 0;
-    transform: translateY(-0.9rem);
+    transform: scale(1);
   }
 }
 
-@keyframes fb-motion-shift {
+@keyframes fb-feedback-intent {
   from {
-    opacity: 0.6;
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fb-feedback-handoff {
+  from {
+    opacity: 0;
   }
 
   to {
@@ -146,21 +348,21 @@
 
 @media (prefers-reduced-motion: reduce) {
   .hand__item,
-  [data-motion='draw'],
-  [data-motion='play'],
-  [data-motion='shift'] {
+  .battle-feedback,
+  .battle-feedback__flash,
+  .battle-feedback__impact,
+  .battle-feedback__chip,
+  .field-banner__shift,
+  .enemy-panel__intent[data-intent-reveal='true'],
+  [data-feedback-handoff='true'] {
     animation: none;
     transform: none;
   }
 
-  /*
-   * Keep the number on screen for its full 400ms so damage feedback is not
-   * lost; only the float and fade are removed.
-   */
-  [data-motion='damage'] {
-    animation: none;
-    opacity: 1;
-    transform: none;
+  /* Nothing decorative is shown in a reduced form: the layer is not rendered. */
+  .battle-feedback,
+  .field-banner__shift {
+    display: none;
   }
 
   .card-view,
@@ -169,10 +371,11 @@
   .card-detail__play,
   .battle-controls__end,
   .field-banner,
+  .field-banner__roundel,
   .field-banner__cycle-step,
   .player-panel,
   .enemy-panel {
-    transition-duration: 1ms;
+    transition-duration: var(--fb-dur-instant);
   }
 
   .card-view,
@@ -187,17 +390,20 @@
 /* -------------------------------------------------------------------------- */
 
 [data-reduced-motion='true'] .hand__item,
-[data-reduced-motion='true'] [data-motion='draw'],
-[data-reduced-motion='true'] [data-motion='play'],
-[data-reduced-motion='true'] [data-motion='shift'] {
+[data-reduced-motion='true'] .battle-feedback,
+[data-reduced-motion='true'] .battle-feedback__flash,
+[data-reduced-motion='true'] .battle-feedback__impact,
+[data-reduced-motion='true'] .battle-feedback__chip,
+[data-reduced-motion='true'] .field-banner__shift,
+[data-reduced-motion='true'] .enemy-panel__intent[data-intent-reveal='true'],
+[data-reduced-motion='true'] [data-feedback-handoff='true'] {
   animation: none;
   transform: none;
 }
 
-[data-reduced-motion='true'] [data-motion='damage'] {
-  animation: none;
-  opacity: 1;
-  transform: none;
+[data-reduced-motion='true'] .battle-feedback,
+[data-reduced-motion='true'] .field-banner__shift {
+  display: none;
 }
 
 [data-reduced-motion='true'] .card-view,
@@ -206,10 +412,11 @@
 [data-reduced-motion='true'] .card-detail__play,
 [data-reduced-motion='true'] .battle-controls__end,
 [data-reduced-motion='true'] .field-banner,
+[data-reduced-motion='true'] .field-banner__roundel,
 [data-reduced-motion='true'] .field-banner__cycle-step,
 [data-reduced-motion='true'] .player-panel,
 [data-reduced-motion='true'] .enemy-panel {
-  transition-duration: 1ms;
+  transition-duration: var(--fb-dur-instant);
 }
 
 [data-reduced-motion='true'] .card-view,
@@ -222,32 +429,40 @@
 /* Explicit "motion on" wins over a matching OS query (both directions)       */
 /* -------------------------------------------------------------------------- */
 
-[data-reduced-motion='false'] .hand__item,
-[data-reduced-motion='false'] [data-motion='draw'] {
-  animation: fb-motion-draw var(--fb-motion-draw, 180ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+[data-reduced-motion='false'] .hand[data-dealt='true'] .hand__item[data-drawn='true'] {
+  animation: fb-feedback-draw var(--fb-dur-draw) var(--fb-ease) both;
 }
 
-[data-reduced-motion='false'] [data-motion='play'] {
-  animation: fb-motion-play var(--fb-motion-play, 160ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+[data-reduced-motion='false'] .battle-feedback__flash {
+  animation: fb-feedback-flash var(--fb-dur-play) var(--fb-ease) both;
 }
 
-[data-reduced-motion='false'] [data-motion='damage'] {
-  animation: fb-motion-damage var(--fb-motion-damage, 400ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+[data-reduced-motion='false'] .battle-feedback__impact {
+  animation: fb-feedback-impact var(--fb-dur-damage) var(--fb-ease) both;
 }
 
-[data-reduced-motion='false'] [data-motion='shift'] {
-  animation: fb-motion-shift var(--fb-motion-shift, 300ms)
-    var(--fb-ease, cubic-bezier(0.2, 0, 0.2, 1)) both;
+[data-reduced-motion='false'] .battle-feedback__chip {
+  animation: fb-feedback-chip var(--fb-dur-shift) var(--fb-ease) both;
+}
+
+[data-reduced-motion='false'] .field-banner__shift {
+  animation: fb-feedback-shift var(--fb-dur-shift) var(--fb-ease) both;
+}
+
+[data-reduced-motion='false'] .enemy-panel__intent[data-intent-reveal='true'] {
+  animation: fb-feedback-intent var(--fb-dur-draw) var(--fb-ease) both;
+}
+
+[data-reduced-motion='false'] [data-feedback-handoff='true'] {
+  animation: fb-feedback-handoff var(--fb-dur-play) var(--fb-ease) both;
 }
 
 [data-reduced-motion='false'] .field-banner,
+[data-reduced-motion='false'] .field-banner__roundel,
 [data-reduced-motion='false'] .field-banner__cycle-step,
 [data-reduced-motion='false'] .player-panel,
 [data-reduced-motion='false'] .enemy-panel {
-  transition-duration: var(--fb-motion-shift, 300ms);
+  transition-duration: var(--fb-dur-shift);
 }
 
 [data-reduced-motion='false'] .card-view,
@@ -255,7 +470,7 @@
 [data-reduced-motion='false'] .card-detail__close,
 [data-reduced-motion='false'] .card-detail__play,
 [data-reduced-motion='false'] .battle-controls__end {
-  transition-duration: var(--fb-motion-lift, 120ms);
+  transition-duration: var(--fb-dur-lift);
 }
 
 [data-reduced-motion='false'] .card-view:active {

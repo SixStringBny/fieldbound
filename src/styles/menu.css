@@ -1,0 +1,460 @@
+/**
+ * Menu - the table hub (solo-flow section 2, OVERHAUL section 6.1).
+ *
+ * Composition: a hero (wordmark, tagline, run plaque) and a hub of exactly five
+ * entries. At >=1024 they sit side by side; below that the hero stacks above the
+ * hub. The page may scroll vertically and never horizontally.
+ *
+ * The entry is one native button covering the whole card or row. The visible
+ * title and hint are siblings associated through `aria-labelledby` /
+ * `aria-describedby`, so a screen reader gets the frozen accessible name and
+ * the hint stays part of the object rather than a separate form row.
+ *
+ * At phone widths the hero reserves the space above the thumb envelope
+ * (`100svh - 288px`), so Play Solo - the route's primary action - sits fully
+ * inside the lowest 288px of a 375x667 or 390x844 viewport (AB-P1).
+ */
+
+.app-root:has(> #main-content[data-screen='menu']) {
+  padding: 0.75rem 0.625rem; /* 375x667: 12px 10px */
+}
+
+.shell[data-screen='menu'] {
+  max-width: var(--fb-board-max);
+}
+
+.menu {
+  display: grid;
+  gap: var(--fb-space-5);
+  width: 100%;
+  min-width: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Hero                                                                       */
+/* -------------------------------------------------------------------------- */
+
+.menu__hero {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.menu__eyebrow {
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-2xs);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: var(--fb-tracking-wide);
+  line-height: var(--fb-leading-ui);
+  text-transform: uppercase;
+}
+
+.menu__wordmark {
+  margin-top: var(--fb-space-2);
+  color: var(--fb-text);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-display);
+  font-weight: var(--fb-weight-display);
+  letter-spacing: var(--fb-tracking-wide);
+  line-height: var(--fb-leading-tight);
+  text-transform: uppercase;
+}
+
+.menu__tagline {
+  margin-top: var(--fb-space-3);
+  max-width: 24rem;
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-lg);
+  line-height: var(--fb-leading-reading);
+}
+
+.menu__plaque {
+  margin-top: var(--fb-space-5);
+  padding: var(--fb-space-3) var(--fb-space-4);
+  border-left: var(--fb-rule-width-strong) solid var(--fb-rule-strong-color);
+  background-color: var(--fb-surface-inset);
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-md);
+  line-height: var(--fb-leading-body);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Hub                                                                        */
+/* -------------------------------------------------------------------------- */
+
+.menu__hub {
+  min-width: 0;
+}
+
+.menu__list {
+  display: grid;
+  gap: var(--fb-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menu__item {
+  position: relative;
+  min-width: 0;
+}
+
+.menu__item--mode {
+  min-height: 4.5rem; /* 72px at 375 */
+  transition: transform var(--fb-dur-lift) var(--fb-ease);
+}
+
+.menu__item--bookmark {
+  min-height: 4.5rem; /* 72px at 375 */
+  transition: transform var(--fb-dur-lift) var(--fb-ease);
+}
+
+.menu__item--row {
+  min-height: 3.5rem; /* 56px at every width */
+}
+
+/* The mode-card and bookmark surfaces are the buttons themselves. */
+.menu__card,
+.menu__bookmark {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  color: var(--fb-text-on-paper);
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color var(--fb-dur-lift) var(--fb-ease);
+}
+
+.menu__card {
+  border: var(--fb-rule-on-paper);
+  border-radius: var(--fb-radius-md);
+  background-color: var(--fb-surface-document);
+  background-image: var(--fb-material-paper);
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
+}
+
+.menu__bookmark {
+  border: var(--fb-rule-on-paper);
+  border-left: var(--fb-rule-width-strong) solid var(--fb-text-on-paper-muted);
+  border-radius: 0 var(--fb-radius-md) var(--fb-radius-md) 0;
+  background-color: var(--fb-surface-document-raised);
+  background-image: var(--fb-material-paper);
+  box-shadow: var(--fb-rim), var(--fb-elev-2);
+}
+
+.menu__card-content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--fb-space-4);
+  min-height: inherit;
+  padding: var(--fb-space-3) var(--fb-space-4);
+  pointer-events: none;
+}
+
+.menu__card-text {
+  display: grid;
+  min-width: 0;
+  gap: var(--fb-space-1);
+}
+
+.menu__card-title {
+  color: var(--fb-text-on-paper);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-xl);
+  font-weight: var(--fb-weight-display);
+  letter-spacing: var(--fb-tracking-display);
+  line-height: var(--fb-leading-ui);
+}
+
+.menu__card-hint {
+  color: var(--fb-text-on-paper-soft);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-leading-body);
+}
+
+.menu__card-glyph {
+  color: var(--fb-text-on-paper-muted);
+  font-family: var(--fb-font-glyph);
+  font-size: var(--fb-text-xl);
+  line-height: 1;
+}
+
+/* Seals are decorative: the title beside them carries the word. */
+.menu__seal {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--fb-radius-pill);
+  font-family: var(--fb-font-glyph);
+  font-size: var(--fb-text-lg);
+  line-height: 1;
+  box-shadow: var(--fb-rim), var(--fb-elev-1);
+}
+
+.menu__seal--ember {
+  background-color: var(--fb-action);
+  background-image: var(--fb-material-wax);
+  color: var(--fb-action-ink);
+}
+
+.menu__seal--brass {
+  background-color: var(--fb-selected);
+  background-image: var(--fb-material-brass);
+  color: var(--fb-selected-ink);
+}
+
+.menu__bookmark-content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: var(--fb-space-2);
+  row-gap: var(--fb-space-1);
+  min-height: inherit;
+  padding: var(--fb-space-2) var(--fb-space-4);
+  pointer-events: none;
+}
+
+.menu__bookmark-title {
+  grid-column: 1;
+  grid-row: 1;
+  color: var(--fb-text-on-paper);
+  font-family: var(--fb-font-display);
+  font-size: var(--fb-text-lg);
+  font-weight: var(--fb-weight-display);
+  line-height: var(--fb-leading-ui);
+}
+
+.menu__bookmark-hint {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  color: var(--fb-text-on-paper);
+  font-size: var(--fb-text-sm);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--fb-leading-ui);
+}
+
+.menu__bookmark-deck {
+  grid-column: 2;
+  grid-row: 1;
+  color: var(--fb-text-on-paper-muted);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-leading-ui);
+}
+
+.menu__row {
+  display: flex;
+  width: 100%;
+  min-height: 3.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fb-space-2);
+  padding: 0 var(--fb-space-3);
+  border: var(--fb-rule-subtle);
+  border-radius: var(--fb-radius-xs);
+  background-color: transparent;
+  color: var(--fb-text-soft);
+  font: inherit;
+  font-size: var(--fb-text-md);
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color var(--fb-dur-lift) var(--fb-ease),
+    color var(--fb-dur-lift) var(--fb-ease),
+    transform var(--fb-dur-lift) var(--fb-ease);
+}
+
+.menu__row-title {
+  font-weight: var(--fb-weight-ui);
+}
+
+.menu__row-glyph {
+  color: var(--fb-rule-strong-color);
+  font-family: var(--fb-font-glyph);
+  font-size: var(--fb-text-lg);
+  line-height: 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Interaction states                                                         */
+/* -------------------------------------------------------------------------- */
+
+@media (hover: hover) {
+  .menu__item--mode:hover,
+  .menu__item--bookmark:hover {
+    transform: translateY(-2px);
+  }
+
+  .menu__item--mode:hover .menu__card,
+  .menu__item--bookmark:hover .menu__bookmark {
+    border-color: var(--fb-text-on-paper-muted);
+    box-shadow: var(--fb-rim), var(--fb-elev-3);
+  }
+
+  .menu__row:hover {
+    border-color: var(--fb-rule-strong-color);
+    color: var(--fb-text);
+  }
+}
+
+.menu__item--mode:has(.menu__card:active),
+.menu__item--bookmark:has(.menu__bookmark:active),
+.menu__row:active {
+  transform: translateY(var(--fb-press-y));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu__item--mode,
+  .menu__item--bookmark,
+  .menu__card,
+  .menu__bookmark,
+  .menu__row {
+    transition-duration: var(--fb-dur-instant);
+  }
+
+  .menu__item--mode:hover,
+  .menu__item--bookmark:hover,
+  .menu__item--mode:has(.menu__card:active),
+  .menu__item--bookmark:has(.menu__bookmark:active),
+  .menu__row:active {
+    transform: none;
+  }
+}
+
+[data-reduced-motion='true'] .menu__item--mode,
+[data-reduced-motion='true'] .menu__item--bookmark,
+[data-reduced-motion='true'] .menu__card,
+[data-reduced-motion='true'] .menu__bookmark,
+[data-reduced-motion='true'] .menu__row {
+  transition-duration: var(--fb-dur-instant);
+}
+
+[data-reduced-motion='true'] .menu__item--mode:hover,
+[data-reduced-motion='true'] .menu__item--bookmark:hover,
+[data-reduced-motion='true'] .menu__item--mode:has(.menu__card:active),
+[data-reduced-motion='true'] .menu__item--bookmark:has(.menu__bookmark:active),
+[data-reduced-motion='true'] .menu__row:active {
+  transform: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Widths                                                                     */
+/* -------------------------------------------------------------------------- */
+
+@media (min-width: 390px) {
+  .app-root:has(> #main-content[data-screen='menu']) {
+    padding: 1rem 0.75rem; /* 390x844: 16px 12px */
+  }
+
+  .menu__item--mode,
+  .menu__item--bookmark {
+    min-height: 4.75rem; /* 76px */
+  }
+}
+
+@media (max-width: 639px) {
+  .menu__hero {
+    min-height: calc(100svh - 18rem); /* leave the thumb envelope free */
+    justify-content: center;
+  }
+}
+
+@media (min-width: 640px) {
+  .app-root:has(> #main-content[data-screen='menu']) {
+    /* The legacy shell centres short documents vertically from 640px up;
+       the menu spec starts at the page padding (24/32/48px), so opt out. */
+    justify-content: flex-start;
+    padding: 1.5rem 1rem; /* 768x1024: 24px 16px */
+  }
+
+  .menu__item--mode {
+    min-height: 6rem; /* 96px */
+  }
+
+  .menu__item--bookmark {
+    min-height: 5.25rem; /* 84px */
+  }
+
+  .menu__card-content {
+    gap: var(--fb-space-5);
+    padding: var(--fb-space-4) var(--fb-space-5);
+  }
+
+  .menu__card-title {
+    font-size: var(--fb-text-2xl);
+  }
+
+  .menu__card-hint {
+    font-size: var(--fb-text-sm);
+  }
+
+  .menu__seal {
+    width: 3rem;
+    height: 3rem;
+    font-size: var(--fb-text-xl);
+  }
+
+  .menu__bookmark-content {
+    padding: var(--fb-space-2) var(--fb-space-5);
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-root:has(> #main-content[data-screen='menu']) {
+    padding: 2rem 1.5rem; /* 1024x768: 32px 24px */
+  }
+
+  .menu {
+    grid-template-columns: minmax(0, 1fr) 27.5rem; /* hub 440 */
+    column-gap: var(--fb-space-6);
+    align-items: start;
+  }
+
+  .menu__item--mode {
+    min-height: 8.75rem; /* 140px */
+  }
+
+  .menu__card-content {
+    padding: var(--fb-space-5);
+  }
+
+  .menu__bookmark-content {
+    padding: var(--fb-space-3) var(--fb-space-5);
+  }
+
+  .menu__tagline {
+    font-size: var(--fb-text-xl);
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-root:has(> #main-content[data-screen='menu']) {
+    padding: 3rem 1.5rem; /* 1280x800: 48px 24px */
+  }
+
+  .menu {
+    grid-template-columns: minmax(0, 1fr) 32rem; /* hub 512 */
+    column-gap: var(--fb-space-7);
+  }
+
+  .menu__item--mode {
+    min-height: 9.375rem; /* 150px */
+  }
+
+  .menu__item--bookmark {
+    min-height: 5.5rem; /* 88px */
+  }
+}

@@ -62,6 +62,7 @@ import type {
   Side,
 } from '../engine/types';
 import type { FieldMatchup } from '../ui/components/FieldBanner';
+import { cuesForCardPlay as cuesForCardPlayFromDeltas } from '../ui/feedback/consumers';
 import type { CueName } from '../ui/events';
 
 /* -------------------------------------------------------------------------- */
@@ -306,38 +307,18 @@ export function createBattleControllerState(
  * Cues for one resolved card. `card-play` always leads; the other cues are
  * derived from what actually changed, so a zero-damage hit or a Ward at the
  * defense cap stays silent for that cue.
+ *
+ * The mapping reads the shared `BattleDeltas` (motion-and-feedback section 2.1)
+ * through `cuesForCardPlay`, so the log, the announcement, the visual beat and
+ * the cue list cannot disagree about what a transition did. The output is
+ * unchanged; `ui/feedback/parity.test.ts` pins it. Exported so that parity test
+ * can compare the real controller mapping with the deltas.
  */
-function cuesForCardPlay(
+export function cuesForCardPlay(
   before: BattleState,
   after: BattleState,
 ): readonly CueName[] {
-  const cues: CueName[] = ['card-play'];
-
-  if (
-    after.sides.player.health < before.sides.player.health ||
-    after.sides.opponent.health < before.sides.opponent.health
-  ) {
-    cues.push('damage');
-  }
-
-  if (
-    after.sides.player.defense > before.sides.player.defense ||
-    after.sides.opponent.defense > before.sides.opponent.defense
-  ) {
-    cues.push('ward');
-  }
-
-  if (after.field !== before.field) {
-    cues.push('shift');
-  }
-
-  if (after.outcome === 'player-victory') {
-    cues.push('victory');
-  } else if (after.outcome === 'opponent-victory') {
-    cues.push('defeat');
-  }
-
-  return cues;
+  return cuesForCardPlayFromDeltas(before, after);
 }
 
 /* -------------------------------------------------------------------------- */

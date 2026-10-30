@@ -232,6 +232,38 @@ function firstRewardOption(): HTMLElement {
   return screen.getAllByRole('button', { name: /^Choose / })[0] as HTMLElement;
 }
 
+/** The confirm control's label follows the selected offer (solo-flow §5.2). */
+function selectedRewardName(): string {
+  return (firstRewardOption().getAttribute('aria-label') ?? '').replace(
+    /^Choose /,
+    '',
+  );
+}
+
+function takeRewardButton(): HTMLButtonElement {
+  return screen.getByRole('button', { name: /^Take / }) as HTMLButtonElement;
+}
+
+/**
+ * The deliberate two-step interaction (solo-flow §5.2): the first activation
+ * only selects, so the screen must still be the reward until the labelled
+ * confirm action is used.
+ */
+function chooseFirstReward(): void {
+  const option = firstRewardOption();
+  const name = selectedRewardName();
+
+  fireEvent.click(option);
+  expect(option.getAttribute('aria-pressed')).toBe('true');
+  expect(currentScreen()).toBe('reward');
+
+  const take = takeRewardButton();
+  expect(take.disabled).toBe(false);
+  expect(take.textContent).toBe(`Take ${name}`);
+
+  fireEvent.click(take);
+}
+
 function statValue(label: string): string {
   const term = screen.getByText(label);
   const value = term.parentElement?.querySelector('dd');
@@ -303,6 +335,58 @@ describe('App solo setup', () => {
     expect(save.battle?.sides.player.hand).toHaveLength(5);
   });
 
+  it('renders the physical deck table with every printed card name', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play Solo' }));
+
+    const cards = screen.getAllByRole('button', {
+      name: /^Choose the .* deck$/,
+    });
+
+    expect(cards.map((card) => card.getAttribute('aria-label'))).toEqual([
+      'Choose the Ember deck',
+      'Choose the Frost deck',
+      'Choose the Gale deck',
+      'Choose the Stone deck',
+    ]);
+
+    // The contents block is the description, so the deck is readable without
+    // inflating the frozen accessible name (solo-flow §3.1, §9.1).
+    for (const card of cards) {
+      const describedBy = card.getAttribute('aria-describedby');
+      const contents =
+        describedBy === null ? null : document.getElementById(describedBy);
+
+      expect(contents, `${String(card.getAttribute('aria-label'))}`).not.toBeNull();
+      expect(contents?.textContent).toContain('10 cards');
+      expect(contents?.textContent).toContain('2 Shift cards');
+      expect(
+        contents?.querySelectorAll('.solo-deck__card'),
+        'all ten printed card names are listed',
+      ).toHaveLength(10);
+      expect(
+        contents?.querySelectorAll('.solo-deck__tag'),
+        'both Shift cards are tagged in words',
+      ).toHaveLength(2);
+      expect(contents?.querySelector('.solo-deck__tag')?.textContent).toContain(
+        'Shift',
+      );
+    }
+
+    const ember = screen.getByRole('button', { name: 'Choose the Ember deck' });
+    const frost = screen.getByRole('button', { name: 'Choose the Frost deck' });
+
+    chooseDeck('Ember');
+    expect(ember.getAttribute('aria-pressed')).toBe('true');
+    expect(frost.getAttribute('aria-pressed')).toBe('false');
+
+    // One selection at a time.
+    chooseDeck('Frost');
+    expect(ember.getAttribute('aria-pressed')).toBe('false');
+    expect(frost.getAttribute('aria-pressed')).toBe('true');
+  });
+
   it('returns to the menu with Back to menu', () => {
     render(<App />);
 
@@ -332,7 +416,22 @@ describe('App solo setup', () => {
         .getAttribute('aria-valuetext'),
     ).toBe('40 of 40 health');
     expect(screen.getByText('10 cards')).toBeTruthy();
-    expect(screen.getAllByText('Cinder Warden').length).toBeGreaterThan(0);
+    expect(screen.getByText('Cinder Warden', { selector: '.run-progress__name' })).toBeTruthy();
+
+    // The ladder is a status map: four steps, one current step with
+    // aria-current, and every state stated in words (solo-flow §4.1).
+    const ladder = screen.getByRole('list', { name: 'Run progress' });
+    expect(within(ladder).getAllByRole('listitem')).toHaveLength(4);
+
+    const current = ladder.querySelectorAll('[aria-current="step"]');
+    expect(current).toHaveLength(1);
+    expect(current[0]?.textContent).toContain('Cinder Warden');
+    expect(current[0]?.textContent).toContain('Current');
+
+    expect(
+      ladder.textContent,
+      'every step status is stated in words',
+    ).toContain('Upcoming');
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to battle' }));
 
@@ -379,6 +478,57 @@ describe('App solo reward flow', () => {
     ).toBeNull();
   });
 
+  it('selects a reward before confirming it, and confirms exactly once', () => {
+    render(<App soloEncounter={WEAK_ENEMY} />);
+    startRun();
+    playAffordableCards();
+
+    expect(currentScreen()).toBe('reward');
+
+    const take = takeRewardButton();
+    expect(take.disabled).toBe(true);
+    expect(take.textContent).toBe('Take reward');
+    expect(screen.getByText('Select one reward to continue.')).toBeTruthy();
+
+    const options = screen.getAllByRole('button', { name: /^Choose / });
+    const first = options[0] as HTMLElement;
+    const firstName = (first.getAttribute('aria-label') ?? '').replace(
+      /^Choose /,
+      '',
+    );
+
+    fireEvent.click(first);
+
+    // The deliberate change: the first activation only selects.
+    expect(currentScreen()).toBe('reward');
+    expect(first.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByText('Select one reward to continue.')).toBeNull();
+    expect(takeRewardButton().disabled).toBe(false);
+    expect(takeRewardButton().textContent).toBe(`Take ${firstName}`);
+
+    // Changing the selection is allowed before confirming.
+    const second = options[1] as HTMLElement;
+    const secondName = (second.getAttribute('aria-label') ?? '').replace(
+      /^Choose /,
+      '',
+    );
+
+    fireEvent.click(second);
+    expect(first.getAttribute('aria-pressed')).toBe('false');
+    expect(second.getAttribute('aria-pressed')).toBe('true');
+    expect(takeRewardButton().textContent).toBe(`Take ${secondName}`);
+
+    const deckBefore = loadRunSave(localStorage).save?.run.deck.length ?? 0;
+    fireEvent.click(takeRewardButton());
+
+    expect(currentScreen()).toBe('run-overview');
+
+    const save = loadRunSave(localStorage);
+    expect(save.save?.run.cardsAdded).toBe(1);
+    expect(save.save?.run.deck).toHaveLength(deckBefore + 1);
+    expect(save.save?.run.phase).toBe('overview');
+  });
+
   it('adds the chosen card and opens the next battle from the overview', () => {
     render(<App soloEncounter={WEAK_ENEMY} />);
     startRun();
@@ -388,7 +538,7 @@ describe('App solo reward flow', () => {
     expect(currentScreen()).toBe('reward');
 
     const deckBefore = loadRunSave(localStorage).save?.run.deck.length ?? 0;
-    fireEvent.click(firstRewardOption());
+    chooseFirstReward();
 
     expect(currentScreen()).toBe('run-overview');
     expect(screen.getByText('2 of 4')).toBeTruthy();
@@ -437,7 +587,7 @@ describe('App solo result', () => {
       }
 
       if (current === 'reward') {
-        fireEvent.click(firstRewardOption());
+        chooseFirstReward();
         continue;
       }
 
@@ -453,6 +603,38 @@ describe('App solo result', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Run complete' }),
     ).toBeTruthy();
+
+    // The route heading owns focus; the result surface adds no live line of its
+    // own, so the app keeps exactly the one region it mounts.
+    const runResultHeading = screen.getByRole('heading', {
+      level: 1,
+      name: 'Run complete',
+    });
+
+    expect(document.activeElement).toBe(runResultHeading);
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(document.querySelectorAll('.run-result [aria-live]')).toHaveLength(0);
+    expect(document.querySelectorAll('.run-result [role="status"]')).toHaveLength(
+      0,
+    );
+
+    // Verdict plaque above two parchment ledgers: totals, then the record.
+    const ledgers = Array.from(document.querySelectorAll('.result__ledger'));
+
+    expect(ledgers).toHaveLength(2);
+    expect(ledgers[0]?.classList.contains('result__ledger--totals')).toBe(true);
+    expect(ledgers[1]?.classList.contains('result__ledger--best')).toBe(true);
+    expect(
+      Array.from(document.querySelectorAll('.result__ledger--totals dt')).map(
+        (term) => term.textContent,
+      ),
+    ).toEqual(['Encounters cleared', 'Turns', 'Cards added', 'Damage taken']);
+    expect(
+      Array.from(document.querySelectorAll('.result__ledger--best dt')).map(
+        (term) => term.textContent,
+      ),
+    ).toEqual(['Furthest encounter', 'Boss clears', 'Fewest completed turns']);
+
     expect(statValue('Encounters cleared')).toBe('4 of 4');
     expect(statValue('Cards added')).toBe('3');
     expect(statValue('Boss clears')).toBe('1');

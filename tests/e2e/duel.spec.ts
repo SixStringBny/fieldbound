@@ -24,15 +24,18 @@
  * fixed series. It never touches localStorage, never skips a round and never
  * weakens a privacy assertion.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import {
+  CARD_NAMES,
+  CARD_NAME_BY_ID,
+  assertPrivacyInvariant,
   collectConsoleErrors,
   currentScreen,
   dismissPrivacy,
+  expectNoCardNames,
   expectNoConsoleErrors,
+  expectNoHorizontalScroll,
   expectScreen,
   openApp,
   playGreedyTurn,
@@ -49,11 +52,6 @@ interface SeriesWins {
   player2: number;
 }
 
-interface CatalogCard {
-  readonly id: string;
-  readonly name: string;
-}
-
 /** Fixed seed for the harness navigation; the app draws the match seed. */
 const SEED = 20261031;
 
@@ -68,30 +66,6 @@ const WINS_REQUIRED = 2;
 
 /** How long the first handoff is left alone to prove it never self-dismisses. */
 const AUTO_DISMISS_WATCH_MS = 750;
-
-/**
- * The frozen card catalog the app ships. Reading the data file keeps the
- * "no known card name is queryable" assertion tied to the real names instead of
- * a hand-maintained copy that can drift. This is test-side data, not an app
- * module import and not injected state.
- */
-const CATALOG_PATH = join(process.cwd(), 'src', 'content', 'cards.json');
-const CATALOG = JSON.parse(
-  readFileSync(CATALOG_PATH, 'utf8'),
-) as readonly CatalogCard[];
-
-if (CATALOG.length < 20) {
-  throw new Error(
-    `The card catalog at ${CATALOG_PATH} looks truncated (${String(
-      CATALOG.length,
-    )} entries); the privacy scan needs the full name list.`,
-  );
-}
-
-const CARD_NAMES: readonly string[] = CATALOG.map((card) => card.name);
-const CARD_NAME_BY_ID = new Map(
-  CATALOG.map((card) => [card.id, card.name] as const),
-);
 
 /* -------------------------------------------------------------------------- */
 /* Pure helpers                                                                */
@@ -136,95 +110,21 @@ function addWin(wins: SeriesWins, seat: Seat): void {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Fail if any known card name can be found anywhere in the document — visible
- * text, hidden text, or an accessible name/alt attribute. Querying for real
- * names matters: a hand re-parented into an overlay still leaks.
- */
-async function expectNoCardNames(page: Page, context: string): Promise<void> {
-  const found = await page.evaluate((names: readonly string[]) => {
-    const pieces: string[] = [document.body.textContent ?? ''];
-
-    for (const element of Array.from(
-      document.querySelectorAll('[aria-label], [title], [alt]'),
-    )) {
-      pieces.push(
-        element.getAttribute('aria-label') ?? '',
-        element.getAttribute('title') ?? '',
-        element.getAttribute('alt') ?? '',
-      );
-    }
-
-    const haystack = pieces.join('\n');
-
-    return names.filter((name) => haystack.includes(name));
-  }, CARD_NAMES);
-
-  expect(
-    found,
-    found.length === 0
-      ? `${context}: no card name may be queryable here.`
-      : `${context}: card names are queryable while they must be hidden: ${found.join(
-          ', ',
-        )}.`,
-  ).toEqual([]);
-}
-
-/**
- * Assert the full privacy handoff for `viewer`: the right title, an empty board,
- * no card names and exactly one explicit dismissal control. Returns the
- * handoff locator so the caller can watch it for auto-dismissal.
+ * Assert the full privacy handoff for `viewer` through the shared invariant
+ * helper (duel-flow §3.2/§8.3): the right title, no board/hand/count/back/meter/
+ * field/log, no catalog card name and exactly one dismissal control. Returns
+ * the handoff locator so the caller can watch it for auto-dismissal.
  */
 async function assertPrivacyScreen(
   page: Page,
   viewer: Seat,
   context: string,
 ): Promise<Locator> {
-  await expectScreen(page, 'privacy', context);
+  const privacy = await assertPrivacyInvariant(page, viewer, context);
 
-  const privacy = page.locator('[data-duel-privacy="true"]');
   await expect(
-    privacy,
-    `${context}: the full-screen privacy handoff is not visible.`,
-  ).toBeVisible();
-  await expect(
-    privacy,
-    `${context}: exactly one privacy handoff may be mounted.`,
-  ).toHaveCount(1);
-
-  const titles = page.getByRole('heading', { level: 1 });
-  await expect(
-    titles,
+    page.getByRole('heading', { level: 1 }),
     `${context}: the handoff must carry exactly one title.`,
-  ).toHaveCount(1);
-  await expect(
-    titles,
-    `${context}: the handoff must name ${viewer}, and only ${viewer}.`,
-  ).toHaveText(`Pass to ${viewer}`);
-
-  // The board is unmounted, not covered. Every one of these must be absent.
-  const forbidden = [
-    '.duel-battle',
-    '.battle-board',
-    '.duel-panel',
-    '.hand',
-    'button.card-view',
-    '[data-card-detail-layer="true"]',
-    '.field-banner',
-    '[role="meter"]',
-  ];
-
-  for (const selector of forbidden) {
-    await expect(
-      page.locator(selector),
-      `${context}: ${selector} must be absent while the handoff is shown, not merely covered.`,
-    ).toHaveCount(0);
-  }
-
-  await expectNoCardNames(page, context);
-
-  await expect(
-    page.getByRole('button', { name: "I'm ready", exact: true }),
-    `${context}: the handoff must offer exactly one explicit ready control.`,
   ).toHaveCount(1);
 
   return privacy;
@@ -434,6 +334,36 @@ async function readRoundResult(
     )}.`,
   ).toBe(String(round));
 
+  // The deterministic public next opener is text, never a pip interpretation.
+  await expect(
+    page.getByText(
+      `Next round: ${firstPlayerOfRound(round + 1)} opens.`,
+      { exact: true },
+    ),
+    `${context}: the round result must name the deterministic next opener.`,
+  ).toBeVisible();
+
+  // The same three-pip strip as the board, with this round's winner recorded.
+  const strip = page.getByRole('list', { name: 'Series score' });
+
+  await expect(
+    strip,
+    `${context}: the round result must carry exactly one series strip.`,
+  ).toHaveCount(1);
+
+  const pips = strip.locator('[data-series-pip]');
+  await expect(
+    pips,
+    `${context}: the series strip must have exactly three named pips.`,
+  ).toHaveCount(3);
+
+  for (let index = 0; index < 3; index += 1) {
+    await expect(
+      pips.nth(index),
+      `${context}: pip ${String(index + 1)} must be named by its round.`,
+    ).toContainText(`Round ${String(index + 1)}:`);
+  }
+
   return winner;
 }
 
@@ -573,7 +503,7 @@ async function startDuel(
     'Player 1 confirmation must advance to the Player 2 deck step.',
   ).toBeVisible();
   await expect(
-    page.locator('.duel-decks [aria-pressed="true"]'),
+    page.locator('.duel-setup .solo-decks [aria-pressed="true"]'),
     "Player 2's step must not reveal or pre-select Player 1's deck.",
   ).toHaveCount(0);
 
@@ -614,6 +544,362 @@ test.describe('seeded best-of-three duel', () => {
     ({ browserName }) => browserName !== 'chromium',
     'The full best-of-three duel journey runs on Chromium only.',
   );
+
+  test('holds the setup, privacy and board geometry at all five viewports', async ({
+    page,
+  }) => {
+    test.setTimeout(180_000);
+
+    const errors = collectConsoleErrors(page);
+    const viewports = [
+      { label: '375x667', width: 375, height: 667 },
+      { label: '390x844', width: 390, height: 844 },
+      { label: '768x1024', width: 768, height: 1024 },
+      { label: '1024x768', width: 1024, height: 768 },
+      { label: '1280x800', width: 1280, height: 800 },
+    ] as const;
+
+    const noPageScroll = async (context: string) => {
+      const metrics = await page.evaluate(() => ({
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight,
+        scrollWidth: document.documentElement.scrollWidth,
+        scrollHeight: document.documentElement.scrollHeight,
+      }));
+
+      expect(
+        metrics.scrollWidth,
+        `${context}: the page scrolled sideways (${String(
+          metrics.scrollWidth,
+        )} > ${String(metrics.innerWidth)}).`,
+      ).toBeLessThanOrEqual(metrics.innerWidth + 1);
+      expect(
+        metrics.scrollHeight,
+        `${context}: the surface page-scrolled (${String(
+          metrics.scrollHeight,
+        )} > ${String(metrics.innerHeight)}).`,
+      ).toBeLessThanOrEqual(metrics.innerHeight + 1);
+    };
+
+    const minimumTargets = async (context: string) => {
+      const boxes = await page.evaluate(() =>
+        Array.from(document.querySelectorAll<HTMLElement>('#main-content button'))
+          .filter((node) => node.getClientRects().length > 0)
+          .map((node) => {
+            const rect = node.getBoundingClientRect();
+            return {
+              label:
+                node.getAttribute('aria-label') ??
+                (node.textContent ?? '').trim().slice(0, 40),
+              width: rect.width,
+              height: rect.height,
+            };
+          }),
+      );
+
+      for (const box of boxes) {
+        expect(
+          box.width,
+          `${context}: "${box.label}" is ${String(box.width)}px wide.`,
+        ).toBeGreaterThanOrEqual(43.5);
+        expect(
+          box.height,
+          `${context}: "${box.label}" is ${String(box.height)}px tall.`,
+        ).toBeGreaterThanOrEqual(43.5);
+      }
+    };
+
+    await openApp(page, SEED);
+    await page.getByRole('button', { name: 'Local Duel', exact: true }).click();
+    await expectScreen(page, 'duel-setup', 'the five-viewport sweep');
+
+    // Step 1: four physical deck cards, all ten names, the look-away banner.
+    for (const viewport of viewports) {
+      const context = `setup step 1 at ${viewport.label}`;
+      await page.setViewportSize(viewport);
+      await expectNoHorizontalScroll(page);
+      await expect(
+        page.getByRole('heading', {
+          level: 2,
+          name: 'Player 1, choose your deck',
+          exact: true,
+        }),
+        `${context}: the step question is missing.`,
+      ).toBeVisible();
+      await expect(
+        page.getByText('Player 2, look away.', { exact: true }),
+        `${context}: the look-away banner is missing.`,
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: /^Choose the .* deck$/ }),
+        `${context}: the deck table must offer four deck cards.`,
+      ).toHaveCount(4);
+      await expect(
+        page.locator('.duel-setup .solo-deck').first(),
+        `${context}: the first deck card does not list ten printed names.`,
+      ).toContainText('10 cards');
+      await minimumTargets(context);
+    }
+
+    // Step 2: the sealed marker names nothing, and no deck is pre-selected.
+    await page.setViewportSize(viewports[0]);
+    await chooseDeck(page, 'Ember');
+    await page
+      .getByRole('button', { name: 'Confirm Player 1 deck', exact: true })
+      .click();
+
+    for (const viewport of viewports) {
+      const context = `setup step 2 at ${viewport.label}`;
+      await page.setViewportSize(viewport);
+      await expectNoHorizontalScroll(page);
+      await expect(
+        page.getByRole('heading', {
+          level: 2,
+          name: 'Player 2, choose your deck',
+          exact: true,
+        }),
+        `${context}: the step question is missing.`,
+      ).toBeVisible();
+      await expect(
+        page.getByText('Player 1 has chosen.', { exact: true }),
+        `${context}: the step banner is missing.`,
+      ).toBeVisible();
+      await expect(
+        page.locator('.duel-setup .solo-decks [aria-pressed="true"]'),
+        `${context}: Player 1's pick must not be selected or revealed.`,
+      ).toHaveCount(0);
+
+      const sealed = page.locator('[data-duel-sealed="true"]');
+
+      await expect(
+        sealed,
+        `${context}: the sealed pick marker is missing.`,
+      ).toBeVisible();
+      await expect(
+        sealed,
+        `${context}: the sealed marker must say the deck is locked.`,
+      ).toContainText("Player 1's deck is locked");
+      expect(
+        await sealed.getAttribute('data-element'),
+        `${context}: the sealed marker must carry no element attribution.`,
+      ).toBeNull();
+      await expect(
+        sealed.locator('[aria-label]'),
+        `${context}: the sealed marker must not name the pick in aria-label.`,
+      ).toHaveCount(0);
+      await minimumTargets(context);
+    }
+
+    // Summary: both locked cards and the exact public lines.
+    await page.setViewportSize(viewports[0]);
+    await chooseDeck(page, 'Frost');
+    await page
+      .getByRole('button', { name: 'Confirm Player 2 deck', exact: true })
+      .click();
+
+    for (const viewport of viewports) {
+      const context = `setup summary at ${viewport.label}`;
+      await page.setViewportSize(viewport);
+      await expectNoHorizontalScroll(page);
+      await expect(
+        page.getByRole('heading', {
+          level: 2,
+          name: 'Both decks are locked',
+          exact: true,
+        }),
+        `${context}: the locked summary is missing.`,
+      ).toBeVisible();
+      await expect(
+        page.locator('.duel-setup__picks'),
+        `${context}: the summary must name both locked decks.`,
+      ).toContainText('Player 1: Ember');
+      await expect(
+        page.locator('.duel-setup__picks'),
+        `${context}: the summary must name both locked decks.`,
+      ).toContainText('Player 2: Frost');
+      await expect(
+        page.locator('.duel-locked'),
+        `${context}: the summary must show two locked deck cards.`,
+      ).toHaveCount(2);
+      await minimumTargets(context);
+    }
+
+    // Privacy: fixed, opaque, one action, no board at every width.
+    await page.setViewportSize(viewports[0]);
+    await page.getByRole('button', { name: 'Start Match', exact: true }).click();
+
+    for (const viewport of viewports) {
+      const context = `privacy at ${viewport.label}`;
+      await page.setViewportSize(viewport);
+
+      const privacy = await assertPrivacyInvariant(page, 'Player 1', context);
+
+      await privacy.evaluate(async (node) => {
+        await Promise.all(node.getAnimations().map((animation) => animation.finished));
+      });
+
+      const cover = await page.evaluate(() => {
+        const surface = document.querySelector<HTMLElement>('.duel-privacy');
+        const rect = surface?.getBoundingClientRect();
+        const style = surface === null ? null : getComputedStyle(surface);
+
+        return {
+          position: style?.position ?? '',
+          width: rect?.width ?? 0,
+          height: rect?.height ?? 0,
+          background: style?.backgroundColor ?? '',
+          buttons: document.querySelectorAll('.duel-privacy button').length,
+        };
+      });
+
+      expect(cover.position, `${context}: privacy must be a fixed surface.`).toBe(
+        'fixed',
+      );
+      expect(
+        cover.width,
+        `${context}: the privacy surface must cover the viewport width.`,
+      ).toBeGreaterThanOrEqual(viewport.width - 1);
+      expect(
+        cover.height,
+        `${context}: the privacy surface must cover the viewport height.`,
+      ).toBeGreaterThanOrEqual(viewport.height - 1);
+      expect(
+        cover.background,
+        `${context}: the privacy surface must be fully opaque.`,
+      ).toMatch(/^rgb\(/);
+      expect(
+        cover.buttons,
+        `${context}: privacy must offer exactly one action.`,
+      ).toBe(1);
+      await noPageScroll(context);
+      await minimumTargets(context);
+    }
+
+    // The board: no page scroll, one hand, the documented bands and rail.
+    await dismissPrivacy(page, 'Player 1');
+
+    for (const viewport of viewports) {
+      const context = `duel board at ${viewport.label}`;
+      await page.setViewportSize(viewport);
+      await expectScreen(page, 'battle', context);
+      await expectNoHorizontalScroll(page);
+      await noPageScroll(context);
+      await minimumTargets(context);
+
+      await expect(
+        page.locator('.duel-battle'),
+        `${context}: exactly one duel board may be mounted.`,
+      ).toHaveCount(1);
+      await expect(
+        page.locator('.hand'),
+        `${context}: only the viewer's hand may exist.`,
+      ).toHaveCount(1);
+      await expect(
+        page.locator('.hand button.card-view'),
+        `${context}: the active hand must hold five card buttons.`,
+      ).toHaveCount(5);
+      await expect(
+        page.locator('.duel-panel--opponent button.card-view'),
+        `${context}: the opponent must never render card faces.`,
+      ).toHaveCount(0);
+      await expect(
+        page.locator('[data-hand-count]'),
+        `${context}: the opponent hand count is missing.`,
+      ).toHaveText(/^\d+ cards? in hand$/);
+      await expect(
+        page.locator('.duel-panel--self'),
+        `${context}: the self panel must name the locked Ember deck.`,
+      ).toContainText('Ember deck');
+      await expect(
+        page.locator('.duel-panel--opponent'),
+        `${context}: the opponent panel must name the locked Frost deck.`,
+      ).toContainText('Frost deck');
+      await expect(
+        page.locator('.duel-header__eyebrow .shell__eyebrow'),
+        `${context}: the header must carry Round 1 and the score.`,
+      ).toContainText('Round 1 · Series 0–0');
+      await expect(
+        page.locator('.duel-header [data-series-pip]'),
+        `${context}: the header must carry the three-pip strip.`,
+      ).toHaveCount(3);
+      await expect(
+        page.getByRole('button', { name: 'End Turn', exact: true }),
+        `${context}: End Turn must be live on the active turn.`,
+      ).toBeEnabled();
+
+      const bands = await page.evaluate(() => {
+        const box = (selector: string) => {
+          const element = document.querySelector<HTMLElement>(selector);
+          if (element === null) {
+            return null;
+          }
+          const rect = element.getBoundingClientRect();
+          return { width: rect.width, height: rect.height };
+        };
+
+        return {
+          opponent: box('.duel-panel--opponent'),
+          hand: box('.hand'),
+          rail: box('[data-battle-log="true"]'),
+          card: box('.hand__item'),
+        };
+      });
+
+      const expectedOpponent =
+        viewport.width === 375
+          ? 132
+          : viewport.width === 390
+            ? 150
+            : viewport.width === 768
+              ? 160
+              : 140;
+
+      expect(
+        Math.abs((bands.opponent?.height ?? 0) - expectedOpponent),
+        `${context}: the opponent band measured ${String(
+          bands.opponent?.height,
+        )}px, expected ${String(expectedOpponent)} ±8.`,
+      ).toBeLessThanOrEqual(8);
+
+      const expectedCard =
+        viewport.width >= 1280
+          ? { width: 138, height: 194 }
+          : viewport.width >= 1024
+            ? { width: 118, height: 168 }
+            : viewport.width >= 768
+              ? { width: 118, height: 168 }
+              : viewport.width <= 375
+                ? { width: 108, height: 136 }
+                : { width: 108, height: 152 };
+
+      expect(
+        Math.abs((bands.card?.width ?? 0) - expectedCard.width),
+        `${context}: the card width measured ${String(bands.card?.width)}px.`,
+      ).toBeLessThanOrEqual(2);
+      expect(
+        Math.abs((bands.card?.height ?? 0) - expectedCard.height),
+        `${context}: the card height measured ${String(bands.card?.height)}px.`,
+      ).toBeLessThanOrEqual(2);
+
+      if (viewport.width >= 1024) {
+        const expectedRail = viewport.width >= 1280 ? 288 : 240;
+
+        expect(
+          Math.abs((bands.rail?.width ?? 0) - expectedRail),
+          `${context}: the log rail measured ${String(
+            bands.rail?.width,
+          )}px, expected ${String(expectedRail)}.`,
+        ).toBeLessThanOrEqual(1);
+      } else {
+        await expect(
+          page.locator('[data-battle-log="true"]'),
+          `${context}: the log is a footer strip plus drawer below 1024.`,
+        ).toHaveCSS('display', 'contents');
+      }
+    }
+
+    expectNoConsoleErrors(errors, 'the five-viewport duel sweep');
+  });
 
   test('completes a best-of-three with a privacy handoff before every turn', async ({
     page,
@@ -802,6 +1088,41 @@ test.describe('seeded best-of-three duel', () => {
           ).toBeVisible();
         }
 
+        // The match strip is the same public record as the board: one played
+        // pip per completed round, each named by its round winner.
+        const matchPips = page.locator(
+          '[data-duel-result="match"] [data-series-pip]',
+        );
+
+        await expect(
+          matchPips,
+          `${context}: the match result must carry exactly three pips.`,
+        ).toHaveCount(3);
+
+        const pipWinners = await matchPips.evaluateAll((nodes) =>
+          nodes.map((node) => node.getAttribute('data-round-winner') ?? ''),
+        );
+
+        expect(
+          pipWinners.filter((winner) => winner === 'player1').length,
+          `${context}: the strip must credit Player 1 with ${String(
+            wins.player1,
+          )} round win(s).`,
+        ).toBe(wins.player1);
+        expect(
+          pipWinners.filter((winner) => winner === 'player2').length,
+          `${context}: the strip must credit Player 2 with ${String(
+            wins.player2,
+          )} round win(s).`,
+        ).toBe(wins.player2);
+
+        for (let index = 0; index < 3; index += 1) {
+          await expect(
+            matchPips.nth(index),
+            `${context}: pip ${String(index + 1)} must be named by its round.`,
+          ).toContainText(`Round ${String(index + 1)}:`);
+        }
+
         break;
       }
 
@@ -852,7 +1173,7 @@ test.describe('seeded best-of-three duel', () => {
     ).toContain('Series 0\u20130');
 
     await expect(
-      page.locator('.duel-battle .duel-battle__turn'),
+      page.locator('.duel-battle .duel-header__turn'),
       'A rematch must start again on turn 1.',
     ).toHaveText(/^Turn 1$/i);
     await expect(
@@ -863,6 +1184,22 @@ test.describe('seeded best-of-three duel', () => {
       page.locator('.duel-panel--opponent'),
       "A rematch must keep Player 2's locked Frost deck.",
     ).toContainText('Frost deck');
+
+    // 5. Leaving is immediate: no confirmation dialog, the series discarded and
+    //    the menu without a Continue Run entry. A duel never writes storage.
+    await page.getByRole('button', { name: 'Leave duel', exact: true }).click();
+    await expectScreen(page, 'menu', 'leaving the duel');
+    await expect(
+      page.getByRole('button', { name: 'Continue Run', exact: true }),
+      'Leaving a duel must not leave a resumable entry behind.',
+    ).toHaveCount(0);
+
+    const storageKeys = await page.evaluate(() => Object.keys(localStorage));
+
+    expect(
+      storageKeys.filter((key) => key.toLowerCase().includes('duel')),
+      'A duel must never write a storage key.',
+    ).toEqual([]);
 
     expectNoConsoleErrors(
       errors,
