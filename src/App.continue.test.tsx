@@ -396,11 +396,12 @@ describe('App Continue Run restore', () => {
     expect(rewardOptionLabels()).toEqual(offers);
     expect(screen.getByText(/^Health: \d+ \/ 40$/).textContent).toBe(health);
 
-    // The restored offer list is still the live one: one choice advances the
-    // ladder and writes the next save.
+    // The restored offer list is still the live one: select, then confirm, and
+    // the ladder advances and writes the next save (solo-flow §5.2).
     fireEvent.click(
       screen.getAllByRole('button', { name: /^Choose / })[0] as HTMLElement,
     );
+    fireEvent.click(screen.getByRole('button', { name: /^Take / }));
 
     expect(currentScreen()).toBe('run-overview');
     expect(loadRunSave(localStorage).save?.run.phase).toBe('overview');
@@ -458,6 +459,7 @@ describe('App Continue Run restore', () => {
     fireEvent.click(
       screen.getAllByRole('button', { name: /^Choose / })[0] as HTMLElement,
     );
+    fireEvent.click(screen.getByRole('button', { name: /^Take / }));
 
     expect(currentScreen()).toBe('run-overview');
 
