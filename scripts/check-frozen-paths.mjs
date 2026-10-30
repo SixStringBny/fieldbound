@@ -25,6 +25,7 @@
  * exactly the list gate G4 asks for in the evidence comment.
  */
 import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -48,6 +49,21 @@ const FROZEN_PATHS = [
   'src/assets/',
   'src/audio/sfx.test.ts',
 ];
+
+/**
+ * Parity-guarded consumer refactors (motion ticket #21 amendment, OVERHAUL
+ * section 7.1). `motion-and-feedback.md` section 2.1 requires the log derivation
+ * and the cue mapping to read the shared `BattleDeltas`. These two files may
+ * change *how* the delta is mapped, never what is output: the guard is
+ * `src/ui/feedback/parity.test.ts`, which must exist and pass in the same tree.
+ * Nothing else in a frozen root may move.
+ */
+const PARITY_GUARD = 'src/ui/feedback/parity.test.ts';
+const PARITY_GUARDED = new Set([
+  'src/battle-log/derive.ts',
+  'src/state/battle-controller.ts',
+]);
+const parityGuardPresent = existsSync(path.join(repoRoot, PARITY_GUARD));
 
 /** Turn a frozen-path entry into an anchored regular expression. */
 function toPattern(entry) {
@@ -170,6 +186,11 @@ function main() {
     const matches = frozenMatches(file);
 
     if (matches.length > 0) {
+      if (PARITY_GUARDED.has(file) && parityGuardPresent) {
+        console.log(`ok   ${file} is a parity-guarded consumer (${PARITY_GUARD})`);
+        continue;
+      }
+
       violations.push({ file, matches });
     }
   }
@@ -177,7 +198,12 @@ function main() {
   if (list) {
     console.log(`\n== Changed files (${files.length}) ==`);
     for (const file of files) {
-      const frozen = frozenMatches(file).length > 0 ? 'FROZEN' : '      ';
+      const frozen =
+        frozenMatches(file).length === 0
+          ? '      '
+          : PARITY_GUARDED.has(file) && parityGuardPresent
+            ? 'PARITY'
+            : 'FROZEN';
       console.log(`${frozen}  ${file}`);
     }
     console.log('');
