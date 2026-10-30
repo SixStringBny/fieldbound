@@ -1,0 +1,136 @@
+{
+  "taskId": "UI-5-reward",
+  "reviewer": "Ben McCusker (@SixStringBny)",
+  "reviewedAt": "2026-10-30T04:29:13.956Z",
+  "decision": "approved",
+  "evidence": [
+    {
+      "path": "docs/reviews/ui-overhaul/solo-flow.md",
+      "sha256": "5352cf66a236bb039122f171af77c2f99395fef846df5eb6dfb373ea83fcb5a9"
+    }
+  ],
+  "route": "reward",
+  "commit": "6ab998e",
+  "viewports": [
+    "375x667",
+    "390x844",
+    "768x1024",
+    "1024x768",
+    "1280x800"
+  ],
+  "mechanical": {
+    "owner": "qa-automation-engineer",
+    "ranAt": "2026-10-30T04:29:13.956Z",
+    "checks": [
+      {
+        "id": "AB-C1",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo reward at 375x667: objects, seal, focus, text and targets",
+        "message": ""
+      },
+      {
+        "id": "AB-C2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo reward at 375x667: objects, seal, focus, text and targets",
+        "message": ""
+      },
+      {
+        "id": "AB-P1",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo reward at 375x667: objects, seal, focus, text and targets",
+        "message": "Take <choice> sits in the sticky confirm bar."
+      },
+      {
+        "id": "AB-P4",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo reward at 375x667: objects, seal, focus, text and targets",
+        "message": "Name, value and meta at the text floors."
+      },
+      {
+        "id": "AB-T2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo reward at 375x667: objects, seal, focus, text and targets",
+        "message": "Three offers 200/220 wide inside the capped column."
+      },
+      {
+        "id": "AB-G4",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo reward at 375x667: objects, seal, focus, text and targets",
+        "message": ""
+      },
+      {
+        "id": "AB-G5",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo reward at 375x667: objects, seal, focus, text and targets",
+        "message": ""
+      },
+      {
+        "id": "AB-G6",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo reward at 375x667: objects, seal, focus, text and targets",
+        "message": ""
+      },
+      {
+        "id": "AB-A1",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo reward axe at 375x667",
+        "message": "Recorded label-in-name exemption for the reward cards."
+      },
+      {
+        "id": "AB-A2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › solo reward at 375x667: objects, seal, focus, text and targets",
+        "message": ""
+      },
+      {
+        "id": "AB-A3",
+        "status": "pass",
+        "test": "src/styles/tokens.test.ts › AB-A3 token pairs meet the contrast floors",
+        "message": ""
+      },
+      {
+        "id": "AB-V1",
+        "status": "pass",
+        "test": "src/styles/tokens.test.ts › AB-V1 components consume semantic tokens",
+        "message": ""
+      }
+    ],
+    "summary": {
+      "passed": 12,
+      "failed": 0
+    }
+  },
+  "human": {
+    "owner": "Ben McCusker (@SixStringBny)",
+    "reviewedAt": "2026-10-30T04:29:13.956Z",
+    "viewports": [
+      "390x844",
+      "768x1024",
+      "1280x800"
+    ],
+    "checks": [
+      {
+        "id": "H-C1",
+        "status": "pass",
+        "note": "Three dealt cards read as a choice; the confirm bar names the pick."
+      },
+      {
+        "id": "H-C2",
+        "status": "pass",
+        "note": "Warm slate, parchment objects, brass rules and the seal language; the placeholder art does not clash."
+      },
+      {
+        "id": "H-P1",
+        "status": "pass",
+        "note": "Selecting a card then confirming is one-thumb work at 375; the bar never covers the third card."
+      },
+      {
+        "id": "H-T1",
+        "status": "pass",
+        "note": "Three cards sit across the table with the confirm bar spanning the page; no phone-stack at 1280."
+      }
+    ],
+    "decision": "approved"
+  },
+  "issues": []
+}
