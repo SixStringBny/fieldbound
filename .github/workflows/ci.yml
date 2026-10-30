@@ -57,6 +57,18 @@ jobs:
       - name: Bundle budget
         run: node scripts/check-budget.mjs
 
+      # AB-E2: the sweep writes one full-page frame per route per viewport to
+      # test-results/screenshots/ on every run. They are evidence, never
+      # baselines, so they are uploaded whether the run passed or failed.
+      - name: Upload the five-viewport sweep (AB-E2)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots
+          path: test-results/screenshots/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Upload Playwright results on failure
         if: failure()
         uses: actions/upload-artifact@v4
