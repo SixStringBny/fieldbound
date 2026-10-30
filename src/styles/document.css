@@ -647,15 +647,24 @@
 /* Interaction states                                                         */
 /* -------------------------------------------------------------------------- */
 
+@media (hover: hover) and (max-width: 1023px) {
+  .contents__link:hover {
+    color: var(--fb-text-on-paper);
+    background-color: var(--fb-surface-document-raised);
+  }
+}
+
+@media (hover: hover) and (min-width: 1024px) {
+  .contents__link:hover {
+    color: var(--fb-text);
+    background-color: var(--fb-surface-hover);
+  }
+}
+
 @media (hover: hover) {
   .document__back:hover {
     color: var(--fb-text);
     text-decoration-color: currentColor;
-  }
-
-  .contents__link:hover {
-    color: var(--fb-text-on-paper);
-    background-color: var(--fb-surface-document-raised);
   }
 }
 
