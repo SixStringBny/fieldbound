@@ -132,7 +132,15 @@ export async function openApp(page: Page, seed: number): Promise<void> {
   const path = seededPath(seed);
   const response = await page.goto(path, { waitUntil: 'domcontentloaded' });
 
-  if (response === null || !response.ok()) {
+  // Firefox reports the conditional revalidation of an already-cached document
+  // as 304 while Chromium and WebKit fold it into 200. Both mean "the browser
+  // rendered the document", so the release harness accepts either; a missing
+  // document still arrives as null, a non-2xx/304 status, or a failed
+  // `data-screen` assertion on the next line.
+  const delivered =
+    response !== null && (response.ok() || response.status() === 304);
+
+  if (!delivered) {
     throw new Error(
       `Seeded navigation to ${path} did not return a document (status ${
         response === null ? 'no response' : String(response.status())

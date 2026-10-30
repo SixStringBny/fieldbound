@@ -279,6 +279,10 @@ test.describe('how to play', () => {
     await toggle.click();
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
 
+    // WebKit does not move focus to a button on click, so Escape at document
+    // level would never reach the disclosure there. Focusing the toggle first
+    // is the path a keyboard user takes and works on all three engines.
+    await toggle.focus();
     await page.keyboard.press('Escape');
 
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
@@ -428,7 +432,12 @@ test.describe('how to play at the game table', () => {
       for (const link of await links.all()) {
         await expect(link).toBeVisible();
         const box = await link.boundingBox();
-        expect(box!.height, 'each contents link is a 44px target').toBeGreaterThanOrEqual(44);
+        // Firefox settles a 44px rule at 43.99998474121094: the measurement is
+        // rounded to 1/100px before the floor is applied, never below 44.
+        expect(
+          Math.round(box!.height * 100) / 100,
+          'each contents link is a 44px target',
+        ).toBeGreaterThanOrEqual(44);
       }
 
       await expectNoHorizontalScroll(page);
@@ -542,7 +551,11 @@ test.describe('settings at the game table', () => {
 
     for (const row of await page.locator('.settings__row').all()) {
       const box = await row.boundingBox();
-      expect(box!.height, 'a settings row is at least 88px at the table').toBeGreaterThanOrEqual(88);
+      // Same 1/100px rounding as the rail links: Firefox reports 87.99998.
+      expect(
+        Math.round(box!.height * 100) / 100,
+        'a settings row is at least 88px at the table',
+      ).toBeGreaterThanOrEqual(88);
     }
 
     // Nothing is sticky on Settings and there is no contents surface.

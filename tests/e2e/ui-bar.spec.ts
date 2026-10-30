@@ -842,6 +842,13 @@ test.describe('menu', () => {
     await page.emulateMedia({ forcedColors: 'none' });
     await page.emulateMedia({ contrast: 'more' });
 
+    // Firefox evaluates `prefers-contrast` in the CSS cascade only when a
+    // document is created, so a runtime `emulateMedia` there changes
+    // `matchMedia` without touching the stylesheet. Reloading under the
+    // preference exercises the same branch on all three engines.
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expectScreen(page, 'menu', 'the high-contrast reload');
+
     const more = await page.evaluate(() => {
       const card = document.querySelector('.menu__card');
 
@@ -1666,6 +1673,29 @@ const READING_DOCUMENTS: readonly DocumentRoute[] = [
   },
 ];
 
+/**
+ * Re-open a reading route after a full reload. Firefox evaluates
+ * `prefers-contrast` in the CSS cascade only when a document is created, so the
+ * high-contrast branch is measured after a reload and the route is re-entered
+ * from the seeded menu. The same path restores the default materials when the
+ * preference is cleared.
+ */
+async function reenterDocument(
+  page: Page,
+  route: DocumentRouteName,
+): Promise<void> {
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expectScreen(page, 'menu', `re-entering ${route}`);
+  await page
+    .getByRole('button', {
+      name: route === 'how-to-play' ? 'How to Play' : 'Settings',
+      exact: true,
+    })
+    .click();
+  await expectScreen(page, route, `re-entering ${route}`);
+  await page.evaluate(() => document.fonts.ready);
+}
+
 /** Every text-bearing element's rendered size, for the `AB-P4` floors. */
 async function readReadingText(page: Page) {
   return page.evaluate(() =>
@@ -1684,7 +1714,10 @@ async function readReadingText(page: Page) {
           size: Number.parseFloat(style.fontSize),
           uppercase: style.textTransform === 'uppercase',
           overflow: style.textOverflow,
-          clipped: element.scrollWidth > element.clientWidth + 1,
+          // Inline elements have no client box: Firefox reports scrollWidth > 0
+          // with clientWidth 0 for an inline `<strong>`, which is laid out in
+          // its parent's box. Only elements that own a client box can clip.
+          clipped: element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1,
           rendered:
             text !== '' &&
             element.getClientRects().length > 0 &&
@@ -1888,6 +1921,7 @@ for (const viewport of VIEWPORTS) {
 
         await page.emulateMedia({ forcedColors: 'none' });
         await page.emulateMedia({ contrast: 'more' });
+        await reenterDocument(page, route.name);
 
         const more = await page.evaluate(() => {
           const sheet = document.querySelector('.document__sheet');
@@ -1902,6 +1936,7 @@ for (const viewport of VIEWPORTS) {
         expect(more?.rule, 'prefers-contrast must harden the rule').toBeGreaterThanOrEqual(2);
 
         await page.emulateMedia({ contrast: 'no-preference' });
+        await reenterDocument(page, route.name);
 
         // AB-V2 / AB-V5 - slate page, parchment sheet, no banned motif.
         const identity = await page.evaluate(() => {
