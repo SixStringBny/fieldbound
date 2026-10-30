@@ -47,7 +47,7 @@
       {
         "id": "AB-P1",
         "status": "pass",
-        "test": "tests/e2e/ui-bar.spec.ts › AB-P1 the primary action sits inside the 288px thumb envelope at 375x667",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-P1 the menu fills the phone viewport and keeps Play Solo on screen at 375x667",
         "message": "375x667 and 390x844."
       },
       {
@@ -59,13 +59,13 @@
       {
         "id": "AB-T1",
         "status": "pass",
-        "test": "tests/e2e/ui-bar.spec.ts › AB-T1 the hero and hub are side by side",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-T1 the two mode cards are side by side",
         "message": "1024 and 1280."
       },
       {
         "id": "AB-T2",
         "status": "pass",
-        "test": "tests/e2e/ui-bar.spec.ts › AB-T2 the hub measures 512 inside a centred 1080 column",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-T2 the modes fill a centred 1080 column",
         "message": "Also 440 inside 976 at 1024."
       },
       {

@@ -747,6 +747,61 @@ async function openMenuWithCorruptSave(page: Page): Promise<void> {
   await expectScreen(page, 'menu', 'the corrupt-save reload');
 }
 
+/** The menu's block geometry: enough to judge composition, fill and dead bands. */
+async function menuGeometry(page: Page) {
+  return page.evaluate(() => {
+    const box = (selector: string) => {
+      const node = document.querySelector(selector);
+
+      if (node === null) {
+        return null;
+      }
+
+      const rect = node.getBoundingClientRect();
+
+      return {
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+        bottom: rect.y + rect.height,
+      };
+    };
+
+    const stack = [
+      '.menu__hero',
+      '.menu__item--solo',
+      '.menu__item--duel',
+      '.menu__item--bookmark',
+      '.menu__docs',
+    ]
+      .map((selector) => box(selector))
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+
+    let maxGap = 0;
+
+    for (let index = 1; index < stack.length; index += 1) {
+      maxGap = Math.max(maxGap, stack[index]!.y - stack[index - 1]!.bottom);
+    }
+
+    return {
+      masthead: box('.menu__hero'),
+      solo: box('.menu__item--solo'),
+      duel: box('.menu__item--duel'),
+      bookmark: box('.menu__item--bookmark'),
+      docs: box('.menu__docs'),
+      docRow: box('.menu__row'),
+      playSolo: box('.menu__card--solo'),
+      menu: box('.menu'),
+      maxGap,
+      innerWidth: window.innerWidth,
+      innerHeight: window.innerHeight,
+      scrollHeight: document.documentElement.scrollHeight,
+      scrollWidth: document.documentElement.scrollWidth,
+    };
+  });
+}
+
 test.describe('menu', () => {
   test.use({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
 
@@ -924,52 +979,43 @@ test.describe('menu', () => {
     expect(await page.locator('.menu__card--solo').count()).toBe(1);
   });
 
-  test('AB-T1 the hero and hub are side by side', async ({ page }) => {
+  test('AB-T1 the two mode cards are side by side', async ({ page }) => {
     await openApp(page, SEED);
 
-    const hero = await page.locator('.menu__hero').boundingBox();
-    const hub = await page.locator('.menu__hub').boundingBox();
+    const geometry = await menuGeometry(page);
 
-    expect(hero).not.toBeNull();
-    expect(hub).not.toBeNull();
+    expect(geometry.solo).not.toBeNull();
+    expect(geometry.duel).not.toBeNull();
 
-    expect(hero!.x + hero!.width).toBeLessThanOrEqual(hub!.x + 1);
-    expect(Math.min(hero!.y + hero!.height, hub!.y + hub!.height)).toBeGreaterThan(
-      Math.max(hero!.y, hub!.y),
-    );
+    expect(
+      geometry.solo!.x + geometry.solo!.width,
+      'the modes share one row instead of stacking',
+    ).toBeLessThanOrEqual(geometry.duel!.x + 1);
+    expect(Math.abs(geometry.solo!.y - geometry.duel!.y), 'the modes start together').toBeLessThanOrEqual(2);
+    expect(Math.abs(geometry.solo!.height - geometry.duel!.height), 'the modes are equal').toBeLessThanOrEqual(2);
   });
 
-  test('AB-T2 the hub measures 512 inside a centred 1080 column', async ({ page }) => {
+  test('AB-T2 the modes fill a centred 1080 column', async ({ page }) => {
     await openApp(page, SEED);
 
-    const boxes = await page.evaluate(() => {
-      const read = (selector: string) => {
-        const node = document.querySelector(selector);
-        if (node === null) {
-          return null;
-        }
-        const rect = node.getBoundingClientRect();
-        return { x: rect.x, width: rect.width };
-      };
+    const geometry = await menuGeometry(page);
 
-      return {
-        menu: read('.menu'),
-        hero: read('.menu__hero'),
-        hub: read('.menu__hub'),
-        innerWidth: window.innerWidth,
-      };
-    });
+    expect(geometry.menu).not.toBeNull();
+    expect(geometry.solo).not.toBeNull();
+    expect(geometry.duel).not.toBeNull();
+    expect(geometry.docs).not.toBeNull();
 
-    expect(boxes.menu).not.toBeNull();
-    expect(boxes.hero).not.toBeNull();
-    expect(boxes.hub).not.toBeNull();
+    expect(geometry.menu!.width, 'the menu content column is 1080 at 1280').toBeCloseTo(1080, 0);
+    expect(Math.abs(geometry.solo!.width - 528), 'each mode is 528 at 1280').toBeLessThanOrEqual(8);
+    expect(Math.abs(geometry.solo!.width - geometry.duel!.width), 'the modes share the column').toBeLessThanOrEqual(1);
 
-    expect(boxes.menu!.width, 'the menu content column is 1080 at 1280').toBeCloseTo(1080, 0);
-    expect(Math.abs(boxes.hub!.width - 512), 'the hub is 512 at 1280').toBeLessThanOrEqual(8);
-    expect(Math.abs(boxes.hero!.width - 520), 'the hero takes the rest of 1080').toBeLessThanOrEqual(8);
+    // The footer is the same column as the modes, so there is no dead column
+    // under the pair.
+    expect(geometry.docs!.x, 'the footer starts with the modes').toBeCloseTo(geometry.menu!.x, 0);
+    expect(geometry.docs!.width, 'the footer spans the column').toBeCloseTo(geometry.menu!.width, 0);
 
-    const leftGap = boxes.menu!.x;
-    const rightGap = boxes.innerWidth - (boxes.menu!.x + boxes.menu!.width);
+    const leftGap = geometry.menu!.x;
+    const rightGap = geometry.innerWidth - (geometry.menu!.x + geometry.menu!.width);
     expect(Math.abs(leftGap - rightGap), 'the column is centred').toBeLessThanOrEqual(2);
   });
 
@@ -1097,24 +1143,58 @@ for (const viewport of [
   test.describe(`menu phone ${viewport.label}`, () => {
     test.use({ viewport: { width: viewport.width, height: viewport.height }, reducedMotion: 'reduce' });
 
-    test(`AB-P1 the primary action sits inside the 288px thumb envelope at ${viewport.label}`, async ({
+    test(`AB-P1 the menu fills the phone viewport and keeps Play Solo on screen at ${viewport.label}`, async ({
       page,
     }) => {
-      await openApp(page, SEED);
+      for (const state of ['no save', 'valid save'] as const) {
+        if (state === 'no save') {
+          await openApp(page, SEED);
+        } else {
+          await openMenuWithSave(page);
+        }
 
-      const box = await page.getByRole('button', { name: 'Play Solo', exact: true }).boundingBox();
-      expect(box).not.toBeNull();
+        const geometry = await menuGeometry(page);
 
-      const thumbTop = viewport.height - 288;
+        expect(geometry.masthead, `${state}: the masthead must render`).not.toBeNull();
+        expect(geometry.solo, `${state}: Play Solo must render`).not.toBeNull();
+        expect(geometry.docRow, `${state}: the document links must render`).not.toBeNull();
 
-      expect(box!.y, 'Play Solo must start inside the thumb envelope').toBeGreaterThanOrEqual(thumbTop);
-      expect(box!.y + box!.height, 'Play Solo must stay inside the viewport').toBeLessThanOrEqual(
-        viewport.height,
-      );
-      expect(box!.x, 'at least 8px from the left edge').toBeGreaterThanOrEqual(8);
-      expect(box!.x + box!.width, 'at least 8px from the right edge').toBeLessThanOrEqual(
-        viewport.width - 8,
-      );
+        // AB-P1 menu amendment: the menu fills the viewport instead of reserving
+        // the 288px thumb band, so the primary action must be on screen without
+        // scrolling, clear of both side edges, and the page must not leave a
+        // dead band where the old hero reserve used to sit.
+        expect(geometry.playSolo, `${state}: Play Solo must be a rendered box`).not.toBeNull();
+        expect(
+          geometry.playSolo!.bottom,
+          `${state}: Play Solo must be visible without scrolling`,
+        ).toBeLessThanOrEqual(viewport.height);
+        expect(geometry.playSolo!.x, `${state}: at least 8px from the left edge`).toBeGreaterThanOrEqual(8);
+        expect(
+          geometry.playSolo!.x + geometry.playSolo!.width,
+          `${state}: at least 8px from the right edge`,
+        ).toBeLessThanOrEqual(viewport.width - 8);
+
+        expect(
+          geometry.solo!.y - geometry.masthead!.bottom,
+          `${state}: the masthead hands straight over to the modes`,
+        ).toBeLessThanOrEqual(48);
+        expect(
+          geometry.maxGap,
+          `${state}: no empty band taller than 15% of the viewport`,
+        ).toBeLessThanOrEqual(viewport.height * 0.15);
+        expect(geometry.scrollHeight, `${state}: the menu fits the phone viewport`).toBeLessThanOrEqual(
+          viewport.height + 1,
+        );
+        expect(geometry.scrollWidth, `${state}: no horizontal page scroll`).toBeLessThanOrEqual(
+          viewport.width + 1,
+        );
+
+        // The modes are the objects; the documents are one quiet row.
+        expect(
+          geometry.solo!.height,
+          `${state}: the mode cards are visibly larger than the document row`,
+        ).toBeGreaterThan(geometry.docRow!.height * 3);
+      }
     });
 
     test(`AB-P4 no ellipsis and the text floors hold at ${viewport.label}`, async ({ page }) => {
@@ -1122,7 +1202,6 @@ for (const viewport of [
 
       const text = await page.evaluate(() => {
         const selectors = [
-          '.menu__eyebrow',
           '.menu__tagline',
           '.menu__plaque',
           '.menu__card-title',
@@ -1149,9 +1228,7 @@ for (const viewport of [
       for (const item of text) {
         expect(item.textOverflow, `${item.selector} must not use ellipsis`).not.toBe('ellipsis');
         expect(item.clipped, `${item.selector} "${item.text}" is clipped`).toBe(false);
-        expect(item.fontSize, `${item.selector} "${item.text}" is below 12px`).toBeGreaterThanOrEqual(
-          item.selector === '.menu__eyebrow' ? 11 : 12,
-        );
+        expect(item.fontSize, `${item.selector} "${item.text}" is below 12px`).toBeGreaterThanOrEqual(12);
       }
     });
   });
@@ -1161,48 +1238,34 @@ for (const viewport of [
 test.describe('menu 1024', () => {
   test.use({ viewport: { width: 1024, height: 768 }, reducedMotion: 'reduce' });
 
-  test('AB-T1 the hero and hub are side by side at 1024', async ({ page }) => {
+  test('AB-T1 the two mode cards are side by side at 1024', async ({ page }) => {
     await openApp(page, SEED);
 
-    const hero = await page.locator('.menu__hero').boundingBox();
-    const hub = await page.locator('.menu__hub').boundingBox();
+    const geometry = await menuGeometry(page);
 
-    expect(hero).not.toBeNull();
-    expect(hub).not.toBeNull();
-    expect(hero!.x + hero!.width).toBeLessThanOrEqual(hub!.x + 1);
+    expect(geometry.solo).not.toBeNull();
+    expect(geometry.duel).not.toBeNull();
+    expect(
+      geometry.solo!.x + geometry.solo!.width,
+      'the modes share one row instead of stacking',
+    ).toBeLessThanOrEqual(geometry.duel!.x + 1);
   });
 
-  test('AB-T2 the hub measures 440 inside a centred 976 column', async ({ page }) => {
+  test('AB-T2 the modes fill a centred 976 column at 1024', async ({ page }) => {
     await openApp(page, SEED);
 
-    const boxes = await page.evaluate(() => {
-      const read = (selector: string) => {
-        const node = document.querySelector(selector);
-        if (node === null) {
-          return null;
-        }
-        const rect = node.getBoundingClientRect();
-        return { x: rect.x, width: rect.width };
-      };
+    const geometry = await menuGeometry(page);
 
-      return {
-        menu: read('.menu'),
-        hero: read('.menu__hero'),
-        hub: read('.menu__hub'),
-        innerWidth: window.innerWidth,
-      };
-    });
+    expect(geometry.menu).not.toBeNull();
+    expect(geometry.solo).not.toBeNull();
+    expect(geometry.duel).not.toBeNull();
 
-    expect(boxes.menu).not.toBeNull();
-    expect(boxes.hub).not.toBeNull();
-    expect(boxes.hero).not.toBeNull();
+    expect(geometry.menu!.width, 'the menu content column is 976 at 1024').toBeCloseTo(976, 0);
+    expect(Math.abs(geometry.solo!.width - 476), 'each mode is 476 at 1024').toBeLessThanOrEqual(8);
+    expect(Math.abs(geometry.solo!.width - geometry.duel!.width), 'the modes share the column').toBeLessThanOrEqual(1);
 
-    expect(boxes.menu!.width, 'the menu content column is 976 at 1024').toBeCloseTo(976, 0);
-    expect(Math.abs(boxes.hub!.width - 440), 'the hub is 440 at 1024').toBeLessThanOrEqual(8);
-    expect(Math.abs(boxes.hero!.width - 504), 'the hero takes the rest of 976').toBeLessThanOrEqual(8);
-
-    const leftGap = boxes.menu!.x;
-    const rightGap = boxes.innerWidth - (boxes.menu!.x + boxes.menu!.width);
+    const leftGap = geometry.menu!.x;
+    const rightGap = geometry.innerWidth - (geometry.menu!.x + geometry.menu!.width);
     expect(Math.abs(leftGap - rightGap), 'the column is centred').toBeLessThanOrEqual(2);
   });
 });

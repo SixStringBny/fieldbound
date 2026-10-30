@@ -113,7 +113,7 @@ row narrows them.
 
 | ID | Applies to | Pass condition |
 | --- | --- | --- |
-| `AB-P1` | every play route at 375×667 and 390×844 | The primary action's box is fully inside the viewport, wholly below `height − 288px`, and ≥8px from each side edge. On scroll routes the action bar is sticky or fixed so this holds before any scrolling. |
+| `AB-P1` | every play route at 375×667 and 390×844 | The primary action's box is fully inside the viewport, wholly below `height − 288px`, and ≥8px from each side edge. On scroll routes the action bar is sticky or fixed so this holds before any scrolling. **Menu exception (amended 2026-10-30):** the menu fills the viewport rather than reserving the thumb band, so instead the primary action must be on screen without scrolling and ≥8px from each side edge, the masthead must hand over to the modes with a gap ≤48px, no band between the masthead and the footer may exceed 15% of the viewport height, the page must not scroll vertically, and each mode card must be at least 3× the height of a document row. A docked quick-start is rejected: a second Play Solo control would break the five-entry contract (`AB-C1`) and the single action seal (`AB-C2`). |
 | `AB-P2` | battle, duel board, privacy | `document.scrollHeight ≤ innerHeight + 1` and `document.scrollWidth ≤ innerWidth + 1` at all five viewports; vertical scrolling is confined to the rack, log, drawer and detail sheet. |
 | `AB-P3` | battle, duel board below 1024 | Five card buttons render; the rack is the only element with `scrollWidth > clientWidth` in the hand; at 375 the fifth card is revealed by keyboard focus and by rack scroll. |
 | `AB-P4` | every route | No rendered text uses `text-overflow: ellipsis` on card names, log lines or intent text; computed sizes hold the spec floors (≥11px uppercase labels, ≥12px body, 16px/1.6 reading prose); the detail sheet renders the card's full text. |
@@ -122,7 +122,7 @@ row narrows them.
 
 | ID | Applies to | Pass condition |
 | --- | --- | --- |
-| `AB-T1` | every route at 1024×768 and 1280×800 | The spec's named pair renders side by side with no vertical stacking: arena + log rail (board routes), hero + hub (menu), ladder + status/next column (run overview), contents rail + document sheet (How to Play). Routes whose spec names no pair are exempt from `AB-T1` and are measured by `AB-T2` with the widths in §13.4. |
+| `AB-T1` | every route at 1024×768 and 1280×800 | The spec's named pair renders side by side with no vertical stacking: arena + log rail (board routes), the two mode cards (menu, amended 2026-10-30 from hero + hub), ladder + status/next column (run overview), contents rail + document sheet (How to Play). Routes whose spec names no pair are exempt from `AB-T1` and are measured by `AB-T2` with the widths in §13.4. |
 | `AB-T2` | every route at 1024×768 and 1280×800 | The interactive content box is no wider than the route's width in §13.4 and its left and right page gaps differ by ≤2px. On board routes the board is ≤1080px, centred within 2px, and no empty column or gutter inside it is wider than 240px. |
 | `AB-T3` | board routes at ≥1024 | The log rail measures 240±1px at 1024 and 288±1px at 1280, is sticky, and its bottom stops at the hand line rather than scrolling under it. |
 | `AB-T4` | board routes at ≥1024 | The hand rack scroller, the phone footer strip and the single-column stack are absent; the hand fan and the log rail are present. |
@@ -475,7 +475,7 @@ CSS pixels from the route's spec; ±2px on centring, ±8px on a card or zone box
 
 | Route | Measured box | 1024 | 1280 | Cap |
 | --- | --- | --- | --- | --- |
-| `menu` | hero + hub columns | hub 440, hero rest of 984 | hub 512, hero rest of 1080 | 1080 |
+| `menu` | the two mode cards | 476 each, gap 24 (976) | 528 each, gap 24 (1080) | 1080 |
 | `how-to-play` | contents rail + sheet | rail 224, gap 24, sheet 672 | same | 1080 |
 | `settings` | sheet | 672 | 672 | 672 (42rem) |
 | `solo-setup` | first two deck cards side by side | 460×250, gap 16 | 512×260, gap 20 | 1080 |

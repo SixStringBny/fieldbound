@@ -6,14 +6,19 @@
  * validated a saved run, so a corrupt save can never advertise a resumable game
  * (RUN-05).
  *
- * The screen is the table hub from `docs/design-system/solo-flow.md` section 2:
- * a hero with the wordmark, tagline and run plaque beside the five entries.
- * Play Solo and Local Duel are parchment mode cards, Continue Run is a
- * parchment bookmark (only with a validated save), and How to Play and Settings
- * are quiet brass document rows. Each entry is one native button covering the
- * whole object; the visible label and hint are associated with it by
- * `aria-labelledby` / `aria-describedby`, so the accessible names stay exactly
- * the frozen strings while the whole card remains the target.
+ * The screen is the table from `docs/design-system/solo-flow.md` section 2, as
+ * amended by the UI polish pass: a masthead at the top, the two modes as the
+ * largest objects in the middle - each carrying the field roundel, the game's
+ * own motif - and How to Play and Settings as one quiet footer row at the
+ * bottom. Continue Run is a parchment bookmark spanning the hub, only with a
+ * validated save. The composition fills the viewport instead of reserving an
+ * empty band above the thumb envelope (AB-P1 menu amendment).
+ *
+ * Each entry is one native button covering the whole object; the visible label
+ * and hint are associated with it by `aria-labelledby` / `aria-describedby`, so
+ * the accessible names stay exactly the frozen strings while the whole card
+ * remains the target. The mode motif is decorative: the seal and the disc are
+ * `aria-hidden`, and the title beside them carries the word.
  */
 
 export interface MenuScreenProps {
@@ -51,14 +56,11 @@ export function MenuScreen({
   return (
     <div className="menu">
       <header className="menu__hero">
-        <p className="menu__eyebrow">A shared-field card battler</p>
         <h1 className="menu__wordmark">Fieldbound</h1>
         <p className="menu__tagline">
           One field. Three energies. Two ways to play.
         </p>
-        {hasSave ? null : (
-          <p className="menu__plaque">No run in progress</p>
-        )}
+        {hasSave ? null : <p className="menu__plaque">No run in progress</p>}
       </header>
 
       <nav className="menu__hub" aria-label="Main menu">
@@ -72,8 +74,9 @@ export function MenuScreen({
               onClick={onPlaySolo}
             />
             <span className="menu__card-content">
-              <span className="menu__seal menu__seal--ember" aria-hidden="true">
-                ▲
+              <span className="menu__motif" aria-hidden="true">
+                <span className="menu__motif-ring" />
+                <span className="menu__seal menu__seal--ember">▲</span>
               </span>
               <span className="menu__card-text">
                 <span className="menu__card-title" id="menu-play-solo-label">
@@ -98,8 +101,9 @@ export function MenuScreen({
               onClick={onLocalDuel}
             />
             <span className="menu__card-content">
-              <span className="menu__seal menu__seal--brass" aria-hidden="true">
-                ◆
+              <span className="menu__motif menu__motif--duel" aria-hidden="true">
+                <span className="menu__motif-ring" />
+                <span className="menu__seal menu__seal--brass">◆</span>
               </span>
               <span className="menu__card-text">
                 <span className="menu__card-title" id="menu-local-duel-label">
@@ -147,36 +151,36 @@ export function MenuScreen({
             </li>
           ) : null}
 
-          <li className="menu__item menu__item--row">
-            <button
-              type="button"
-              className="menu__row"
-              aria-labelledby="menu-how-to-play-label"
-              onClick={onHowToPlay}
-            >
-              <span className="menu__row-title" id="menu-how-to-play-label">
-                How to Play
-              </span>
-              <span className="menu__row-glyph" aria-hidden="true">
-                ›
-              </span>
-            </button>
-          </li>
+          <li className="menu__item menu__item--docs">
+            <div className="menu__docs">
+              <button
+                type="button"
+                className="menu__row"
+                aria-labelledby="menu-how-to-play-label"
+                onClick={onHowToPlay}
+              >
+                <span className="menu__row-title" id="menu-how-to-play-label">
+                  How to Play
+                </span>
+                <span className="menu__row-glyph" aria-hidden="true">
+                  ›
+                </span>
+              </button>
 
-          <li className="menu__item menu__item--row">
-            <button
-              type="button"
-              className="menu__row"
-              aria-labelledby="menu-settings-label"
-              onClick={onSettings}
-            >
-              <span className="menu__row-title" id="menu-settings-label">
-                Settings
-              </span>
-              <span className="menu__row-glyph" aria-hidden="true">
-                ›
-              </span>
-            </button>
+              <button
+                type="button"
+                className="menu__row"
+                aria-labelledby="menu-settings-label"
+                onClick={onSettings}
+              >
+                <span className="menu__row-title" id="menu-settings-label">
+                  Settings
+                </span>
+                <span className="menu__row-glyph" aria-hidden="true">
+                  ›
+                </span>
+              </button>
+            </div>
           </li>
         </ul>
       </nav>

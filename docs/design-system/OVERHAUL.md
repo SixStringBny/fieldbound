@@ -98,7 +98,7 @@ side-by-side pair at ≥1024 where the spec names one (checked by `AB-T1`);
 
 | Route (`data-screen`) | Idiom | Pair at ≥1024 | Page scroll | Primary action | Spec |
 | --- | --- | --- | --- | --- | --- |
-| `menu` | table hub | hero + hub | vertical | **Play Solo** (mode card) | solo-flow §2 |
+| `menu` | table | the two mode cards | vertical | **Play Solo** (mode card) | solo-flow §2 (amended by the polish pass) |
 | `how-to-play` | reading document | contents rail + sheet | vertical | **Back to menu** | reading-screens §2–§3 |
 | `settings` | reading document | — (one 42rem sheet) | vertical | **Back** | reading-screens §2, §4 |
 | `solo-setup` | deck table | — (2×2 grid + sticky bar) | vertical | **Start Run** | solo-flow §3 |
@@ -266,19 +266,24 @@ and the tests that may change. Numbers live in the cited section.
 
 ### 6.1 Menu — the table hub
 
-- **Objects:** wordmark + tagline + run plaque in the hero; five entries in the
-  hub — **Play Solo** and **Local Duel** as mode cards, **Continue Run** as a
-  parchment bookmark (only with a validated save), **How to Play** and
-  **Settings** as quiet brass rows. No form rows, no equal-weight links.
-- **Anchors:** two columns 1.05fr/0.95fr at ≥1024 (hub 512@1280, 440@1024),
-  one column below; entries 150/140/76/72px tall by width; sticky nothing.
+- **Objects:** a masthead (wordmark, tagline, quiet "No run in progress" line); the
+  two equal mode cards - **Play Solo** (ember seal) and **Local Duel** (brass seal
+  and second counter) - each carrying the field roundel as its only large art;
+  **Continue Run** as a parchment bookmark (only with a validated save); **How to
+  Play** and **Settings** as one quiet footer row. No form rows, no equal-weight
+  links.
+- **Anchors:** one filled column, 1080 cap: modes side by side from 768 (528 each
+  at 1280, 476 each at 1024, 24px gap, up to 480 tall) and stacked below; bookmark
+  and footer span the column; the block fills the viewport with no hero reserve
+  (AB-P1 menu amendment). No sticky elements.
 - **States:** no save → no Continue entry and a quiet "No run in progress" line;
   valid save → exact hint `Encounter N of 4 · X of 40 health` + `Ember deck · 11
   cards`; corrupt save behaves as no save. No loading state.
 - **Focus/tab:** hero not focusable; entries in DOM order; route `h1`
   **Fieldbound**; `nav` **Main menu**.
 - **Tests that change:** `App.navigation.test.tsx`, `App.test.tsx`,
-  `smoke.spec.ts`. Spec: solo-flow §2, §9; bar `AB-C1`, `AB-T1`.
+  `smoke.spec.ts`, the menu scope of `ui-bar.spec.ts`. Spec: solo-flow §2, §9;
+  bar `AB-C1`, `AB-P1` (menu amendment), `AB-T1`, `AB-T2`.
 
 ### 6.2 How to Play — the reading document
 

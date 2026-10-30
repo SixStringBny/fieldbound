@@ -1,57 +1,61 @@
 /**
- * Menu - the table hub (solo-flow section 2, OVERHAUL section 6.1).
+ * Menu - the table (solo-flow section 2, amended by the UI polish pass).
  *
- * Composition: a hero (wordmark, tagline, run plaque) and a hub of exactly five
- * entries. At >=1024 they sit side by side; below that the hero stacks above the
- * hub. The page may scroll vertically and never horizontally.
+ * Composition: a masthead at the top, the two modes as the largest objects in
+ * the middle and one quiet footer row of documents at the bottom. The block
+ * fills the viewport: the mode rows take the slack, so there is no empty band
+ * where the old hero reserve used to sit (AB-P1 menu amendment). Below 768 the
+ * modes stack; from 768 they sit side by side. The page may scroll vertically
+ * if a save adds the Continue bookmark and the content outgrows the viewport,
+ * and never scrolls horizontally.
+ *
+ * The mode motif is the game's own field roundel - a brass ring with the
+ * element seal at its centre - built from tokens and borders rather than an
+ * image, so it needs no scrim, no reserved aspect ratio and no bytes, and it
+ * survives the forced-colors branch. The duel motif adds a second, hollow disc:
+ * two players, one field.
  *
  * The entry is one native button covering the whole card or row. The visible
  * title and hint are siblings associated through `aria-labelledby` /
  * `aria-describedby`, so a screen reader gets the frozen accessible name and
  * the hint stays part of the object rather than a separate form row.
- *
- * At phone widths the hero reserves the space above the thumb envelope
- * (`100svh - 288px`), so Play Solo - the route's primary action - sits fully
- * inside the lowest 288px of a 375x667 or 390x844 viewport (AB-P1).
  */
 
 .app-root:has(> #main-content[data-screen='menu']) {
-  padding: 0.75rem 0.625rem; /* 375x667: 12px 10px */
+  --menu-pad-y: 0.75rem;
+  --menu-pad-x: 0.625rem; /* 375x667: 12px 10px */
+
+  padding: var(--menu-pad-y) var(--menu-pad-x);
 }
 
 .shell[data-screen='menu'] {
+  display: flex;
   max-width: var(--fb-board-max);
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .menu {
   display: grid;
-  gap: var(--fb-space-5);
+  flex: 1 1 auto;
   width: 100%;
   min-width: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  row-gap: var(--fb-space-3);
 }
 
 /* -------------------------------------------------------------------------- */
-/* Hero                                                                       */
+/* Masthead                                                                   */
 /* -------------------------------------------------------------------------- */
 
 .menu__hero {
-  display: flex;
+  display: grid;
   min-width: 0;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.menu__eyebrow {
-  color: var(--fb-text-soft);
-  font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
-  letter-spacing: var(--fb-tracking-wide);
-  line-height: var(--fb-leading-ui);
-  text-transform: uppercase;
+  gap: var(--fb-space-2);
+  align-content: start;
 }
 
 .menu__wordmark {
-  margin-top: var(--fb-space-2);
   color: var(--fb-text);
   font-family: var(--fb-font-display);
   font-size: var(--fb-text-display);
@@ -62,21 +66,19 @@
 }
 
 .menu__tagline {
-  margin-top: var(--fb-space-3);
-  max-width: 24rem;
-  color: var(--fb-text-soft);
-  font-size: var(--fb-text-lg);
-  line-height: var(--fb-leading-reading);
-}
-
-.menu__plaque {
-  margin-top: var(--fb-space-5);
-  padding: var(--fb-space-3) var(--fb-space-4);
-  border-left: var(--fb-rule-width-strong) solid var(--fb-rule-strong-color);
-  background-color: var(--fb-surface-inset);
   color: var(--fb-text-soft);
   font-size: var(--fb-text-md);
   line-height: var(--fb-leading-body);
+}
+
+.menu__plaque {
+  justify-self: start;
+  padding: var(--fb-space-1) var(--fb-space-3);
+  border-left: var(--fb-rule-width-strong) solid var(--fb-rule-strong-color);
+  background-color: var(--fb-surface-inset);
+  color: var(--fb-text-soft);
+  font-size: var(--fb-text-xs);
+  line-height: var(--fb-leading-ui);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -84,15 +86,24 @@
 /* -------------------------------------------------------------------------- */
 
 .menu__hub {
-  min-width: 0;
+  display: grid;
+  min-height: 0;
 }
 
 .menu__list {
   display: grid;
-  gap: var(--fb-space-2);
+  height: 100%;
   margin: 0;
   padding: 0;
   list-style: none;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    'solo solo'
+    'duel duel'
+    'continue continue'
+    'docs docs';
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto auto;
+  gap: var(--fb-space-3);
 }
 
 .menu__item {
@@ -100,18 +111,28 @@
   min-width: 0;
 }
 
-.menu__item--mode {
-  min-height: 4.5rem; /* 72px at 375 */
-  transition: transform var(--fb-dur-lift) var(--fb-ease);
+.menu__item--solo {
+  grid-area: solo;
+}
+
+.menu__item--duel {
+  grid-area: duel;
 }
 
 .menu__item--bookmark {
+  grid-area: continue;
   min-height: 4.5rem; /* 72px at 375 */
   transition: transform var(--fb-dur-lift) var(--fb-ease);
 }
 
-.menu__item--row {
-  min-height: 3.5rem; /* 56px at every width */
+.menu__item--docs {
+  grid-area: docs;
+}
+
+.menu__item--mode {
+  display: grid;
+  min-height: 8.5rem; /* 136px at 375 */
+  transition: transform var(--fb-dur-lift) var(--fb-ease);
 }
 
 /* The mode-card and bookmark surfaces are the buttons themselves. */
@@ -151,11 +172,13 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--fb-space-4);
-  min-height: inherit;
-  padding: var(--fb-space-3) var(--fb-space-4);
+  height: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  justify-items: center;
+  gap: var(--fb-space-2);
+  padding: var(--fb-space-3);
+  text-align: center;
   pointer-events: none;
 }
 
@@ -181,24 +204,69 @@
 }
 
 .menu__card-glyph {
+  position: absolute;
+  top: var(--fb-space-3);
+  right: var(--fb-space-4);
   color: var(--fb-text-on-paper-muted);
   font-family: var(--fb-font-glyph);
   font-size: var(--fb-text-xl);
   line-height: 1;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Mode motif: the field roundel                                              */
+/* -------------------------------------------------------------------------- */
+
+.menu__motif {
+  position: relative;
+  display: grid;
+  width: 6rem;
+  height: 6rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: var(--fb-rule-strong);
+  border-radius: 50%;
+  background-color: var(--fb-surface-inset);
+  box-shadow: var(--fb-rim), var(--fb-elev-1);
+}
+
+/* The inner ring is the roundel's own double rim, not a second panel rule. */
+.menu__motif-ring {
+  position: absolute;
+  inset: 5px;
+  border: var(--fb-rule-subtle);
+  border-radius: 50%;
+}
+
+/* The duel motif adds a second, raised counter: two players, one field. */
+.menu__motif--duel::after {
+  content: '';
+  position: absolute;
+  right: -12%;
+  bottom: -12%;
+  width: 38%;
+  height: 38%;
+  border: var(--fb-rule-strong);
+  border-radius: 50%;
+  background-color: var(--fb-surface-document-raised);
+  box-shadow: var(--fb-rim), var(--fb-elev-1);
+}
+
 /* Seals are decorative: the title beside them carries the word. */
 .menu__seal {
   display: inline-flex;
-  width: 2.5rem;
-  height: 2.5rem;
   align-items: center;
   justify-content: center;
   border-radius: var(--fb-radius-pill);
   font-family: var(--fb-font-glyph);
-  font-size: var(--fb-text-lg);
   line-height: 1;
   box-shadow: var(--fb-rim), var(--fb-elev-1);
+}
+
+.menu__motif .menu__seal {
+  width: 46%;
+  height: 46%;
+  font-size: var(--fb-text-xs);
 }
 
 .menu__seal--ember {
@@ -213,15 +281,20 @@
   color: var(--fb-selected-ink);
 }
 
+/* -------------------------------------------------------------------------- */
+/* Continue bookmark                                                          */
+/* -------------------------------------------------------------------------- */
+
 .menu__bookmark-content {
   position: relative;
   z-index: 1;
   display: grid;
+  height: 100%;
   grid-template-columns: minmax(0, 1fr) auto;
+  align-content: center;
   align-items: baseline;
   column-gap: var(--fb-space-2);
   row-gap: var(--fb-space-1);
-  min-height: inherit;
   padding: var(--fb-space-2) var(--fb-space-4);
   pointer-events: none;
 }
@@ -253,15 +326,27 @@
   line-height: var(--fb-leading-ui);
 }
 
+/* -------------------------------------------------------------------------- */
+/* Document footer                                                            */
+/* -------------------------------------------------------------------------- */
+
+.menu__docs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--fb-space-2);
+  padding-top: var(--fb-space-2);
+  border-top: var(--fb-rule-subtle);
+}
+
 .menu__row {
   display: flex;
   width: 100%;
-  min-height: 3.5rem;
+  min-height: 3rem;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--fb-space-2);
-  padding: 0 var(--fb-space-3);
-  border: var(--fb-rule-subtle);
+  justify-content: flex-start;
+  gap: var(--fb-space-1);
+  padding: 0 var(--fb-space-1);
+  border: 0;
   border-radius: var(--fb-radius-xs);
   background-color: transparent;
   color: var(--fb-text-soft);
@@ -272,7 +357,6 @@
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition:
-    border-color var(--fb-dur-lift) var(--fb-ease),
     color var(--fb-dur-lift) var(--fb-ease),
     transform var(--fb-dur-lift) var(--fb-ease);
 }
@@ -305,7 +389,6 @@
   }
 
   .menu__row:hover {
-    border-color: var(--fb-rule-strong-color);
     color: var(--fb-text);
   }
 }
@@ -356,105 +439,115 @@
 
 @media (min-width: 390px) {
   .app-root:has(> #main-content[data-screen='menu']) {
-    padding: 1rem 0.75rem; /* 390x844: 16px 12px */
+    --menu-pad-y: 1rem;
+    --menu-pad-x: 0.75rem; /* 390x844: 16px 12px */
   }
 
-  .menu__item--mode,
   .menu__item--bookmark {
     min-height: 4.75rem; /* 76px */
   }
 }
 
-@media (max-width: 639px) {
-  .menu__hero {
-    min-height: calc(100svh - 18rem); /* leave the thumb envelope free */
-    justify-content: center;
+@media (min-width: 640px) {
+  .app-root:has(> #main-content[data-screen='menu']) {
+    --menu-pad-y: 1.5rem;
+    --menu-pad-x: 1rem; /* 768x1024: 24px 16px */
+  }
+
+  .menu__row {
+    font-size: var(--fb-text-lg);
+    padding: 0 var(--fb-space-2);
   }
 }
 
-@media (min-width: 640px) {
-  .app-root:has(> #main-content[data-screen='menu']) {
-    /* The legacy shell centres short documents vertically from 640px up;
-       the menu spec starts at the page padding (24/32/48px), so opt out. */
-    justify-content: flex-start;
-    padding: 1.5rem 1rem; /* 768x1024: 24px 16px */
+/* From 768 the two modes sit side by side as the table's pair. */
+@media (min-width: 768px) {
+  .menu {
+    row-gap: var(--fb-space-4);
+  }
+
+  .menu__list {
+    grid-template-areas:
+      'solo duel'
+      'continue continue'
+      'docs docs';
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    gap: var(--fb-space-4) var(--fb-space-5);
   }
 
   .menu__item--mode {
-    min-height: 6rem; /* 96px */
-  }
-
-  .menu__item--bookmark {
-    min-height: 5.25rem; /* 84px */
+    align-self: center;
+    height: 100%;
+    min-height: 12rem;
+    max-height: 34rem; /* 544px: the pair stops growing on a tall tablet */
   }
 
   .menu__card-content {
-    gap: var(--fb-space-5);
-    padding: var(--fb-space-4) var(--fb-space-5);
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    align-content: center;
+    gap: var(--fb-space-4);
+    padding: var(--fb-space-5);
+    text-align: center;
+  }
+
+  .menu__card-glyph {
+    position: absolute;
+    top: var(--fb-space-4);
+    right: var(--fb-space-4);
+  }
+
+  .menu__motif {
+    width: 9rem;
+    height: 9rem;
+    max-height: none;
+  }
+
+  .menu__motif .menu__seal {
+    font-size: var(--fb-text-xl);
   }
 
   .menu__card-title {
-    font-size: var(--fb-text-2xl);
+    font-size: var(--fb-text-3xl);
   }
 
   .menu__card-hint {
     font-size: var(--fb-text-sm);
   }
 
-  .menu__seal {
-    width: 3rem;
-    height: 3rem;
-    font-size: var(--fb-text-xl);
-  }
-
-  .menu__bookmark-content {
-    padding: var(--fb-space-2) var(--fb-space-5);
-  }
-}
-
-@media (min-width: 1024px) {
-  .app-root:has(> #main-content[data-screen='menu']) {
-    padding: 2rem 1.5rem; /* 1024x768: 32px 24px */
-  }
-
-  .menu {
-    grid-template-columns: minmax(0, 1fr) 27.5rem; /* hub 440 */
-    column-gap: var(--fb-space-6);
-    align-items: start;
-  }
-
-  .menu__item--mode {
-    min-height: 8.75rem; /* 140px */
-  }
-
-  .menu__card-content {
-    padding: var(--fb-space-5);
+  .menu__tagline {
+    font-size: var(--fb-text-lg);
   }
 
   .menu__bookmark-content {
     padding: var(--fb-space-3) var(--fb-space-5);
   }
+}
 
-  .menu__tagline {
-    font-size: var(--fb-text-xl);
+@media (min-width: 1024px) {
+  .app-root:has(> #main-content[data-screen='menu']) {
+    --menu-pad-y: 2rem;
+    --menu-pad-x: 1.5rem; /* 1024x768: 32px 24px */
+  }
+
+  .menu__motif {
+    width: 9.5rem;
+    height: 9.5rem;
   }
 }
 
 @media (min-width: 1280px) {
   .app-root:has(> #main-content[data-screen='menu']) {
-    padding: 3rem 1.5rem; /* 1280x800: 48px 24px */
+    --menu-pad-y: 3rem;
+    --menu-pad-x: 1.5rem; /* 1280x800: 48px 24px */
   }
 
-  .menu {
-    grid-template-columns: minmax(0, 1fr) 32rem; /* hub 512 */
-    column-gap: var(--fb-space-7);
+  .menu__motif {
+    width: 10rem;
+    height: 10rem;
   }
 
-  .menu__item--mode {
-    min-height: 9.375rem; /* 150px */
-  }
-
-  .menu__item--bookmark {
-    min-height: 5.5rem; /* 88px */
+  .menu__tagline {
+    font-size: var(--fb-text-xl);
   }
 }
