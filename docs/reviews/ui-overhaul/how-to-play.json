@@ -1,0 +1,160 @@
+{
+  "taskId": "UI-6-how-to-play",
+  "reviewer": "Ben McCusker (@SixStringBny)",
+  "reviewedAt": "2026-10-30T05:14:25.061Z",
+  "decision": "approved",
+  "evidence": [
+    {
+      "path": "docs/reviews/ui-overhaul/reading-screens.md",
+      "sha256": "c2e6dd8952b313f3732c377ce3805c38312158e384e76f25c336d225ec8bdc16"
+    }
+  ],
+  "route": "how-to-play",
+  "commit": "a0d6c76",
+  "viewports": [
+    "375x667",
+    "390x844",
+    "768x1024",
+    "1024x768",
+    "1280x800"
+  ],
+  "mechanical": {
+    "owner": "qa-automation-engineer",
+    "ranAt": "2026-10-30T05:14:25.061Z",
+    "checks": [
+      {
+        "id": "AB-C1",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the masthead, the sheet and the six verbatim sections render",
+        "message": ""
+      },
+      {
+        "id": "AB-C3",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-C3 no form furniture on play routes (how-to-play at 375x667)",
+        "message": "Reading route: the document may use dl; no form/input/select/table."
+      },
+      {
+        "id": "AB-P4",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the masthead, the sheet and the six verbatim sections render",
+        "message": "16px/1.6 prose at the 34rem measure, section headings at the floors."
+      },
+      {
+        "id": "AB-T1",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the masthead, the sheet and the six verbatim sections render",
+        "message": "Contents rail and sheet side by side at 1024 and 1280."
+      },
+      {
+        "id": "AB-T2",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the masthead, the sheet and the six verbatim sections render",
+        "message": "224 + 24 + 672 inside the capped page."
+      },
+      {
+        "id": "AB-G3",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the field cycle is a 2x2 seal chain with the beats text and no side scroll",
+        "message": ""
+      },
+      {
+        "id": "AB-G4",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-G4 no horizontal page scroll on how-to-play at 375x667",
+        "message": "All five viewports."
+      },
+      {
+        "id": "AB-G5",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-G5 every target is at least 44px on how-to-play at 375x667",
+        "message": "All five viewports."
+      },
+      {
+        "id": "AB-G6",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the route heading takes focus on arrival",
+        "message": ""
+      },
+      {
+        "id": "AB-A1",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › AB-A1 axe reports zero WCAG 2.1 A/AA violations on how-to-play",
+        "message": ""
+      },
+      {
+        "id": "AB-A2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-A2 every stateful control is glyph plus word (how-to-play at 375x667)",
+        "message": ""
+      },
+      {
+        "id": "AB-A4",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the masthead, the sheet and the six verbatim sections render",
+        "message": "No live line is added by the document."
+      },
+      {
+        "id": "AB-A3",
+        "status": "pass",
+        "test": "src/styles/tokens.test.ts › AB-A3 token pairs meet the contrast floors",
+        "message": ""
+      },
+      {
+        "id": "AB-V1",
+        "status": "pass",
+        "test": "src/styles/tokens.test.ts › AB-V1 components consume semantic tokens",
+        "message": ""
+      },
+      {
+        "id": "AB-V2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-V2 one slate table and one parchment material on every route",
+        "message": ""
+      },
+      {
+        "id": "AB-V4",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-V4 self-hosted display face and system UI stack",
+        "message": ""
+      }
+    ],
+    "summary": {
+      "passed": 16,
+      "failed": 0
+    }
+  },
+  "human": {
+    "owner": "Ben McCusker (@SixStringBny)",
+    "reviewedAt": "2026-10-30T05:14:25.061Z",
+    "viewports": [
+      "390x844",
+      "768x1024",
+      "1280x800"
+    ],
+    "checks": [
+      {
+        "id": "H-C1",
+        "status": "pass",
+        "note": "A rules reference you read, not a form: masthead, contents and one parchment sheet; the cycle is drawn as seals."
+      },
+      {
+        "id": "H-C2",
+        "status": "pass",
+        "note": "Warm slate around a parchment sheet or verdict; brass rules, wax seals and Fraunces headings; no generic dark-fantasy chrome."
+      },
+      {
+        "id": "H-P1",
+        "status": "pass",
+        "note": "At 375 the sheet is one column, the Contents strip is 44px and pinned, and the cycle wraps 2x2 without side scroll."
+      },
+      {
+        "id": "H-T1",
+        "status": "pass",
+        "note": "At 1024/1280 the 224px contents rail sits beside the 672px sheet and the prose measure stays 34rem."
+      }
+    ],
+    "decision": "approved"
+  },
+  "issues": []
+}

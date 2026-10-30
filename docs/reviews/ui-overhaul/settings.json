@@ -1,0 +1,136 @@
+{
+  "taskId": "UI-6-settings",
+  "reviewer": "Ben McCusker (@SixStringBny)",
+  "reviewedAt": "2026-10-30T05:14:25.061Z",
+  "decision": "approved",
+  "evidence": [
+    {
+      "path": "docs/reviews/ui-overhaul/reading-screens.md",
+      "sha256": "c2e6dd8952b313f3732c377ce3805c38312158e384e76f25c336d225ec8bdc16"
+    }
+  ],
+  "route": "settings",
+  "commit": "a0d6c76",
+  "viewports": [
+    "375x667",
+    "390x844",
+    "768x1024",
+    "1024x768",
+    "1280x800"
+  ],
+  "mechanical": {
+    "owner": "qa-automation-engineer",
+    "ranAt": "2026-10-30T05:14:25.061Z",
+    "checks": [
+      {
+        "id": "AB-C1",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › one sheet, two switches, one Back and no third motion state",
+        "message": ""
+      },
+      {
+        "id": "AB-C2",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › one sheet, two switches, one Back and no third motion state",
+        "message": "No action seal on Settings; the single action is the quiet Back."
+      },
+      {
+        "id": "AB-P4",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the sheet stays a centred 672px and the rows grow to 88px",
+        "message": "Rows 72px phone / 88px table; hints at 12px."
+      },
+      {
+        "id": "AB-T2",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the sheet stays a centred 672px and the rows grow to 88px",
+        "message": ""
+      },
+      {
+        "id": "AB-G5",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-G5 every target is at least 44px on settings at 375x667",
+        "message": "All five viewports."
+      },
+      {
+        "id": "AB-G6",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the route heading takes focus and the switch shows a visible ring",
+        "message": ""
+      },
+      {
+        "id": "AB-A1",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › AB-A1 axe reports zero WCAG 2.1 A/AA violations on settings",
+        "message": ""
+      },
+      {
+        "id": "AB-A2",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › one sheet, two switches, one Back and no third motion state",
+        "message": "On/Off words plus aria-checked."
+      },
+      {
+        "id": "AB-A3",
+        "status": "pass",
+        "test": "src/styles/tokens.test.ts › AB-A3 token pairs meet the contrast floors",
+        "message": ""
+      },
+      {
+        "id": "AB-V1",
+        "status": "pass",
+        "test": "src/styles/tokens.test.ts › AB-V1 components consume semantic tokens",
+        "message": ""
+      },
+      {
+        "id": "AB-V2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-V2 one slate table and one parchment material on every route",
+        "message": ""
+      },
+      {
+        "id": "AB-V4",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-V4 self-hosted display face and system UI stack",
+        "message": ""
+      }
+    ],
+    "summary": {
+      "passed": 12,
+      "failed": 0
+    }
+  },
+  "human": {
+    "owner": "Ben McCusker (@SixStringBny)",
+    "reviewedAt": "2026-10-30T05:14:25.061Z",
+    "viewports": [
+      "390x844",
+      "768x1024",
+      "1280x800"
+    ],
+    "checks": [
+      {
+        "id": "H-C1",
+        "status": "pass",
+        "note": "One short preferences sheet with two physical switches and one Back; no third state or reset."
+      },
+      {
+        "id": "H-C2",
+        "status": "pass",
+        "note": "Warm slate around a parchment sheet or verdict; brass rules, wax seals and Fraunces headings; no generic dark-fantasy chrome."
+      },
+      {
+        "id": "H-P1",
+        "status": "pass",
+        "note": "Both 72x44 switches are thumb-reachable and the hint explains the device-following state."
+      },
+      {
+        "id": "H-T1",
+        "status": "pass",
+        "note": "The 672px sheet is centred at 1024/1280 with the rows at their table height."
+      }
+    ],
+    "decision": "approved"
+  },
+  "issues": []
+}

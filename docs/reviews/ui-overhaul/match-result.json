@@ -1,0 +1,118 @@
+{
+  "taskId": "UI-6-match-result",
+  "reviewer": "Ben McCusker (@SixStringBny)",
+  "reviewedAt": "2026-10-30T05:14:25.061Z",
+  "decision": "approved",
+  "evidence": [
+    {
+      "path": "docs/reviews/ui-overhaul/reading-screens.md",
+      "sha256": "c2e6dd8952b313f3732c377ce3805c38312158e384e76f25c336d225ec8bdc16"
+    }
+  ],
+  "route": "match-result",
+  "commit": "a0d6c76",
+  "viewports": [
+    "375x667",
+    "390x844",
+    "768x1024",
+    "1024x768",
+    "1280x800"
+  ],
+  "mechanical": {
+    "owner": "qa-automation-engineer",
+    "ranAt": "2026-10-30T05:14:25.061Z",
+    "checks": [
+      {
+        "id": "AB-C1",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the round result is a verdict plaque with the strip and next opener",
+        "message": "The match result shares the plaque component; the duel journey covers its path."
+      },
+      {
+        "id": "AB-C2",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the round result is a verdict plaque with the strip and next opener",
+        "message": "Rematch is the single action seal; Change decks and Menu are secondary."
+      },
+      {
+        "id": "AB-G4",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the round result is a verdict plaque with the strip and next opener",
+        "message": ""
+      },
+      {
+        "id": "AB-G5",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the round result is a verdict plaque with the strip and next opener",
+        "message": ""
+      },
+      {
+        "id": "AB-G6",
+        "status": "pass",
+        "test": "tests/e2e/reading-screens.spec.ts › the route heading takes focus on arrival",
+        "message": ""
+      },
+      {
+        "id": "AB-A3",
+        "status": "pass",
+        "test": "src/styles/tokens.test.ts › AB-A3 token pairs meet the contrast floors",
+        "message": ""
+      },
+      {
+        "id": "AB-V1",
+        "status": "pass",
+        "test": "src/styles/tokens.test.ts › AB-V1 components consume semantic tokens",
+        "message": ""
+      },
+      {
+        "id": "AB-V2",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-V2 one slate table and one parchment material on every route",
+        "message": ""
+      },
+      {
+        "id": "AB-V4",
+        "status": "pass",
+        "test": "tests/e2e/ui-bar.spec.ts › AB-V4 self-hosted display face and system UI stack",
+        "message": ""
+      }
+    ],
+    "summary": {
+      "passed": 9,
+      "failed": 0
+    }
+  },
+  "human": {
+    "owner": "Ben McCusker (@SixStringBny)",
+    "reviewedAt": "2026-10-30T05:14:25.061Z",
+    "viewports": [
+      "390x844",
+      "768x1024",
+      "1280x800"
+    ],
+    "checks": [
+      {
+        "id": "H-C1",
+        "status": "pass",
+        "note": "A match verdict: winner, final score and the three-pip strip; Rematch is the action."
+      },
+      {
+        "id": "H-C2",
+        "status": "pass",
+        "note": "Warm slate around a parchment sheet or verdict; brass rules, wax seals and Fraunces headings; no generic dark-fantasy chrome."
+      },
+      {
+        "id": "H-P1",
+        "status": "pass",
+        "note": "At 375 the actions stack full width; no per-round history survives."
+      },
+      {
+        "id": "H-T1",
+        "status": "pass",
+        "note": "At 1024/1280 the plaque is 720px with Rematch, Change decks and Menu in one row."
+      }
+    ],
+    "decision": "approved"
+  },
+  "issues": []
+}
