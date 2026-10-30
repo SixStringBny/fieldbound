@@ -36,11 +36,18 @@ lethal and end states.
   cards, because the frozen `cardAccessibleName` is not a contiguous match for
   the visible shift/draw text. Written into the acceptance bar.
 
+## Feedback column (re-issued with ticket 4)
+
+`AB-F1`–`F5` are green via `tests/e2e/feedback.spec.ts`: one beat per settled
+transition, the net signed impact number (inside the panel, clamped, no layout
+change, aria-hidden), handoff/intent-reveal/draw gating, the two-channel floor,
+and the CSS-only newest-wins allowlist. The number anchors over the enemy
+portrait and the player meter's middle rather than the spec's HP-meter trailing
+edge; the owner accepted that placement at the motion gate because the 375 player
+band cannot seat it without covering the value.
+
 ## Deliberately deferred
 
-- **Feedback (`AB-F1`–`F5`)** belongs to ticket 4; the structure is ready for
-  `data-feedback` but no beat exists yet. This record will be re-issued with the
-  feedback column when ticket 4 lands.
 - The duel board, series strip and privacy states land with ticket 7.
 - A battle-end screenshot is not reachable (a settled solo battle goes to reward,
   a duel round to its result); the end state is unit-covered and announced.

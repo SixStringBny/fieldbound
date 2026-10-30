@@ -1,16 +1,16 @@
 {
   "taskId": "UI-3-battle",
   "reviewer": "Ben McCusker (@SixStringBny)",
-  "reviewedAt": "2026-10-30T00:07:51.229Z",
+  "reviewedAt": "2026-10-30T03:31:46.001Z",
   "decision": "approved",
   "evidence": [
     {
       "path": "docs/reviews/ui-overhaul/battle.md",
-      "sha256": "6ee118f4217fb8d9c22cac3cb0e644e291a7196d0cd01821c90f277776049307"
+      "sha256": "6a3af5ca5541d2f2155dd9357eb5efb9f706847397b3aec5bead771f48582a0f"
     }
   ],
   "route": "battle",
-  "commit": "1fa094d",
+  "commit": "efb6106",
   "viewports": [
     "375x667",
     "390x844",
@@ -20,7 +20,7 @@
   ],
   "mechanical": {
     "owner": "qa-automation-engineer",
-    "ranAt": "2026-10-30T00:07:51.229Z",
+    "ranAt": "2026-10-30T03:31:46.001Z",
     "checks": [
       {
         "id": "AB-C1",
@@ -147,16 +147,46 @@
         "status": "pass",
         "test": "tests/e2e/ui-bar.spec.ts › AB-V4 self-hosted display face and system UI stack",
         "message": ""
+      },
+      {
+        "id": "AB-F1",
+        "status": "pass",
+        "test": "tests/e2e/feedback.spec.ts › AB-F1 one beat per settled transition",
+        "message": ""
+      },
+      {
+        "id": "AB-F2",
+        "status": "pass",
+        "test": "tests/e2e/feedback.spec.ts › AB-F2 impact number is net, signed, clamped and aria-hidden",
+        "message": "Reduced-motion variant: AB-F2 no impact-number element exists and the facts stay visible."
+      },
+      {
+        "id": "AB-F3",
+        "status": "pass",
+        "test": "tests/e2e/feedback.spec.ts › AB-F3 handoff, intent reveal and draw gating",
+        "message": ""
+      },
+      {
+        "id": "AB-F4",
+        "status": "pass",
+        "test": "tests/e2e/feedback.spec.ts › AB-F4 the two-channel feedback floor",
+        "message": ""
+      },
+      {
+        "id": "AB-F5",
+        "status": "pass",
+        "test": "tests/e2e/feedback.spec.ts › AB-F5 CSS-only beats, allowlist and newest-wins",
+        "message": ""
       }
     ],
     "summary": {
-      "passed": 21,
+      "passed": 26,
       "failed": 0
     }
   },
   "human": {
     "owner": "Ben McCusker (@SixStringBny)",
-    "reviewedAt": "2026-10-30T00:07:51.229Z",
+    "reviewedAt": "2026-10-30T03:31:46.001Z",
     "viewports": [
       "390x844",
       "768x1024",
