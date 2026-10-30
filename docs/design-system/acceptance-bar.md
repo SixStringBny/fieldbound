@@ -142,7 +142,7 @@ row narrows them.
 
 | ID | Applies to | Pass condition |
 | --- | --- | --- |
-| `AB-A1` | every route at 375 and 1280 | `@axe-core/playwright` reports zero WCAG 2.1 A/AA violations. Suppressing a rule requires a one-line reason recorded here; the list starts empty. Axe is evidence, never a substitute for the human column. |
+| `AB-A1` | every route at 375 and 1280 | `@axe-core/playwright` reports zero WCAG 2.1 A/AA violations. Suppressing a rule requires a one-line reason recorded here; the list starts empty. Axe is evidence, never a substitute for the human column. **Recorded exemption (2026-10-30, owner-approved at the battle gate):** `label-content-name-mismatch` is suppressed on the battle and duel hand cards, where the frozen `cardAccessibleName` cannot be a contiguous match for the visible shift/draw text; revisit when the duel ticket lands. |
 | `AB-A2` | every route | Every stateful control carries a glyph plus a word: affordability, selection, current step, element and outcome are never colour-only. |
 | `AB-A3` | every route | Computed contrast ratios meet the token sheet's floors: ≥4.5:1 all text, ≥7:1 stat values and primary text, ≥3:1 interactive boundaries and glyphs. Any rendered pair not listed in the token sheet is measured before it ships. |
 | `AB-A4` | battle, duel board | Exactly one polite live region; exactly one announcement per settled transition; the log is non-live; no second live region is added by a beat. |
