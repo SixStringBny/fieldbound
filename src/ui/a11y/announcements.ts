@@ -1,13 +1,18 @@
 /**
  * Battle announcement prose (SHL-FR-06).
  *
- * Turns the difference between two settled engine states into one polite
- * sentence for the app's live region. Keeping this a pure function has two
- * benefits:
+ * Turns one settled engine transition into one polite sentence for the app's
+ * live region. Keeping this a pure function has two benefits:
  *
  *   - the announcement is derived from a state transition, never from a render
  *     pass, so React re-renders cannot repeat it;
  *   - the wording is testable without mounting the board.
+ *
+ * The *change* comes from the shared `BattleDeltas` (motion-and-feedback section
+ * 2.1), the same diff the log, the cue list and the visual beat read. The
+ * resulting numbers a sentence has to state — remaining health, its maximum —
+ * come from the settled state. Wording, order and punctuation are unchanged;
+ * `src/ui/feedback/parity.test.ts` pins the sentence to the deltas.
  *
  * Only facts are stated: the health and defense deltas the engine produced, the
  * field the engine selected and the matchup facts the controller resolved. The
@@ -16,12 +21,15 @@
 import type { BattleState, Element } from '../../engine/types';
 import type { FieldMatchup } from '../components/FieldBanner';
 import { elementLabel } from '../components/ElementCue';
+import type { BattleDeltas } from '../feedback/diff';
 
 /** The two intents whose settled results are announced. */
 export type AnnouncedIntent = 'play-card' | 'end-turn';
 
 export interface BattleUpdateInput {
-  readonly previous: BattleState;
+  /** What the transition changed, from `diffBattleState`. */
+  readonly deltas: BattleDeltas;
+  /** The settled state, for the remaining and maximum values in a sentence. */
   readonly next: BattleState;
   readonly intent: AnnouncedIntent;
   /** Controller-resolved field facts for the new field; null on Neutral. */
@@ -67,7 +75,7 @@ function fieldSentence(
  * - A settled battle always closes with "Victory." or "Defeat.".
  */
 export function describeBattleUpdate({
-  previous,
+  deltas,
   next,
   intent,
   fieldMatchup,
@@ -79,7 +87,7 @@ export function describeBattleUpdate({
     parts.push('Enemy turn.');
   }
 
-  const playerLost = previous.sides.player.health - next.sides.player.health;
+  const playerLost = -deltas.health.player;
   if (playerLost > 0) {
     parts.push(
       healthSentence(
@@ -91,7 +99,7 @@ export function describeBattleUpdate({
     );
   }
 
-  const enemyLost = previous.sides.opponent.health - next.sides.opponent.health;
+  const enemyLost = -deltas.health.opponent;
   if (enemyLost > 0) {
     parts.push(
       healthSentence(
@@ -103,31 +111,30 @@ export function describeBattleUpdate({
     );
   }
 
-  const playerDefense =
-    next.sides.player.defense - previous.sides.player.defense;
-  if (playerDefense > 0) {
-    parts.push(`You gain ${playerDefense} defense.`);
+  if (deltas.defense.player > 0) {
+    parts.push(`You gain ${deltas.defense.player} defense.`);
   }
 
-  const enemyDefense =
-    next.sides.opponent.defense - previous.sides.opponent.defense;
-  if (enemyDefense > 0) {
-    parts.push(`${enemyName} gains ${enemyDefense} defense.`);
+  if (deltas.defense.opponent > 0) {
+    parts.push(`${enemyName} gains ${deltas.defense.opponent} defense.`);
   }
 
-  const field = fieldSentence(previous.field, next.field, fieldMatchup);
+  const field =
+    deltas.field === null
+      ? ''
+      : fieldSentence(deltas.field.previous, deltas.field.next, fieldMatchup);
   if (field !== '') {
     parts.push(field);
   }
 
-  if (next.outcome === 'player-victory') {
+  if (deltas.outcome === 'player-victory') {
     parts.push('Victory.');
-  } else if (next.outcome === 'opponent-victory') {
+  } else if (deltas.outcome === 'opponent-victory') {
     parts.push('Defeat.');
   }
 
-  if (intent === 'end-turn' && next.outcome === 'ongoing') {
-    parts.push(`Your turn. Turn ${next.turn}.`);
+  if (intent === 'end-turn' && deltas.outcome === 'ongoing') {
+    parts.push(`Your turn. Turn ${deltas.turn}.`);
   }
 
   if (parts.length === 0) {

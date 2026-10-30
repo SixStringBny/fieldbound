@@ -21,9 +21,17 @@
  * field shift, Ward defense, heal, damage, status application, then outcome.
  * Zero-value deltas are omitted, so a transition that changed nothing produces
  * an empty effects list rather than a synthetic "+0" fact.
+ *
+ * The deltas themselves come from the shared `diffBattleState` (motion-and-
+ * feedback section 2.1), which the announcement, the cue list and the visual
+ * feedback beat also read. This module now only maps deltas to log effects, so
+ * the four consumers cannot disagree about what changed; its output is
+ * unchanged, and `derive.test.ts` plus `ui/feedback/parity.test.ts` are the
+ * proof.
  */
-import { STATUS_KINDS } from '../engine/types';
-import type { BattleState, Side } from '../engine/types';
+import type { BattleState } from '../engine/types';
+import { diffBattleState } from '../ui/feedback/diff';
+import { logEffectsFromDeltas } from '../ui/feedback/consumers';
 import { BATTLE_LOG_LIMIT } from './types';
 import type { BattleLogEffect, BattleLogEntry } from './types';
 
@@ -55,99 +63,21 @@ export type BattleLogContext =
   | BattleLogCardContext
   | BattleLogTurnContext;
 
-/** The other side without importing the battle reducer. */
-function otherSide(side: Side): Side {
-  return side === 'player' ? 'opponent' : 'player';
-}
-
 /** Stable id derived from the settled turn and the never-reused ordinal. */
 function entryId(turn: number, ordinal: number): string {
   return `t${String(turn)}-e${String(ordinal)}`;
 }
 
 /**
- * Copies every observable delta, in engine application order. Only increases in
- * a status count are recorded: a stack spent by an attack is not an
- * application, and a battle-end clear is not one either.
+ * Copies every observable delta, in engine application order, from the shared
+ * diff. Only increases in a status count are recorded: a stack spent by an
+ * attack is not an application, and a battle-end clear is not one either.
  */
 function deriveEffects(before: BattleState, after: BattleState): BattleLogEffect[] {
-  const effects: BattleLogEffect[] = [];
-  const actor = before.activeSide;
-  const order: readonly Side[] = [actor, otherSide(actor)];
-
-  if (before.field !== after.field) {
-    effects.push({
-      kind: 'field',
-      previous: before.field,
-      next: after.field,
-    });
-  }
-
-  for (const side of order) {
-    const was = before.sides[side];
-    const now = after.sides[side];
-
-    if (now.defense > was.defense) {
-      effects.push({
-        kind: 'defense',
-        target: side,
-        amount: now.defense - was.defense,
-        total: now.defense,
-      });
-    }
-  }
-
-  for (const side of order) {
-    const was = before.sides[side];
-    const now = after.sides[side];
-
-    if (now.health > was.health) {
-      effects.push({
-        kind: 'heal',
-        target: side,
-        amount: now.health - was.health,
-        remaining: now.health,
-        max: now.maxHealth,
-      });
-    }
-  }
-
-  for (const side of order) {
-    const was = before.sides[side];
-    const now = after.sides[side];
-
-    if (now.health < was.health) {
-      effects.push({
-        kind: 'damage',
-        target: side,
-        amount: was.health - now.health,
-        remaining: now.health,
-        max: now.maxHealth,
-      });
-    }
-  }
-
-  for (const side of order) {
-    const was = before.sides[side];
-    const now = after.sides[side];
-
-    for (const status of STATUS_KINDS) {
-      if (now.statuses[status] > was.statuses[status]) {
-        effects.push({
-          kind: 'status',
-          target: side,
-          status,
-          stacks: now.statuses[status],
-        });
-      }
-    }
-  }
-
-  if (before.outcome === 'ongoing' && after.outcome !== 'ongoing') {
-    effects.push({ kind: 'outcome', outcome: after.outcome });
-  }
-
-  return effects;
+  return logEffectsFromDeltas(diffBattleState(before, after), after, {
+    actor: before.activeSide,
+    settled: before.outcome === 'ongoing' && after.outcome !== 'ongoing',
+  });
 }
 
 /**
