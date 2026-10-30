@@ -1,16 +1,16 @@
 {
-  "taskId": "UI-6-match-result",
+  "taskId": "UI-7-match-result",
   "reviewer": "Ben McCusker (@SixStringBny)",
-  "reviewedAt": "2026-10-30T05:14:25.061Z",
+  "reviewedAt": "2026-10-30T11:50:07.775Z",
   "decision": "approved",
   "evidence": [
     {
-      "path": "docs/reviews/ui-overhaul/reading-screens.md",
-      "sha256": "c2e6dd8952b313f3732c377ce3805c38312158e384e76f25c336d225ec8bdc16"
+      "path": "docs/reviews/ui-overhaul/duel-flow.md",
+      "sha256": "efd170958f51a4e9d21818386e7b68c597c5ac3faec43912c3179f65dfa23fe4"
     }
   ],
   "route": "match-result",
-  "commit": "a0d6c76",
+  "commit": "62bbb1c",
   "viewports": [
     "375x667",
     "390x844",
@@ -20,36 +20,36 @@
   ],
   "mechanical": {
     "owner": "qa-automation-engineer",
-    "ranAt": "2026-10-30T05:14:25.061Z",
+    "ranAt": "2026-10-30T11:50:07.775Z",
     "checks": [
       {
         "id": "AB-C1",
         "status": "pass",
-        "test": "tests/e2e/reading-screens.spec.ts › the round result is a verdict plaque with the strip and next opener",
-        "message": "The match result shares the plaque component; the duel journey covers its path."
+        "test": "tests/e2e/duel.spec.ts › completes a best-of-three with a privacy handoff before every turn",
+        "message": ""
       },
       {
         "id": "AB-C2",
         "status": "pass",
-        "test": "tests/e2e/reading-screens.spec.ts › the round result is a verdict plaque with the strip and next opener",
-        "message": "Rematch is the single action seal; Change decks and Menu are secondary."
+        "test": "tests/e2e/duel.spec.ts › completes a best-of-three with a privacy handoff before every turn",
+        "message": "Rematch is the single action seal; the other two are secondary."
       },
       {
         "id": "AB-G4",
         "status": "pass",
-        "test": "tests/e2e/reading-screens.spec.ts › the round result is a verdict plaque with the strip and next opener",
+        "test": "tests/e2e/duel.spec.ts › holds the setup, privacy and board geometry at all five viewports",
         "message": ""
       },
       {
         "id": "AB-G5",
         "status": "pass",
-        "test": "tests/e2e/reading-screens.spec.ts › the round result is a verdict plaque with the strip and next opener",
+        "test": "tests/e2e/duel.spec.ts › holds the setup, privacy and board geometry at all five viewports",
         "message": ""
       },
       {
         "id": "AB-G6",
         "status": "pass",
-        "test": "tests/e2e/reading-screens.spec.ts › the route heading takes focus on arrival",
+        "test": "tests/e2e/duel.spec.ts › completes a best-of-three with a privacy handoff before every turn",
         "message": ""
       },
       {
@@ -84,7 +84,7 @@
   },
   "human": {
     "owner": "Ben McCusker (@SixStringBny)",
-    "reviewedAt": "2026-10-30T05:14:25.061Z",
+    "reviewedAt": "2026-10-30T11:50:07.775Z",
     "viewports": [
       "390x844",
       "768x1024",
@@ -99,17 +99,17 @@
       {
         "id": "H-C2",
         "status": "pass",
-        "note": "Warm slate around a parchment sheet or verdict; brass rules, wax seals and Fraunces headings; no generic dark-fantasy chrome."
+        "note": "Warm slate, parchment plaque and cards, brass rules and the rust seal language; nothing reads as generic dark fantasy."
       },
       {
         "id": "H-P1",
         "status": "pass",
-        "note": "At 375 the actions stack full width; no per-round history survives."
+        "note": "At 375 the three actions stack full width; no per-round history survives."
       },
       {
         "id": "H-T1",
         "status": "pass",
-        "note": "At 1024/1280 the plaque is 720px with Rematch, Change decks and Menu in one row."
+        "note": "At 1024/1280 the 720px plaque keeps Rematch, Change decks and Menu in one row."
       }
     ],
     "decision": "approved"
