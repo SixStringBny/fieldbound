@@ -271,6 +271,7 @@
 }
 
 .duel-panel {
+  position: relative;
   display: grid;
   gap: var(--fb-space-2);
   min-width: 0;

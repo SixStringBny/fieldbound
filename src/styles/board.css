@@ -832,6 +832,7 @@
 /* -------------------------------------------------------------------------- */
 
 .player-panel {
+  position: relative;
   display: grid;
   min-height: 48px;
   grid-template-areas: 'head meters energy';

@@ -127,9 +127,7 @@
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  transition:
-    border-color var(--fb-dur-lift) var(--fb-ease),
-    box-shadow var(--fb-dur-lift) var(--fb-ease);
+  transition: border-color var(--fb-dur-lift) var(--fb-ease);
 }
 
 .menu__card {
