@@ -1145,6 +1145,8 @@ export function App({
           round={duel.round}
           winner={duel.winner}
           wins={duel.match.wins}
+          roundWinners={duel.match.roundWinners}
+          nextPlayer={duel.match.firstPlayer}
           onNextRound={handleNextRound}
         />
       ) : (
@@ -1155,6 +1157,7 @@ export function App({
         <MatchResultScreen
           winner={duelMatchWinner}
           wins={duel.match.wins}
+          roundWinners={duel.match.roundWinners}
           onRematch={handleRematch}
           onChangeDecks={beginDuelSetup}
           onMenu={leaveDuel}

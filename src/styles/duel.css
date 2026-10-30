@@ -333,40 +333,55 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/* Round and match results                                                    */
+/* Series strip                                                               */
 /* -------------------------------------------------------------------------- */
 
-.duel-result {
-  padding: var(--fb-space-5);
-  border: var(--fb-rule);
-  border-radius: var(--fb-radius-lg);
-  background-color: var(--fb-surface-panel);
-  background-image: var(--fb-material-panel);
-  box-shadow: var(--fb-rim), var(--fb-elev-2);
-  color: var(--fb-text);
-}
-
-.duel-result__score {
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.duel-result__next {
-  margin-top: var(--fb-space-4);
-}
-
-.duel-result__actions {
-  display: grid;
-  gap: var(--fb-space-3);
-  margin: var(--fb-space-4) 0 0;
+/*
+ * Three public pips for the best-of-three (duel-flow section 4.9). The list is
+ * named `Series score` and every pip is named by its round and winner; the
+ * painted pip is decorative, so the strip is never colour-only. It is the same
+ * record on the round result and the match result.
+ */
+.series-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--fb-space-2);
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.duel-result__actions .shell__button,
-.duel-result__next .shell__button {
-  width: 100%;
+.series-strip__pip {
+  position: relative;
+  display: inline-flex;
+  width: 0.75rem; /* 12px pip */
+  height: 0.75rem;
+}
+
+.series-strip__mark {
+  display: block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: var(--fb-rule-width) solid var(--fb-rule-strong-color);
+  border-radius: var(--fb-radius-pill);
+  background-color: transparent;
+}
+
+.series-strip__mark[data-played='true'] {
+  background-color: var(--fb-selected);
+  background-image: var(--fb-material-brass);
+}
+
+.series-strip__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+  white-space: nowrap;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -376,14 +391,5 @@
 @media (min-width: 640px) {
   .duel-decks {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .duel-result__actions {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .duel-result__next .shell__button {
-    width: auto;
-    min-width: 12rem;
   }
 }
