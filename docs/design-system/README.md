@@ -335,14 +335,16 @@ Rules:
   implementation must let the log scroll rather than shrink text.
 - Display face is 700 only. UI weights are 400/600/700; 700 is for values and
   actions, not paragraphs.
-- Uppercase is limited to labels, chips and section headings; tracking
-  `--fb-tracking-label` (0.1em) or `--fb-tracking-wide` (0.16em).
+- Uppercase is one label style: 11px, weight 700, tracking
+  `--fb-tracking-label` (0.1em). Only the display wordmark and the field title
+  are uppercase at display size; section headings are sentence case.
+  `--fb-tracking-wide` is reserved for the display wordmark.
 - Body line length is capped at **68ch** on document panels; battle panels are
   narrow and use 1.4–1.5.
 - Numbers are tabular (`font-variant-numeric: tabular-nums`), especially HP,
   defense, energy, damage and intent totals.
-- Card names clamp to 2 lines; effect summaries clamp to 2 on table and hide on
-  phone (the detail sheet carries the full text).
+- Card names clamp to 2 lines; effect summaries are not on the face at any
+  width — the detail sheet carries the full text.
 
 ---
 
@@ -351,7 +353,10 @@ Rules:
 ### 6.1 Spacing
 
 4px base: `--fb-space-1` 4, `-2` 8, `-3` 12, `-4` 16, `-5` 24, `-6` 32, `-7` 48,
-`-8` 64. Gaps between targets are at least 8px; grouped controls use 4–6px.
+`-8` 64. Gaps between targets are at least 8px; grouped controls use 4–8px.
+Panel and sheet padding and the section rhythm come from the scale
+(24 / 32 / 48 at phone / tablet / table); 10, 20, 28 and 40px panel steps are
+not part of the rhythm.
 
 | Layout token | Value | Use |
 | --- | --- | --- |
@@ -388,6 +393,11 @@ panels and `--fb-radius-lg` for sheets.
 - `--fb-rule-subtle` (1px brass 800) for internal subdivisions and log entries.
 - `--fb-rule-strong` (2px brass 300) for selected/current state.
 - `--fb-rule-on-paper` (1px parchment 700) for card/document edges.
+- **One outline per panel, plus at most one internal divider.** A panel never
+  contains a second bordered panel; inner objects are seals, art frames or
+  controls, not nested boxes. Art frames and chips are the only nested borders.
+- **No dashed or dotted rules.** A state (unavailable, heal, disabled) uses a
+  solid muted border plus its existing word, never a dashed outline.
 - A 2px inset rim (`--fb-rim`) sits inside raised surfaces; no outer grey border.
 - Focus is never a border: use the focus recipe below.
 
@@ -454,14 +464,16 @@ absorbs slack; enemy/player bands keep their content height.
 | --- | --- | --- | --- |
 | Size | 138×194 | 108×152 | `--fb-card-w-table/phone`, aspect 300/420 |
 | Padding | 10/9px | 8/7px | 4px gaps |
-| Cost seal | 27px | 21px | wax material, `--fb-text` 13/10px |
-| Art window | 66px tall | 48px tall | 6/5 crop, `--fb-art-filter`, stone frame, vignette |
+| Cost seal | 27px | 21px | wax material, `--fb-text` 13/11px |
+| Art window | 84px tall (66px compact) | 64px tall on tall phones, 48px at 375×667 | 6/5 crop, `--fb-art-filter`, stone frame, vignette |
 | Name | 13px display / 1.05 | 11px | 2 lines max |
-| Meta | 7px uppercase | 6px | element · type |
-| Summary | 8.5px, 2 lines | hidden | detail sheet owns full text |
-| Value | 20px display | 16px | tabular, label 7/6px |
-| Delta/badge | 7px | 6px | `+2 field`, `Pierce` |
+| Value | 20px display | 16px | tabular, label 11px |
+| Badge | 11px | 11px | at most one: `+2 field` or `Pierce` |
 | Target | full card ≥108×152 | same | no overlapping hit boxes |
+
+Element and type, the printed summary and any further badges live in the detail
+sheet and the frozen accessible name; the face is cost, name, value and at most
+one badge.
 
 The table fan is an arc of ±4° with 10px gaps; rotation is visual only and the
 hit boxes do not overlap. The phone rack is 108px cards, 8px gaps, horizontal
