@@ -551,7 +551,7 @@ describe('BattleBoard card detail', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('keeps an unaffordable card focusable but not activatable', () => {
+  it('keeps an unaffordable card focusable and inspectable', () => {
     renderBoard(makeState({ energy: 1 }));
 
     const inferno = screen.getByRole('button', {
@@ -565,7 +565,16 @@ describe('BattleBoard card detail', () => {
     expect(document.activeElement).toBe(inferno);
 
     fireEvent.click(inferno);
-    fireEvent.keyDown(inferno, { key: 'Enter' });
+
+    const dialog = screen.getByRole('dialog');
+    const play = within(dialog).getByRole('button', { name: 'Play card' });
+
+    expect((play as HTMLButtonElement).disabled).toBe(true);
+    expect(within(dialog).getByText(/need more energy/i)).toBeTruthy();
+
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Close card detail' }),
+    );
     expect(screen.queryByRole('dialog')).toBeNull();
 
     const affordable = cinderJabButton();

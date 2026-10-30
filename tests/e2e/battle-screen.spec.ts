@@ -505,6 +505,21 @@ test.describe('battle states', () => {
     await expect(
       page.getByRole('button', { name: 'End Turn', exact: true }),
     ).toBeEnabled();
+
+    // Inspection stays available; only the detail's Play action is disabled.
+    // Playwright treats aria-disabled as not clickable, so use the keyboard
+    // path a real user has.
+    await unaffordable.focus();
+    await page.keyboard.press('Enter');
+
+    const dialog = page.getByRole('dialog');
+
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByRole('button', { name: 'Play card' }),
+    ).toBeDisabled();
+    await dialog.getByRole('button', { name: 'Close card detail' }).click();
+    await expect(dialog).toHaveCount(0);
   });
 
   test('opens the log drawer above the control bar and closes it with Escape', async ({

@@ -144,7 +144,7 @@ describe('App battle screen', () => {
     expect(within(handRegion()).getAllByRole('button')).toHaveLength(4);
   });
 
-  it('cannot play an unaffordable card through the hand', () => {
+  it('opens an unaffordable card for inspection but cannot play it', () => {
     renderBattle();
 
     playFromHand(/Ember Lance/);
@@ -155,10 +155,17 @@ describe('App battle screen', () => {
     expect(inferno.textContent).toContain('Unaffordable');
 
     fireEvent.click(inferno);
-    fireEvent.keyDown(inferno, { key: 'Enter' });
 
-    expect(screen.queryByRole('dialog')).toBeNull();
+    const dialog = screen.getByRole('dialog');
+    const play = within(dialog).getByRole('button', { name: 'Play card' });
+
+    expect((play as HTMLButtonElement).disabled).toBe(true);
     expect(within(playerRegion()).getByText('1 energy')).toBeTruthy();
+
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Close card detail' }),
+    );
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('ends the turn, runs the enemy plan and returns control', () => {

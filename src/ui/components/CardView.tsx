@@ -33,7 +33,10 @@ export interface CardViewProps {
   readonly affordable: boolean;
   /** App base URL used to resolve the manifest image. */
   readonly baseUrl: string;
-  /** Called only when an affordable card is activated. */
+  /**
+   * Called when a card is activated to inspect it. An unaffordable card still
+   * opens the detail (battle-screen §4, §6); only its Play action is disabled.
+   */
   readonly onInspect: (instanceId: string) => void;
 }
 
@@ -49,9 +52,7 @@ export function CardView({
   const summary = cardEffectLines(card)[0] ?? '';
 
   const activate = () => {
-    if (affordable) {
-      onInspect(instanceId);
-    }
+    onInspect(instanceId);
   };
 
   /**
