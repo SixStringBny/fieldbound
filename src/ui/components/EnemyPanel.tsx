@@ -63,6 +63,12 @@ export function EnemyPanel({
   const alt = `${enemy.name}, ${elementLabel(enemy.element)} enemy, ${side.health} of ${side.maxHealth} health`;
   const stepCount = plan?.steps.length ?? 0;
   const revealing = feedback?.revealIntent === true && !reducedMotion;
+  const planSummary =
+    plan === null
+      ? 'No plan yet.'
+      : stepCount === 0
+        ? 'No cards planned.'
+        : `Incoming: ${plan.totalDamage} damage, ${plan.totalDefense} defense.`;
 
   return (
     <section
@@ -97,6 +103,7 @@ export function EnemyPanel({
             value={side.health}
             max={side.maxHealth}
             tone="health"
+            showLabel={false}
           />
 
           <StatMeter
@@ -105,6 +112,7 @@ export function EnemyPanel({
             value={side.defense}
             max={DEFENSE_CAP}
             tone="defense"
+            showLabel={false}
           />
         </div>
 
@@ -123,7 +131,7 @@ export function EnemyPanel({
         key={revealing && feedback !== null ? `intent-${feedback.key}` : 'intent'}
       >
         <div className="enemy-panel__intent-head">
-          <h3 className="enemy-panel__intent-title">Intent · next turn</h3>
+          <h3 className="enemy-panel__intent-title">{planSummary}</h3>
           {plan?.lethal === true ? (
             <p className="enemy-panel__lethal-badge">Lethal</p>
           ) : null}
@@ -135,33 +143,22 @@ export function EnemyPanel({
               aria-controls={stepsId}
               onClick={() => setExpanded((current) => !current)}
             >
+              <span className="enemy-panel__expand-glyph" aria-hidden="true">
+                {expanded ? '▴' : '▾'}
+              </span>
               {expanded ? 'Show fewer steps' : `Show all ${stepCount} steps`}
             </button>
           ) : null}
         </div>
 
-        {plan === null ? (
-          <p className="enemy-panel__empty">No plan yet.</p>
-        ) : (
+        {plan === null ? null : (
           <>
-            <p className="enemy-panel__totals">
-              {stepCount === 0
-                ? 'No cards planned.'
-                : `Incoming: ${plan.totalDamage} damage, ${plan.totalDefense} defense.`}
-            </p>
-
-            {plan.lethal ? (
-              <p className="enemy-panel__lethal">
-                Lethal: this plan can end the battle.
-              </p>
-            ) : null}
-
             {/*
              * Phone-only preview: the collapsed intent keeps the first three
-             * steps as compact chips (README §8.7), while the full list below
-             * is revealed by `Show all N steps`. The preview is display:none at
-             * table widths and when expanded, so it never duplicates the plan
-             * in the accessibility tree.
+             * steps as quiet text rows, while the full list below is revealed
+             * by `Show all N steps`. The preview is display:none at table
+             * widths and when expanded, so it never duplicates the plan in the
+             * accessibility tree.
              */}
             {stepCount > 0 ? (
               <ol
@@ -264,11 +261,6 @@ export function EnemyPanel({
               </ol>
             ) : null}
 
-            {stepCount > 0 ? (
-              <p className="enemy-panel__note">
-                Recomputed from the live field and defense.
-              </p>
-            ) : null}
           </>
         )}
       </div>

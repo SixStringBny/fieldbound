@@ -109,9 +109,7 @@
   height: 26px;
   flex: 0 0 auto;
   place-items: center;
-  border: var(--fb-rule);
-  border-radius: 50%;
-  color: var(--fb-rule-strong-color);
+  color: var(--fb-text-soft);
   font-family: var(--fb-font-display);
   font-size: var(--fb-text-sm);
   font-weight: var(--fb-weight-display);
@@ -119,11 +117,11 @@
 }
 
 .battle-header__wordmark {
-  color: var(--fb-rule-strong-color);
+  color: var(--fb-text-muted);
   font-family: var(--fb-font-ui);
   font-size: var(--fb-text-2xs);
-  font-weight: 700;
-  letter-spacing: var(--fb-tracking-wide);
+  font-weight: var(--fb-weight-ui);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
   display: none;
@@ -148,14 +146,23 @@
   gap: var(--fb-space-1);
 }
 
-.battle-header__action {
+/* Ghosted route actions: a target-sized control with no fill or pill rule, so
+   the header stays quieter than the board it introduces. */
+.battle-screen .battle-header__action {
   min-height: var(--fb-target);
-  padding: var(--fb-space-1) var(--fb-space-2);
+  padding: 0 var(--fb-space-1);
+  border-color: transparent;
+  background-color: transparent;
   color: var(--fb-text-soft);
   font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.battle-screen .battle-header__action:hover {
+  border-color: transparent;
+  color: var(--fb-text);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -336,7 +343,6 @@
   gap: var(--fb-space-1) var(--fb-space-2);
   padding: var(--fb-space-2);
   border: var(--fb-rule);
-  border-left: 3px solid var(--fb-element-accent);
   border-radius: var(--fb-radius-md);
   background-color: var(--fb-surface-panel);
   background-image: var(--fb-material-panel);
@@ -345,7 +351,7 @@
 }
 
 .enemy-panel[data-lethal='true'] {
-  border-left-color: var(--fb-danger);
+  border-color: var(--fb-danger);
 }
 
 .enemy-panel__portrait {
@@ -406,13 +412,15 @@
   gap: 2px;
 }
 
+/* The panel's one internal divider: a single solid brass hairline, no inset. */
 .enemy-panel__intent {
   display: grid;
+  min-height: 0;
   grid-area: intent;
   align-content: start;
   gap: 2px;
   padding-top: var(--fb-space-1);
-  border-top: var(--fb-rule-width) dashed var(--fb-rule-subtle-color);
+  border-top: var(--fb-rule-subtle);
 }
 
 .enemy-panel__intent-head {
@@ -423,38 +431,26 @@
   gap: var(--fb-space-1) var(--fb-space-2);
 }
 
+/* The plan totals are the intent's only heading; there is no second
+   "Intent · next turn" label restating the same fact. */
 .enemy-panel__intent-title {
-  color: var(--fb-rule-strong-color);
-  font-size: var(--fb-text-2xs);
-  font-weight: 700;
-  letter-spacing: var(--fb-tracking-label);
-  line-height: var(--fb-leading-ui);
-  text-transform: uppercase;
-}
-
-.enemy-panel__lethal-badge {
-  padding: 1px var(--fb-space-2);
-  border: var(--fb-rule-width) solid var(--fb-danger);
-  border-radius: var(--fb-radius-pill);
-  background-color: var(--fb-action-soft);
-  color: var(--fb-danger);
-  font-size: var(--fb-text-2xs);
-  font-weight: 700;
-  letter-spacing: var(--fb-tracking-label);
-  text-transform: uppercase;
-}
-
-.enemy-panel__totals {
   color: var(--fb-text);
   font-size: var(--fb-text-xs);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  line-height: var(--fb-leading-ui);
 }
 
-.enemy-panel__lethal {
+.enemy-panel__lethal-badge {
+  padding: 0 var(--fb-space-1);
+  border: var(--fb-rule-width) solid var(--fb-danger);
+  border-radius: var(--fb-radius-xs);
   color: var(--fb-danger);
   font-size: var(--fb-text-2xs);
   font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
+  text-transform: uppercase;
 }
 
 /* The collapsed phone intent preview; hidden at table widths and when open. */
@@ -479,13 +475,10 @@
 
 .enemy-panel__step {
   display: grid;
-  grid-template-columns: 8px minmax(0, 1fr) auto auto;
-  align-items: center;
+  grid-template-columns: 6px minmax(0, 1fr) auto auto;
+  align-items: baseline;
   gap: var(--fb-space-1) var(--fb-space-2);
-  padding: 2px var(--fb-space-2);
-  border-left: var(--fb-rule-width-strong) solid var(--fb-element-accent);
-  border-radius: 0 var(--fb-radius-sm) var(--fb-radius-sm) 0;
-  background-color: var(--fb-surface-inset);
+  padding: 1px 0;
   font-size: var(--fb-text-2xs);
 }
 
@@ -503,45 +496,30 @@
 
 .enemy-panel__step-detail {
   color: var(--fb-text-soft);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .enemy-panel__step-cost {
-  display: grid;
-  width: 18px;
-  height: 18px;
-  place-items: center;
-  border: var(--fb-rule-subtle);
-  border-radius: 50%;
-  color: var(--fb-element-accent);
+  color: var(--fb-text-muted);
   font-size: var(--fb-text-2xs);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-
-.enemy-panel__note {
-  color: var(--fb-text-muted);
-  font-size: var(--fb-text-2xs);
-  line-height: var(--fb-leading-ui);
-}
-
-.enemy-panel__empty {
-  color: var(--fb-text-soft);
-  font-size: var(--fb-text-xs);
 }
 
 .enemy-panel .status-list--empty {
   display: none;
 }
 
+/* A ghost text control: still a 44px target, but no pill outline of its own. */
 .enemy-panel__expand {
+  display: inline-flex;
   min-height: var(--fb-target);
-  padding: var(--fb-space-1) var(--fb-space-3);
-  border: var(--fb-rule);
-  border-radius: var(--fb-radius-pill);
-  background-color: var(--fb-surface-raised);
+  align-items: center;
+  gap: var(--fb-space-1);
+  padding: 0 var(--fb-space-1);
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
   color: var(--fb-text-soft);
   font: inherit;
   font-size: var(--fb-text-2xs);
@@ -551,9 +529,13 @@
   cursor: pointer;
 }
 
+.enemy-panel__expand-glyph {
+  font-family: var(--fb-font-glyph);
+  font-size: var(--fb-text-xs);
+  line-height: 1;
+}
+
 .enemy-panel__expand[aria-expanded='true'] {
-  border-color: var(--fb-rule-strong-color);
-  background-color: var(--fb-surface-selected);
   color: var(--fb-text);
 }
 
@@ -595,11 +577,21 @@
   white-space: nowrap;
 }
 
+/* Where the value states the fact, the label word is gone; the number carries
+   the meter on its own and sits at the track's trailing edge. */
+.stat-meter[data-show-label='false'] .stat-meter__head {
+  justify-content: flex-end;
+}
+
+.stat-meter[data-show-label='false'] .stat-meter__value {
+  font-size: var(--fb-text-xs);
+}
+
 .stat-meter__track {
   position: relative;
   height: 7px;
   overflow: hidden;
-  border: var(--fb-rule-subtle);
+  border: 0;
   border-radius: var(--fb-radius-pill);
   background-color: var(--fb-surface-inset);
 }
@@ -698,28 +690,13 @@
   box-shadow: var(--fb-rim), var(--fb-elev-2);
 }
 
-.field-banner__roundel-ring {
-  position: absolute;
-  inset: 4px;
-  border: var(--fb-rule-subtle);
-  border-radius: 50%;
-}
-
-.field-banner__roundel-glyph {
-  position: absolute;
-  top: 3px;
-  left: 50%;
-  z-index: 2;
-  transform: translateX(-50%);
-  color: var(--fb-element-accent);
-  font-family: var(--fb-font-glyph);
-  font-size: var(--fb-text-2xs);
-}
-
+/* One brass ring, then the manifest art filling it behind the shared scrim.
+   No second inset ring, glyph or name tag: the title beside it already says
+   which field this is. */
 .field-banner__art {
   display: block;
-  width: 48px;
-  height: 48px;
+  width: calc(100% - 12px);
+  height: calc(100% - 12px);
   overflow: hidden;
   border-radius: 50%;
 }
@@ -732,36 +709,11 @@
   object-position: var(--fb-art-field-position);
 }
 
-.field-banner__roundel-tag {
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  z-index: 2;
-  transform: translateX(-50%);
-  padding: 0 4px;
-  border-radius: var(--fb-radius-xs);
-  background-color: var(--fb-surface-inset);
-  color: var(--fb-text);
-  font-size: var(--fb-text-2xs);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1.2;
-  text-transform: uppercase;
-}
-
 .field-banner__body {
   display: grid;
   min-width: 0;
   justify-items: center;
   gap: 2px;
-}
-
-.field-banner__eyebrow {
-  color: var(--fb-text-soft);
-  font-size: var(--fb-text-2xs);
-  font-weight: 700;
-  letter-spacing: var(--fb-tracking-label);
-  text-transform: uppercase;
 }
 
 .field-banner__title {
@@ -801,8 +753,8 @@
 .field-banner__cycle {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
-  margin: 2px 0 0;
+  gap: 0 var(--fb-space-2);
+  margin: var(--fb-space-1) 0 0;
   padding: 0;
   list-style: none;
 }
@@ -811,20 +763,20 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0 var(--fb-space-1);
-  border: var(--fb-rule-subtle);
-  border-radius: var(--fb-radius-pill);
-  background-color: var(--fb-surface-raised);
+  padding: 0;
+  border: 0;
+  background: transparent;
   font-size: var(--fb-text-2xs);
+  opacity: 0.66;
 }
 
 .field-banner__cycle-step[aria-current='step'] {
-  border-color: var(--fb-element-accent);
-  background: var(--fb-element-bg);
+  border-bottom: var(--fb-rule-width-strong) solid var(--fb-element-accent);
+  opacity: 1;
 }
 
 .field-banner__cycle-step[aria-current='step'] .element-cue {
-  color: var(--fb-element-ink);
+  color: var(--fb-text);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -841,7 +793,6 @@
   gap: 2px var(--fb-space-2);
   padding: 4px var(--fb-space-3);
   border: var(--fb-rule);
-  border-left: 3px solid var(--fb-element-accent);
   border-radius: var(--fb-radius-md);
   background-color: var(--fb-surface-panel);
   background-image: var(--fb-material-panel);
@@ -900,8 +851,10 @@
   white-space: nowrap;
 }
 
+/* One energy presentation at every width: the number plus its pips. The word
+   "energy" is for the accessibility tree only (the number has no unit). */
 .energy-pips {
-  display: none;
+  display: flex;
   gap: 3px;
   margin: 0;
   padding: 0;
@@ -1147,38 +1100,6 @@
   -webkit-line-clamp: 2;
 }
 
-.card-view__meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0 0.3rem;
-  color: var(--fb-text-on-paper-soft);
-  font-size: var(--fb-text-2xs);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 1.1;
-  text-transform: uppercase;
-}
-
-.card-view__meta .element-cue {
-  color: var(--fb-element-shade);
-  font-size: var(--fb-text-2xs);
-  letter-spacing: 0;
-}
-
-.card-view__type {
-  color: var(--fb-text-on-paper-soft);
-}
-
-.card-view__summary {
-  display: none;
-  height: 2.3em;
-  overflow: hidden;
-  color: var(--fb-text-on-paper-soft);
-  font-size: var(--fb-text-2xs);
-  line-height: 1.15;
-}
-
 .card-view__primary {
   display: flex;
   align-items: baseline;
@@ -1199,25 +1120,27 @@
   font-weight: 600;
 }
 
+/* At most one badge on the face; the rest stay in the detail sheet. */
 .card-view__badges {
   display: flex;
-  min-height: 12px;
-  flex-wrap: wrap;
-  gap: 2px;
+  min-height: 14px;
+  max-width: 100%;
   overflow: hidden;
-  max-height: 2.4em;
 }
 
 .card-view__badge {
   display: inline-flex;
+  max-width: 100%;
   align-items: center;
   padding: 0 3px;
+  overflow: hidden;
   border-radius: var(--fb-radius-xs);
   background-color: var(--fb-element-accent);
   color: var(--fb-element-shade);
   font-size: var(--fb-text-2xs);
   font-weight: 700;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .card-view[data-affordable='false'] .card-view__badge {
@@ -1543,6 +1466,28 @@
   }
 }
 
+/* Tall phones have room for the 168px card and a field roundel that earns the
+   space. The floor is high enough that the roundel plus its text still fits. */
+@media (min-width: 376px) and (max-width: 767px) and (min-height: 780px) {
+  .battle-board {
+    --fb-battle-card-h: 10.5rem;
+  }
+
+  .field-banner__roundel {
+    width: 128px;
+    height: 128px;
+  }
+
+  .field-banner__title {
+    font-size: var(--fb-text-xl);
+  }
+
+  .card-view__art {
+    height: 64px;
+    flex-basis: 64px;
+  }
+}
+
 @media (min-width: 376px) and (max-width: 767px) {
   .enemy-panel {
     min-height: 180px;
@@ -1551,19 +1496,33 @@
 
 /* Phone: one-line enemy summary, then steps on demand; compact You labels. */
 @media (max-width: 767px) {
+  /*
+   * The phone field no longer absorbs every spare pixel: the arena splits the
+   * slack 2:1 between the field and the enemy panel, and the field stops at
+   * 300px (under 40% of the board even at 390x844). The intent keeps the room
+   * this gives back; the roundel is the field's only art.
+   */
+  .enemy-panel {
+    flex: 1 1 auto;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .field-banner {
+    max-height: 18.75rem;
+    flex: 2 1 auto;
+  }
+
   .enemy-panel__title {
     font-size: var(--fb-text-xl);
   }
 
   .enemy-panel__intent {
     min-height: 0;
-    max-height: 88px;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    max-height: none;
+    overflow: hidden;
   }
 
-  .enemy-panel__intent[data-expanded='false'] .enemy-panel__steps,
-  .enemy-panel__intent[data-expanded='false'] .enemy-panel__note {
+  .enemy-panel__intent[data-expanded='false'] .enemy-panel__steps {
     display: none;
   }
 
@@ -1579,10 +1538,7 @@
     flex-wrap: wrap;
     align-items: baseline;
     gap: 0 var(--fb-space-1);
-    padding: 2px var(--fb-space-2);
-    border: var(--fb-rule-subtle);
-    border-radius: var(--fb-radius-xs);
-    background-color: var(--fb-surface-inset);
+    padding: 0;
     font-size: var(--fb-text-2xs);
     line-height: var(--fb-leading-ui);
   }
@@ -1603,35 +1559,24 @@
   }
 
   .enemy-panel__steps {
-    max-height: 64px;
+    max-height: 96px;
   }
 
   .field-banner__cycle {
     display: none;
   }
 
-  .stat-meter__label {
-    font-size: 0;
-    letter-spacing: 0;
+  .energy-pip {
+    width: 10px;
+    height: 10px;
   }
+}
 
-  .stat-meter--health .stat-meter__label::before,
-  .stat-meter--defense .stat-meter__label::before {
-    font-size: var(--fb-text-2xs);
-    letter-spacing: var(--fb-tracking-label);
-  }
-
-  .stat-meter--health .stat-meter__label::before {
-    content: 'HP';
-  }
-
-  .stat-meter--defense .stat-meter__label::before {
-    content: 'DEF';
-  }
-
-  .stat-meter__value,
-  .player-panel__energy-text {
-    font-size: 0.625rem;
+/* Tall phones: the three plan steps read as rows, not a cramped three-column
+   strip; the rule sits after the phone defaults it overrides. */
+@media (min-width: 376px) and (max-width: 767px) and (min-height: 780px) {
+  .enemy-panel__intent[data-expanded='false'] .enemy-panel__preview {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1723,13 +1668,8 @@
   }
 
   .field-banner__roundel {
-    width: 92px;
-    height: 92px;
-  }
-
-  .field-banner__art {
-    width: 66px;
-    height: 66px;
+    width: clamp(92px, 13svh, 140px);
+    height: clamp(92px, 13svh, 140px);
   }
 
   .field-banner__title {
@@ -1790,9 +1730,32 @@
     padding-bottom: var(--fb-space-3);
   }
 
+  .card-view__art {
+    height: 64px;
+    flex-basis: 64px;
+  }
+
   .battle-controls__end {
     min-width: 9rem;
     min-height: 48px;
+  }
+}
+
+/* Short tablets (below the 1024 target height): the field floor cannot hold a
+   large roundel and the full body, so the roundel shrinks and the cycle is
+   left to How to Play. */
+@media (min-width: 768px) and (max-width: 1023px) and (max-height: 850px) {
+  .field-banner__roundel {
+    width: 72px;
+    height: 72px;
+  }
+
+  .field-banner__title {
+    font-size: var(--fb-text-xl);
+  }
+
+  .field-banner__cycle {
+    display: none;
   }
 }
 
@@ -1846,7 +1809,7 @@
     padding-top: 0;
     padding-left: var(--fb-space-3);
     border-top: 0;
-    border-left: var(--fb-rule-width) dashed var(--fb-rule-subtle-color);
+    border-left: var(--fb-rule-subtle);
   }
 
   .enemy-panel__steps {
@@ -1860,6 +1823,8 @@
 
   .field-banner {
     min-height: 190px;
+    gap: var(--fb-space-2);
+    padding: var(--fb-space-2);
   }
 
   .field-banner__roundel {
@@ -1869,11 +1834,6 @@
 
   .field-banner__title {
     font-size: var(--fb-text-xl);
-  }
-
-  .field-banner__art {
-    width: 78px;
-    height: 78px;
   }
 
   .player-panel {
@@ -1951,14 +1911,6 @@
     line-height: 1.05;
   }
 
-  .card-view__meta {
-    font-size: var(--fb-text-2xs);
-  }
-
-  .card-view__summary {
-    display: block;
-  }
-
   .card-view__primary-value {
     font-size: var(--fb-text-xl);
   }
@@ -1967,11 +1919,6 @@
     width: 27px;
     height: 27px;
     font-size: var(--fb-text-sm);
-  }
-
-  .card-view__badges {
-    max-height: 1.3em;
-    flex-wrap: nowrap;
   }
 
   .card-detail {
@@ -2008,6 +1955,13 @@
 
   .hand__row {
     gap: 10px;
+  }
+
+  /* The tallest card gives the art more of the face now that the six-line
+     stack is gone. */
+  .card-view__art {
+    height: 84px;
+    flex-basis: 84px;
   }
 }
 
@@ -2120,7 +2074,7 @@
     display: block;
     min-height: 0;
     padding-top: var(--fb-space-2);
-    border-top: var(--fb-rule-width) dashed var(--fb-rule-subtle-color);
+    border-top: var(--fb-rule-subtle);
     overflow-y: auto;
   }
 

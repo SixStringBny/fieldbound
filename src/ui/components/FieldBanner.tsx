@@ -22,7 +22,7 @@ import { FIELD_ELEMENTS } from '../../engine/types';
 import type { Element, FieldElement } from '../../engine/types';
 import type { FieldShift } from '../feedback/derive';
 import { AssetImage } from './AssetImage';
-import { ElementCue, ELEMENT_DISPLAY, elementLabel } from './ElementCue';
+import { ElementCue, elementLabel } from './ElementCue';
 
 /**
  * Field facts supplied by the controller from the engine's frozen cycle. The
@@ -73,10 +73,6 @@ export function FieldBanner({
       aria-labelledby="field-banner-title"
     >
       <div className="field-banner__roundel" aria-hidden="true">
-        <span className="field-banner__roundel-ring" />
-        <span className="field-banner__roundel-glyph">
-          {ELEMENT_DISPLAY[field].glyph}
-        </span>
         <span className="field-banner__art">
           <AssetImage
             assetId={`field:${field}`}
@@ -85,7 +81,6 @@ export function FieldBanner({
             kind="field"
           />
         </span>
-        <span className="field-banner__roundel-tag">{fieldName}</span>
         {shift !== null && !reducedMotion ? (
           <span
             className="field-banner__shift"
@@ -99,7 +94,6 @@ export function FieldBanner({
       </div>
 
       <div className="field-banner__body">
-        <p className="field-banner__eyebrow">Shared field</p>
         <h2 className="field-banner__title" id="field-banner-title">
           <ElementCue element={field} /> <span>field</span>
         </h2>

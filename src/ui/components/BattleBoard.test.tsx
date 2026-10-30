@@ -275,6 +275,34 @@ describe('BattleBoard structure', () => {
    * authoritative unit-level check; REL-04's Playwright spec asserts real pixel
    * overflow and target boxes in the browser.
    */
+  it('keeps every card face to cost, name, value and at most one badge', () => {
+    renderBoard();
+
+    const hand = screen.getByRole('region', { name: 'Your hand' });
+    const cards = Array.from(hand.querySelectorAll('.card-view'));
+
+    expect(cards).toHaveLength(5);
+    expect(hand.querySelectorAll('.card-view__meta')).toHaveLength(0);
+    expect(hand.querySelectorAll('.card-view__summary')).toHaveLength(0);
+
+    for (const card of cards) {
+      expect(card.querySelectorAll('.card-view__badge').length).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('keeps every board zone to one outline and no dashed internal rule', () => {
+    const board = stripCssComments(
+      readFileSync(resolve(process.cwd(), 'src/styles/board.css'), 'utf8'),
+    ).replace(/\.asset-image__fallback\s*\{[^}]*\}/g, '');
+    const log = stripCssComments(
+      readFileSync(resolve(process.cwd(), 'src/styles/battle-log.css'), 'utf8'),
+    );
+
+    // The dashed art fallback is a placeholder failure state, not a board rule.
+    expect(board).not.toContain('dashed');
+    expect(log).not.toContain('dashed');
+  });
+
   it('declares the 375px-to-1080px stylesheet contract', () => {
     const tokens = readFileSync(
       resolve(process.cwd(), 'src/styles/tokens.css'),
@@ -334,6 +362,50 @@ describe('BattleBoard structure', () => {
 /* -------------------------------------------------------------------------- */
 
 describe('BattleBoard stats and cues', () => {
+  it('lets the meter value state the fact without repeating the label', () => {
+    renderBoard();
+
+    const enemy = screen.getByRole('region', { name: 'Cinder Warden' });
+    const player = screen.getByRole('region', { name: 'You' });
+
+    expect(enemy.querySelectorAll('.stat-meter__label')).toHaveLength(0);
+    expect(player.querySelectorAll('.stat-meter__label')).toHaveLength(0);
+    expect(player.textContent).not.toContain('Health');
+    expect(player.textContent).not.toContain('Defense');
+
+    // The words survive where they belong: the accessible meter name and the
+    // spoken value.
+    expect(
+      within(player)
+        .getByRole('meter', { name: 'Your health' })
+        .getAttribute('aria-valuetext'),
+    ).toBe('40 of 40 health');
+  });
+
+  it('presents energy once, as a number plus pips', () => {
+    renderBoard();
+
+    const player = screen.getByRole('region', { name: 'You' });
+
+    expect(within(player).getByText('3 energy')).toBeTruthy();
+    expect(player.querySelectorAll('.energy-pip')).toHaveLength(3);
+    expect(player.querySelectorAll('.energy-pip--on')).toHaveLength(3);
+  });
+
+  it('states the plan totals once, with no second intent label', () => {
+    renderBoard();
+
+    const enemy = screen.getByRole('region', { name: 'Cinder Warden' });
+
+    expect(enemy.textContent).not.toContain('Intent · next turn');
+    expect(
+      within(enemy).getAllByText('Incoming: 5 damage, 0 defense.'),
+    ).toHaveLength(1);
+    expect(
+      within(enemy).getByRole('heading', { level: 3 }).textContent,
+    ).toBe('Incoming: 5 damage, 0 defense.');
+  });
+
   it('shows health, defense, statuses and energy as text plus glyphs', () => {
     renderBoard();
 
@@ -496,6 +568,7 @@ describe('BattleBoard state matrix', () => {
     const enemy = screen.getByRole('region', { name: 'Cinder Warden' });
     expect(enemy.getAttribute('data-lethal')).toBe('true');
     expect(within(enemy).getByText('Lethal')).toBeTruthy();
+    expect(within(enemy).queryByText(/this plan can end the battle/i)).toBeNull();
   });
 
   it('keeps ended-battle cards inspectable while Play is disabled', () => {

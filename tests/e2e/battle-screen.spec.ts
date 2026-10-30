@@ -57,9 +57,11 @@ const VIEWPORTS: readonly ViewportCase[] = [
     width: 390,
     height: 844,
     cardWidth: 108,
-    cardHeight: 152,
+    cardHeight: 168,
+    // The field is capped so the phone intent and the taller card take the
+    // slack; the enemy band grows with it (ticket #30, battle-screen §2.2).
     enemyMin: 180,
-    enemyMax: 200,
+    enemyMax: 208,
     fieldMin: 150,
     handMin: 166,
     playerMin: 44,
@@ -198,6 +200,12 @@ for (const viewport of VIEWPORTS) {
         field.height,
         `${viewport.label}: field ${field.height}px below its ${viewport.fieldMin}px floor.`,
       ).toBeGreaterThanOrEqual(viewport.fieldMin - 1);
+      expect(
+        field.height / board.height,
+        `${viewport.label}: the field takes ${(field.height / board.height * 100).toFixed(
+          1,
+        )}% of the board; its ceiling is 40%.`,
+      ).toBeLessThanOrEqual(0.4);
 
       const player = await boxOf(page.locator('.player-panel'));
       expect(
@@ -252,6 +260,50 @@ for (const viewport of VIEWPORTS) {
 
       await expectNoHorizontalScroll(page);
       expectNoConsoleErrors(errors, `${viewport.label} battle geometry`);
+    });
+
+    test(`density: board zones keep solid outlines and no dashed rule at ${viewport.label}`, async ({
+      page,
+    }) => {
+      await openBattle(page);
+
+      const borders = await page.evaluate(() => {
+        const selectors = [
+          '.enemy-panel',
+          '.enemy-panel__intent',
+          '.stat-meter__track',
+          '.status-list__item',
+          '.field-banner',
+          '.player-panel',
+          '.card-view',
+          '.battle-log__latest',
+        ];
+
+        return selectors.flatMap((selector) =>
+          Array.from(document.querySelectorAll<HTMLElement>(selector)).map(
+            (node) => {
+              const style = window.getComputedStyle(node);
+
+              return {
+                selector,
+                styles: [
+                  style.borderTopStyle,
+                  style.borderRightStyle,
+                  style.borderBottomStyle,
+                  style.borderLeftStyle,
+                ],
+              };
+            },
+          ),
+        );
+      });
+
+      for (const { selector, styles } of borders) {
+        expect(
+          styles.some((style) => style === 'dashed' || style === 'dotted'),
+          `${viewport.label}: ${selector} uses a dashed or dotted internal rule.`,
+        ).toBe(false);
+      }
     });
 
     test(`AB-C4 the field roundel is the arena centre at ${viewport.label}`, async ({
@@ -439,7 +491,6 @@ test.describe('battle states', () => {
     await expect(expand).toHaveAttribute('aria-expanded', 'true');
     await expect(steps).toBeVisible();
     await expect(preview).toBeHidden();
-    await expect(page.locator('.enemy-panel__note')).toBeVisible();
 
     await page.locator('.enemy-panel__expand').click();
     await expect(page.locator('.enemy-panel__expand')).toHaveAttribute(
@@ -520,6 +571,30 @@ test.describe('battle states', () => {
     ).toBeDisabled();
     await dialog.getByRole('button', { name: 'Close card detail' }).click();
     await expect(dialog).toHaveCount(0);
+  });
+
+  test('keeps the card face and the stat labels lean', async ({ page }) => {
+    await openBattle(page);
+
+    await expect(page.locator('.card-view__meta')).toHaveCount(0);
+    await expect(page.locator('.card-view__summary')).toHaveCount(0);
+    await expect(page.locator('.stat-meter__label')).toHaveCount(0);
+
+    const badgeCounts = await page
+      .locator('.hand .card-view')
+      .evaluateAll((cards) =>
+        cards.map((card) => card.querySelectorAll('.card-view__badge').length),
+      );
+
+    for (const count of badgeCounts) {
+      expect(count, 'a card face may show at most one badge').toBeLessThanOrEqual(1);
+    }
+
+    await expect(page.locator('.enemy-panel__intent-title')).toHaveCount(1);
+    await expect(page.locator('.enemy-panel__totals')).toHaveCount(0);
+    await expect(page.locator('.enemy-panel')).not.toContainText(
+      'Intent · next turn',
+    );
   });
 
   test('opens the log drawer above the control bar and closes it with Escape', async ({
