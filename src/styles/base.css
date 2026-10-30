@@ -65,11 +65,14 @@ ul {
   text-align: center;
 }
 
+/* One uppercase-label rule: 11px, 700, 0.1em tracking. Eyebrows and field
+   labels use it; only the display wordmark and field title are uppercase at a
+   larger size. */
 .shell__eyebrow {
   font-family: var(--fb-font-ui);
   font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
-  letter-spacing: var(--fb-tracking-wide);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
   text-transform: uppercase;
   color: var(--fb-text-soft);
 }

@@ -120,8 +120,8 @@
   color: var(--fb-text-muted);
   font-family: var(--fb-font-ui);
   font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
   text-transform: uppercase;
   white-space: nowrap;
   display: none;
@@ -154,9 +154,9 @@
   border-color: transparent;
   background-color: transparent;
   color: var(--fb-text-soft);
-  font-size: 0.625rem;
+  font-size: var(--fb-text-2xs);
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--fb-tracking-label);
   text-transform: uppercase;
 }
 
@@ -1397,8 +1397,6 @@
   color: var(--fb-text-on-paper);
   font-size: var(--fb-text-sm);
   font-weight: 700;
-  letter-spacing: var(--fb-tracking-label);
-  text-transform: uppercase;
 }
 
 .card-detail__effects {

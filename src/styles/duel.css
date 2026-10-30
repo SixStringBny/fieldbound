@@ -55,8 +55,8 @@
 .duel-setup__step-label {
   color: var(--fb-text-soft);
   font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
-  letter-spacing: var(--fb-tracking-wide);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
   line-height: var(--fb-leading-ui);
   text-transform: uppercase;
 }
@@ -211,7 +211,7 @@
 .duel-locked__player {
   color: var(--fb-text-on-paper-soft);
   font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
+  font-weight: 700;
   letter-spacing: var(--fb-tracking-label);
   line-height: var(--fb-leading-ui);
   text-transform: uppercase;
@@ -385,8 +385,8 @@
 .duel-privacy__eyebrow {
   color: var(--fb-text-on-paper-soft);
   font-size: var(--fb-text-2xs);
-  font-weight: var(--fb-weight-ui);
-  letter-spacing: var(--fb-tracking-wide);
+  font-weight: 700;
+  letter-spacing: var(--fb-tracking-label);
   line-height: var(--fb-leading-ui);
   text-transform: uppercase;
 }
@@ -500,7 +500,7 @@
   color: var(--fb-text-soft);
   font-size: var(--fb-text-2xs);
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--fb-tracking-label);
   text-transform: uppercase;
 }
 
