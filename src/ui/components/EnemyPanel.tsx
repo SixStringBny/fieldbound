@@ -1,5 +1,6 @@
 /**
- * Enemy panel (SHL-FR-02, VIS-NFR-03, battle-screen section 2.2).
+ * Enemy panel (SHL-FR-02, VIS-NFR-03, battle-screen section 2.2, motion-and-
+ * feedback section 4).
  *
  * Shows the portrait, name, element, health and defense meters, status stacks
  * and the telegraphed next-turn plan. Every number comes straight from engine
@@ -11,6 +12,11 @@
  * inline; at the table the full plan is visible and the control is hidden by
  * CSS, not unmounted. The totals and the lethal badge stay pinned above the
  * scrollable step list.
+ *
+ * The feedback beat lands *inside* this panel and never remounts it: the impact
+ * flash, the signed net number and the `+N DEF` chip are keyed overlay children,
+ * and the intent block plays its 180ms reveal only when a new plan arrives with
+ * a player turn. Expanding the step list is local state and never re-animates.
  */
 import { useId, useState } from 'react';
 import type {
@@ -19,8 +25,10 @@ import type {
   EnemyPlan,
 } from '../../engine/types';
 import { DEFENSE_CAP } from '../../engine/types';
+import type { FeedbackBeat } from '../feedback/derive';
 import { AssetImage } from './AssetImage';
 import { ElementCue, elementLabel, statusLabel } from './ElementCue';
+import { FeedbackLayer } from './FeedbackLayer';
 import { StatMeter } from './StatMeter';
 import { StatusList } from './StatusList';
 import type { CardCatalogView } from './view-types';
@@ -31,6 +39,10 @@ export interface EnemyPanelProps {
   readonly plan: EnemyPlan | null;
   readonly cards: CardCatalogView;
   readonly baseUrl: string;
+  /** The settled beat, or `null` when this transition shows nothing. */
+  readonly feedback?: FeedbackBeat | null;
+  /** Under reduced motion no decoration is rendered at all. */
+  readonly reducedMotion?: boolean;
 }
 
 function cardName(cards: CardCatalogView, cardId: string): string {
@@ -43,11 +55,14 @@ export function EnemyPanel({
   plan,
   cards,
   baseUrl,
+  feedback = null,
+  reducedMotion = false,
 }: EnemyPanelProps) {
   const [expanded, setExpanded] = useState(false);
   const stepsId = useId();
   const alt = `${enemy.name}, ${elementLabel(enemy.element)} enemy, ${side.health} of ${side.maxHealth} health`;
   const stepCount = plan?.steps.length ?? 0;
+  const revealing = feedback?.revealIntent === true && !reducedMotion;
 
   return (
     <section
@@ -96,9 +111,16 @@ export function EnemyPanel({
         <StatusList statuses={side.statuses} ownerLabel={enemy.name} />
       </div>
 
+      {/*
+        The intent block is keyed on the reveal beat so a new plan replays its
+        one 180ms block; expansion is `expanded` above, so the list, its scroll
+        position within a turn and the `Show all N steps` label all survive.
+      */}
       <div
         className="enemy-panel__intent"
         data-expanded={expanded ? 'true' : 'false'}
+        data-intent-reveal={revealing ? 'true' : undefined}
+        key={revealing && feedback !== null ? `intent-${feedback.key}` : 'intent'}
       >
         <div className="enemy-panel__intent-head">
           <h3 className="enemy-panel__intent-title">Intent · next turn</h3>
@@ -250,6 +272,10 @@ export function EnemyPanel({
           </>
         )}
       </div>
+
+      {feedback === null || reducedMotion ? null : (
+        <FeedbackLayer beat={feedback} side="opponent" slot="enemy" />
+      )}
     </section>
   );
 }

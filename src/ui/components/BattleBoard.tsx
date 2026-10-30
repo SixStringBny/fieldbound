@@ -1,6 +1,6 @@
 /**
  * The battle board (SHL-FR-02, SHL-FR-03, SHL-FR-08, battle-screen sections
- * 1-3).
+ * 1-3, motion-and-feedback sections 3 and 4).
  *
  * One board region owns the arena (enemy + field), the player band, the hand,
  * the battle log and the turn controls. The same DOM is laid out as a phone
@@ -12,6 +12,13 @@
  * which hand index invoked it, so focus can return to the next surviving card
  * when a play removes the invoker. Every consequence leaves as an intent
  * (`onPlayCard`, `onEndTurn`).
+ *
+ * Feedback: the board *receives* the settled beat rather than deriving it, so
+ * the derivation happens once per transition beside the announcement. Every
+ * overlay is a keyed child of a persistent panel — flash, impact number and
+ * defense chip inside the target panel, the ring inside the field roundel, the
+ * intent reveal on the intent block, the handoff on the header/footer. No panel
+ * is ever remounted by a beat.
  *
  * Rules boundary: this file imports engine *types and frozen constants* only.
  * It imports no engine mutator, controller, persistence module or content
@@ -26,6 +33,7 @@ import type {
   CardDefinition,
   EnemyDefinition,
 } from '../../engine/types';
+import type { FeedbackBeat } from '../feedback/derive';
 import { BattleLog } from './BattleLog';
 import type { BattleLogLineView } from './BattleLog';
 import { CardDetail } from './CardDetail';
@@ -54,6 +62,16 @@ export interface BattleBoardProps {
   readonly logLines: readonly BattleLogLineView[];
   /** Visible text for the history toggle ("Log"). */
   readonly logToggleLabel: string;
+  /**
+   * The one beat this settled transition shows, or `null` for a refusal, a
+   * zero-delta action or a mount. Omitted by callers that render a board with
+   * no feedback (tests, non-playing surfaces).
+   */
+  readonly feedback?: FeedbackBeat | null;
+  /** True once any settled transition has happened (`data-dealt`). */
+  readonly dealt?: boolean;
+  /** Resolved reduced motion; no decoration is rendered when true. */
+  readonly reducedMotion?: boolean;
 }
 
 export function BattleBoard({
@@ -66,6 +84,9 @@ export function BattleBoard({
   onEndTurn,
   logLines,
   logToggleLabel,
+  feedback = null,
+  dealt = false,
+  reducedMotion = false,
 }: BattleBoardProps) {
   const [openInstanceId, setOpenInstanceId] = useState<string | null>(null);
   const [openIndex, setOpenIndex] = useState(0);
@@ -135,6 +156,8 @@ export function BattleBoard({
     return document.querySelector<HTMLElement>('.battle-controls__end');
   };
 
+  const handoff = feedback?.handoff === true;
+
   return (
     <section
       className="battle-board"
@@ -154,16 +177,25 @@ export function BattleBoard({
           plan={state.enemyPlan}
           cards={cards}
           baseUrl={baseUrl}
+          feedback={feedback}
+          reducedMotion={reducedMotion}
         />
 
         <FieldBanner
           field={state.field}
           matchup={fieldMatchup}
           baseUrl={baseUrl}
+          shift={feedback?.field ?? null}
+          shiftKey={feedback?.key ?? 0}
+          reducedMotion={reducedMotion}
         />
       </div>
 
-      <PlayerPanel side={player} />
+      <PlayerPanel
+        side={player}
+        feedback={feedback}
+        reducedMotion={reducedMotion}
+      />
 
       <Hand
         hand={player.hand}
@@ -173,13 +205,27 @@ export function BattleBoard({
         discardCount={player.discard.length}
         baseUrl={baseUrl}
         onInspect={inspect}
+        dealt={dealt}
+        draw={feedback?.draw === true}
+        drawn={feedback?.drawn ?? []}
       />
 
       <BattleLog lines={logLines} toggleLabel={logToggleLabel} />
 
       <div className="battle-footer">
         <div className="battle-controls" role="group" aria-label="Turn controls">
-          <p className="battle-controls__energy">{player.energy} energy</p>
+          {/*
+            The footer energy cross-fades in place on a handoff beat. The text is
+            committed first and the label is keyed, so the new value is never
+            held back by the motion.
+          */}
+          <p
+            className="battle-controls__energy"
+            data-feedback-handoff={handoff && !reducedMotion ? 'true' : undefined}
+            key={handoff && feedback !== null ? feedback.key : 'energy'}
+          >
+            {player.energy} energy
+          </p>
           <button
             type="button"
             className="battle-controls__end"

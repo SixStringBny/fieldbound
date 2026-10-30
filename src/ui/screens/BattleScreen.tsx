@@ -13,13 +13,19 @@
  * are rendered here from the controller's settled entries and handed to the
  * board, where the same log element is the phone strip/drawer or the table rail.
  *
- * Two effects keep the shell informed of settled transitions:
+ * Three effects keep the shell informed of settled transitions:
  *
  *   - the cue effect publishes the controller's cue list exactly once per
  *     sequence (audio remains SHL-06's subscriber);
- *   - the announcement effect turns the before/after state into one polite
+ *   - the announcement effect turns the shared `BattleDeltas` into one polite
  *     sentence for the app's single live region. It never announces a render,
- *     only a new sequence, so re-rendering cannot duplicate a message.
+ *     only a new sequence, so re-rendering cannot duplicate a message;
+ *   - the feedback cursor turns the same deltas into at most one visual beat,
+ *     rendered in the commit that carries the settled values.
+ *
+ * The header turn label is one of the two handoff surfaces: it changes text
+ * instantly and is keyed per handoff beat so its 160ms cross-fade replays
+ * without the label ever waiting for the motion.
  *
  * Battle log (LOG-FR-02, LOG-FR-04, LOG-FR-07)
  * --------------------------------------------
@@ -34,6 +40,8 @@ import type { BattleControllerState } from '../../state/battle-controller';
 import { describeBattleUpdate } from '../a11y/announcements';
 import { BattleBoard } from '../components/BattleBoard';
 import { emitCue } from '../events';
+import { diffBattleState } from '../feedback/diff';
+import { useBattleFeedback } from '../feedback/useFeedbackBeat';
 
 export interface BattleScreenProps {
   readonly state: BattleControllerState;
@@ -50,6 +58,12 @@ export interface BattleScreenProps {
    * standalone practice battle and for a duel, where there is no run to show.
    */
   readonly onOverview?: () => void;
+  /**
+   * Resolved reduced motion. The app root already carries it as
+   * `data-reduced-motion`; the value also arrives here because an impact number
+   * must not be *rendered* at all under reduced motion, which CSS cannot do.
+   */
+  readonly reducedMotion?: boolean;
 }
 
 function outcomeLabel(state: BattleControllerState): string {
@@ -72,10 +86,12 @@ export function BattleScreen({
   onAnnounce,
   onExit,
   onOverview,
+  reducedMotion = false,
 }: BattleScreenProps) {
   const report = state.report;
   const previousRef = useRef<BattleControllerState>(state);
   const mountedRef = useRef(false);
+  const { beat, dealt } = useBattleFeedback(state);
 
   const battleOver =
     state.battle.phase === 'ended' || state.battle.outcome !== 'ongoing';
@@ -86,6 +102,7 @@ export function BattleScreen({
     : playerTurn
       ? 'Your turn'
       : 'Enemy turn';
+  const handoff = beat?.handoff === true;
 
   // One rendered line per settled entry (LOG-FR-02). Solo always views the
   // engine player side, so `You` and the enemy name are the two actors and the
@@ -132,7 +149,7 @@ export function BattleScreen({
 
     onAnnounce(
       describeBattleUpdate({
-        previous: previous.battle,
+        deltas: diffBattleState(previous.battle, state.battle),
         next: state.battle,
         intent: report.intent,
         fieldMatchup: state.fieldMatchup,
@@ -153,6 +170,10 @@ export function BattleScreen({
           <p
             className="battle-board__turn battle-header__turn"
             data-outcome={battleOver ? 'true' : 'false'}
+            data-feedback-handoff={
+              handoff && !reducedMotion ? 'true' : undefined
+            }
+            key={handoff && beat !== null ? beat.key : 'turn'}
           >
             {battleOver ? turnText : `Turn ${state.battle.turn} · ${turnText}`}
           </p>
@@ -195,6 +216,9 @@ export function BattleScreen({
         onEndTurn={onEndTurn}
         logLines={logLines}
         logToggleLabel="Log"
+        feedback={beat}
+        dealt={dealt}
+        reducedMotion={reducedMotion}
       />
     </div>
   );

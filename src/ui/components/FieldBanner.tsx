@@ -11,9 +11,16 @@
  * At phone widths the cycle strip is hidden by CSS: the field name plus the
  * matchup sentence is enough there, and the full cycle lives in How to Play.
  * The markup stays one element at every width.
+ *
+ * A field shift is a 300ms disc fade plus one brass ring overlay that scales
+ * 0.9→1 and fades. The roundel keeps its DOM node and `data-field`, and the
+ * field name, matchup sentence and `aria-current` step change instantly, so the
+ * motion is never the only signal that the field moved (motion-and-feedback
+ * section 6).
  */
 import { FIELD_ELEMENTS } from '../../engine/types';
 import type { Element, FieldElement } from '../../engine/types';
+import type { FieldShift } from '../feedback/derive';
 import { AssetImage } from './AssetImage';
 import { ElementCue, ELEMENT_DISPLAY, elementLabel } from './ElementCue';
 
@@ -36,9 +43,22 @@ export interface FieldBannerProps {
   /** `null` on the Neutral opening field, where no element is empowered. */
   readonly matchup: FieldMatchup | null;
   readonly baseUrl: string;
+  /** The shift this beat shows; `null` when the field did not move. */
+  readonly shift?: FieldShift | null;
+  /** The settled sequence, used to replay an identical shift. */
+  readonly shiftKey?: number;
+  /** Under reduced motion no overlay is rendered at all. */
+  readonly reducedMotion?: boolean;
 }
 
-export function FieldBanner({ field, matchup, baseUrl }: FieldBannerProps) {
+export function FieldBanner({
+  field,
+  matchup,
+  baseUrl,
+  shift = null,
+  shiftKey = 0,
+  reducedMotion = false,
+}: FieldBannerProps) {
   const fieldName = elementLabel(field);
 
   const alt =
@@ -66,6 +86,16 @@ export function FieldBanner({ field, matchup, baseUrl }: FieldBannerProps) {
           />
         </span>
         <span className="field-banner__roundel-tag">{fieldName}</span>
+        {shift !== null && !reducedMotion ? (
+          <span
+            className="field-banner__shift"
+            data-field-shift="true"
+            data-from={shift.previous}
+            data-to={shift.next}
+            aria-hidden="true"
+            key={shiftKey}
+          />
+        ) : null}
       </div>
 
       <div className="field-banner__body">

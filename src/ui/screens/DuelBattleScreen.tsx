@@ -14,6 +14,15 @@
  * `onPlayCard` intent as a card face tap. The screen imports no engine mutator,
  * controller or storage module; it receives view types and dispatches intents.
  *
+ * Feedback (motion-and-feedback sections 3 and 11)
+ * ------------------------------------------------
+ * The duel uses the same beat vocabulary over *public* deltas: the four health
+ * and defense values, the shared field and the turn number that both humans can
+ * already see. There is no intent block, so no reveal is ever derived. The beat
+ * is keyed on the public log's length, which grows once per settled transition
+ * and never on a refusal. The privacy handoff unmounts this screen, so a
+ * transition into or out of privacy renders no beat at all.
+ *
  * Battle log (LOG-FR-02, LOG-FR-04, LOG-FR-05, LOG-FR-07)
  * ------------------------------------------------------
  * Only the active-turn view carries entries, so this screen is the only duel
@@ -36,16 +45,20 @@ import type {
 import '../../styles/tokens.css';
 import '../../styles/board.css';
 import '../../styles/duel.css';
+import '../motion/motion.css';
 import { BattleLog } from '../components/BattleLog';
 import { CardDetail } from '../components/CardDetail';
 import type { CardMatchup } from '../components/card-presentation';
 import { ElementCue, elementLabel } from '../components/ElementCue';
 import type { FieldMatchup } from '../components/FieldBanner';
 import { FieldBanner } from '../components/FieldBanner';
+import { FeedbackLayer } from '../components/FeedbackLayer';
 import { Hand } from '../components/Hand';
 import { StatMeter } from '../components/StatMeter';
 import { StatusList } from '../components/StatusList';
 import type { CardCatalogView } from '../components/view-types';
+import type { FeedbackBeat } from '../feedback/derive';
+import { useDuelFeedback } from '../feedback/useFeedbackBeat';
 import { duelHandCountText, duelPlayerName, duelScoreText } from './duel-copy';
 
 export interface DuelBattleScreenProps {
@@ -65,6 +78,8 @@ export interface DuelBattleScreenProps {
   readonly onEndTurn: () => void;
   /** Clear the match and return to the menu. */
   readonly onExit: () => void;
+  /** Resolved reduced motion; no decoration is rendered when true. */
+  readonly reducedMotion?: boolean;
 }
 
 export function DuelBattleScreen({
@@ -76,8 +91,12 @@ export function DuelBattleScreen({
   onPlayCard,
   onEndTurn,
   onExit,
+  reducedMotion = false,
 }: DuelBattleScreenProps) {
   const [openInstanceId, setOpenInstanceId] = useState<string | null>(null);
+  const feedback = useDuelFeedback(view);
+  const dealt = view.log.length > 1;
+  const handoff = feedback?.handoff === true;
 
   const openInstance =
     openInstanceId === null
@@ -141,7 +160,15 @@ export function DuelBattleScreen({
           Local Duel · Round {view.round} · Series {duelScoreText(view.wins)}
         </p>
         <h1 className="shell__page-title">{viewerName}&apos;s turn</h1>
-        <p className="duel-battle__turn">Turn {view.turn}</p>
+        <p
+          className="duel-battle__turn"
+          data-feedback-handoff={
+            handoff && !reducedMotion ? 'true' : undefined
+          }
+          key={handoff && feedback !== null ? feedback.key : 'turn'}
+        >
+          Turn {view.turn}
+        </p>
         <button type="button" className="shell__back" onClick={onExit}>
           Leave duel
         </button>
@@ -153,18 +180,25 @@ export function DuelBattleScreen({
             panel={view.opponent}
             position="opponent"
             titleId="duel-panel-opponent"
+            feedback={feedback}
+            reducedMotion={reducedMotion}
           />
 
           <FieldBanner
             field={view.field}
             matchup={fieldMatchup}
             baseUrl={baseUrl}
+            shift={feedback?.field ?? null}
+            shiftKey={feedback?.key ?? 0}
+            reducedMotion={reducedMotion}
           />
 
           <DuelPanel
             panel={view.self}
             position="self"
             titleId="duel-panel-self"
+            feedback={feedback}
+            reducedMotion={reducedMotion}
           />
 
           <Hand
@@ -173,6 +207,9 @@ export function DuelBattleScreen({
             energy={view.self.energy}
             baseUrl={baseUrl}
             onInspect={setOpenInstanceId}
+            dealt={dealt}
+            draw={feedback?.draw === true}
+            drawn={feedback?.drawn ?? []}
           />
 
           <div
@@ -219,13 +256,25 @@ interface DuelPanelProps {
   readonly panel: DuelSelfView | DuelOpponentView;
   readonly position: 'self' | 'opponent';
   readonly titleId: string;
+  readonly feedback: FeedbackBeat | null;
+  readonly reducedMotion: boolean;
 }
 
 /**
  * One human seat. The active seat also sees their energy; the opposing seat
  * sees only a hand count, which is the whole point of the duel privacy model.
+ *
+ * The seat is also a feedback target: the beat's flash, signed number and
+ * `+N DEF` chip render in a keyed layer inside the persistent panel, using the
+ * same class names and `data-*` contract as the solo board.
  */
-function DuelPanel({ panel, position, titleId }: DuelPanelProps) {
+function DuelPanel({
+  panel,
+  position,
+  titleId,
+  feedback,
+  reducedMotion,
+}: DuelPanelProps) {
   const name = duelPlayerName(panel.player);
   const energy = 'energy' in panel ? panel.energy : null;
 
@@ -276,6 +325,14 @@ function DuelPanel({ panel, position, titleId }: DuelPanelProps) {
           {panel.deckCount} in deck · {panel.discardCount} discarded
         </p>
       </div>
+
+      {feedback === null || reducedMotion ? null : (
+        <FeedbackLayer
+          beat={feedback}
+          side={panel.side}
+          slot={position === 'opponent' ? 'enemy' : 'player'}
+        />
+      )}
     </section>
   );
 }

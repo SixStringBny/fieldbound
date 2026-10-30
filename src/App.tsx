@@ -1054,6 +1054,7 @@ export function App({
           seed={duelLogSeed}
           fieldMatchup={fieldMatchupFor(duelView.field)}
           baseUrl={import.meta.env.BASE_URL}
+          reducedMotion={reducedMotion}
           onPlayCard={handleDuelPlay}
           onEndTurn={handleDuelEndTurn}
           onExit={leaveDuel}
@@ -1061,6 +1062,7 @@ export function App({
       ) : soloBattle !== null ? (
         <SoloBattleRoute
           state={soloBattle}
+          reducedMotion={reducedMotion}
           onPlayCard={handleRunPlayCard}
           onEndTurn={handleRunEndTurn}
           onAnnounce={announce}
@@ -1070,6 +1072,7 @@ export function App({
       ) : (
         <BattleRoute
           config={battle}
+          reducedMotion={reducedMotion}
           onAnnounce={announce}
           onExit={() => navigate('menu')}
         />
@@ -1170,10 +1173,12 @@ function BattleRoute({
   config,
   onAnnounce,
   onExit,
+  reducedMotion,
 }: {
   readonly config: BattleControllerConfig | null;
   readonly onAnnounce: (message: string) => void;
   readonly onExit: () => void;
+  readonly reducedMotion: boolean;
 }) {
   const [initial] = useState<
     EngineResult<BattleControllerState> | null
@@ -1199,6 +1204,7 @@ function BattleRoute({
       initialState={initial.value}
       onAnnounce={onAnnounce}
       onExit={onExit}
+      reducedMotion={reducedMotion}
     />
   );
 }
@@ -1208,10 +1214,12 @@ function BattleSession({
   initialState,
   onAnnounce,
   onExit,
+  reducedMotion,
 }: {
   readonly initialState: BattleControllerState;
   readonly onAnnounce: (message: string) => void;
   readonly onExit: () => void;
+  readonly reducedMotion: boolean;
 }) {
   const controller = useBattleController(initialState);
   const { battle } = controller.state;
@@ -1233,6 +1241,7 @@ function BattleSession({
       onEndTurn={controller.endTurn}
       onAnnounce={onAnnounce}
       onExit={onExit}
+      reducedMotion={reducedMotion}
     />
   );
 }
@@ -1249,6 +1258,7 @@ function SoloBattleRoute({
   onAnnounce,
   onExit,
   onOverview,
+  reducedMotion,
 }: {
   readonly state: BattleControllerState;
   readonly onPlayCard: (instanceId: string) => void;
@@ -1256,6 +1266,7 @@ function SoloBattleRoute({
   readonly onAnnounce: (message: string) => void;
   readonly onExit: () => void;
   readonly onOverview: () => void;
+  readonly reducedMotion: boolean;
 }) {
   const { battle } = state;
   const canEndTurn =
@@ -1274,6 +1285,7 @@ function SoloBattleRoute({
       onAnnounce={onAnnounce}
       onExit={onExit}
       onOverview={onOverview}
+      reducedMotion={reducedMotion}
     />
   );
 }
