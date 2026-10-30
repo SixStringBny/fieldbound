@@ -22,6 +22,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import {
+  assertPrivacyInvariant,
   collectConsoleErrors,
   currentScreen,
   expectNoConsoleErrors,
@@ -1933,3 +1934,265 @@ for (const viewport of VIEWPORTS) {
   });
 }
 
+
+/* -------------------------------------------------------------------------- */
+/* Duel scope (AB-C1, C2, A1, A4, A5, P2, G1, G4, G5)                         */
+/* -------------------------------------------------------------------------- */
+
+const DUEL_BAR_SEED = 20261104;
+
+async function openDuelSetup(page: Page): Promise<void> {
+  await openApp(page, DUEL_BAR_SEED);
+  await page.getByRole('button', { name: 'Local Duel', exact: true }).click();
+  await expectScreen(page, 'duel-setup', 'the duel setup');
+}
+
+async function lockDuelDecks(page: Page): Promise<void> {
+  for (const [player, deck] of [
+    ['1', 'Ember'],
+    ['2', 'Frost'],
+  ] as const) {
+    await page
+      .getByRole('button', { name: `Choose the ${deck} deck`, exact: true })
+      .click();
+    await page
+      .getByRole('button', { name: `Confirm Player ${player} deck`, exact: true })
+      .click();
+  }
+}
+
+async function revealDuelBoard(page: Page): Promise<void> {
+  await lockDuelDecks(page);
+  await page.getByRole('button', { name: 'Start Match', exact: true }).click();
+  await expectScreen(page, 'privacy', 'Start Match');
+  await page.getByRole('button', { name: "I'm ready", exact: true }).click();
+  await expectScreen(page, 'battle', "I'm ready");
+  await expect(
+    page.locator('[data-duel-battle="true"]'),
+    'The duel board did not mount after the ready action.',
+  ).toBeVisible();
+}
+
+for (const viewport of AXE_VIEWPORTS) {
+  test.describe(`duel axe ${viewport.label}`, () => {
+    test.use({
+      viewport: { width: viewport.width, height: viewport.height },
+      reducedMotion: 'reduce',
+    });
+
+    test(`AB-A1 axe reports zero WCAG 2.1 A/AA violations on the duel setup at ${viewport.label}`, async ({
+      page,
+    }) => {
+      const errors = collectConsoleErrors(page);
+
+      await openDuelSetup(page);
+      await page.evaluate(() => document.fonts.ready);
+      await analyse(page, 'duel-setup');
+
+      expectNoConsoleErrors(errors, `duel setup at ${viewport.label}`);
+    });
+
+    test(`AB-A1 axe reports zero WCAG 2.1 A/AA violations on privacy at ${viewport.label}`, async ({
+      page,
+    }) => {
+      const errors = collectConsoleErrors(page);
+
+      await openDuelSetup(page);
+      await lockDuelDecks(page);
+      await page.getByRole('button', { name: 'Start Match', exact: true }).click();
+      await expectScreen(page, 'privacy', 'duel privacy axe');
+      await page.evaluate(() => document.fonts.ready);
+
+      // Privacy must stay green with no deferred rule at all.
+      await analyse(page, 'privacy');
+
+      expectNoConsoleErrors(errors, `duel privacy at ${viewport.label}`);
+    });
+
+    test(`AB-A1 axe reports zero WCAG 2.1 A/AA violations on the duel board at ${viewport.label}`, async ({
+      page,
+    }) => {
+      const errors = collectConsoleErrors(page);
+
+      await openDuelSetup(page);
+      await revealDuelBoard(page);
+      await page.evaluate(() => document.fonts.ready);
+
+      // The board keeps the battle hand-card exemption (AB-A1 recorded).
+      await analyse(page, 'battle');
+
+      expectNoConsoleErrors(errors, `duel board at ${viewport.label}`);
+    });
+  });
+}
+
+test.describe('duel bar 390x844', () => {
+  test.use({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+
+  test('AB-C1/C2 setup, privacy and board named objects', async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+
+    await openDuelSetup(page);
+
+    await expect(
+      page.getByRole('button', { name: /^Choose the .* deck$/ }),
+      'AB-C1: the duel setup must offer four deck cards.',
+    ).toHaveCount(4);
+    await expect(
+      page.getByText('Player 2, look away.', { exact: true }),
+      'AB-C1: the look-away banner is missing.',
+    ).toBeVisible();
+
+    await lockDuelDecks(page);
+
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Both decks are locked', exact: true }),
+      'AB-C1: the locked summary is missing.',
+    ).toBeVisible();
+    await expect(
+      page.locator('.duel-locked'),
+      'AB-C1: the summary must show both locked deck cards.',
+    ).toHaveCount(2);
+
+    // AB-C2: exactly one action seal on setup, and it is the Start button.
+    const setupSeals = page.locator('#main-content .duel-bar__primary');
+
+    await expect(setupSeals, 'AB-C2: the setup has one action seal.').toHaveCount(1);
+    await expect(setupSeals).toHaveAccessibleName('Start Match');
+
+    await page.getByRole('button', { name: 'Start Match', exact: true }).click();
+    await expectScreen(page, 'privacy', 'the duel privacy');
+
+    // AB-A5 and AB-C1: the arriving seat, the look-away line, the public score
+    // and exactly one action, with no board/hand/count/back/meter/field/log.
+    await assertPrivacyInvariant(page, 'Player 1', 'AB-A5 duel privacy');
+    await expect(
+      page.getByRole('button', { name: "I'm ready", exact: true }),
+      'AB-C2: privacy has exactly one action.',
+    ).toHaveCount(1);
+    await expect(
+      page.locator('.duel-privacy__ready'),
+      'AB-C2: the ready action carries the action seal.',
+    ).toHaveCount(1);
+
+    await page.getByRole('button', { name: "I'm ready", exact: true }).click();
+    await expectScreen(page, 'battle', 'the duel board');
+
+    // AB-C1: the board's named objects.
+    await expect(
+      page.getByRole('region', { name: 'Battle', exact: true }),
+      'AB-C1: the duel board region is missing.',
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Player 1 (you)' }),
+      'AB-C1: the self region is missing.',
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Player 2' }),
+      'AB-C1: the opponent region is missing.',
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Your hand' }),
+      'AB-C1: the active hand region is missing.',
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Battle log' }),
+      'AB-C1: the public log region is missing.',
+    ).toBeVisible();
+    await expect(
+      page.getByRole('group', { name: 'Turn controls' }),
+      'AB-C1: the turn controls are missing.',
+    ).toBeVisible();
+    await expect(
+      page.getByRole('list', { name: 'Series score' }),
+      'AB-C1: the series strip is missing.',
+    ).toHaveCount(1);
+    await expect(
+      page.locator('[data-series-pip]'),
+      'AB-C1: the strip must carry three named pips.',
+    ).toHaveCount(3);
+    await expect(
+      page.locator('[data-hand-count]'),
+      'AB-C1: the opponent hand count is missing.',
+    ).toHaveText(/^\d+ cards? in hand$/);
+
+    // AB-C2: one action seal on the board.
+    await expect(
+      page.locator('#main-content .battle-controls__end'),
+      'AB-C2: the board has exactly one turn action.',
+    ).toHaveCount(1);
+
+    expectNoConsoleErrors(errors, 'duel named objects at 390');
+  });
+
+  test('AB-A4 one polite live region and no live log', async ({ page }) => {
+    const errors = collectConsoleErrors(page);
+
+    await openDuelSetup(page);
+    await revealDuelBoard(page);
+
+    await expect(
+      page.getByRole('status'),
+      'AB-A4: exactly one polite live region may exist.',
+    ).toHaveCount(1);
+    await expect(
+      page.locator('[data-battle-log="true"] [aria-live]'),
+      'AB-A4: the duel log must never be live.',
+    ).toHaveCount(0);
+
+    expectNoConsoleErrors(errors, 'duel live region at 390');
+  });
+
+  test('AB-G1/P2/G4/G5 the board and privacy never page-scroll', async ({
+    page,
+  }) => {
+    await openDuelSetup(page);
+    await lockDuelDecks(page);
+    await page.getByRole('button', { name: 'Start Match', exact: true }).click();
+    await expectScreen(page, 'privacy', 'the privacy lock');
+
+    const privacyMetrics = await page.evaluate(() => ({
+      width: window.innerWidth,
+      height: window.innerHeight,
+      scrollWidth: document.documentElement.scrollWidth,
+      scrollHeight: document.documentElement.scrollHeight,
+    }));
+
+    expect(privacyMetrics.scrollWidth, 'AB-G4: privacy must not scroll sideways').toBeLessThanOrEqual(
+      privacyMetrics.width + 1,
+    );
+    expect(privacyMetrics.scrollHeight, 'AB-G1: privacy must not page-scroll').toBeLessThanOrEqual(
+      privacyMetrics.height + 1,
+    );
+
+    await page.getByRole('button', { name: "I'm ready", exact: true }).click();
+    await expectScreen(page, 'battle', 'the duel board lock');
+
+    const boardMetrics = await page.evaluate(() => ({
+      width: window.innerWidth,
+      height: window.innerHeight,
+      scrollWidth: document.documentElement.scrollWidth,
+      scrollHeight: document.documentElement.scrollHeight,
+    }));
+
+    expect(boardMetrics.scrollWidth, 'AB-G4: the board must not scroll sideways').toBeLessThanOrEqual(
+      boardMetrics.width + 1,
+    );
+    expect(boardMetrics.scrollHeight, 'AB-G1/AB-P2: the board must lock to 100svh').toBeLessThanOrEqual(
+      boardMetrics.height + 1,
+    );
+
+    const targets = await readTargets(page);
+
+    for (const target of targets) {
+      expect(
+        target.width,
+        `AB-G5: <${target.tag} class="${target.className}"> "${target.label}" is ${target.width}px wide`,
+      ).toBeGreaterThanOrEqual(MIN_TARGET_PX);
+      expect(
+        target.height,
+        `AB-G5: <${target.tag} class="${target.className}"> "${target.label}" is ${target.height}px tall`,
+      ).toBeGreaterThanOrEqual(MIN_TARGET_PX);
+    }
+  });
+});

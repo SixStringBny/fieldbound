@@ -664,3 +664,76 @@ describe('App reading routes', () => {
     expect(screen.getByRole('status').textContent).toBe('');
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* Duel privacy and board keyboard                                            */
+/* -------------------------------------------------------------------------- */
+
+/** Menu -> Local Duel -> both decks -> Start Match; stops at the handoff. */
+function openDuelPrivacy(): void {
+  fireEvent.click(screen.getByRole('button', { name: 'Local Duel' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Choose the Ember deck' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Confirm Player 1 deck' }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Choose the Frost deck' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Confirm Player 2 deck' }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Start Match' }));
+}
+
+describe('App duel privacy and board keyboard', () => {
+  it('offers one trapped action, ignores Escape and E, and hands focus to the first card', () => {
+    render(<App />);
+
+    openDuelPrivacy();
+
+    expect(mainRegion().getAttribute('data-screen')).toBe('privacy');
+
+    const ready = screen.getByRole('button', { name: "I'm ready" });
+
+    // Exactly one action on the route; the skip link is not a button.
+    expect(screen.getAllByRole('button')).toEqual([ready]);
+    expect(document.activeElement).toBe(ready);
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+
+    fireEvent.keyDown(ready, { key: 'Tab' });
+    expect(document.activeElement).toBe(ready);
+    fireEvent.keyDown(ready, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(ready);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.keyDown(ready, { key: 'e' });
+    expect(mainRegion().getAttribute('data-screen')).toBe('privacy');
+
+    fireEvent.click(ready);
+
+    // The board mounts and focus lands on the first card of the incoming hand.
+    expect(mainRegion().getAttribute('data-screen')).toBe('battle');
+    const hand = handRegion();
+    const cards = within(hand).getAllByRole('button');
+    expect(document.activeElement).toBe(cards[0]);
+
+    // Phone/tablet DOM order: cards -> Log -> End Turn. At the table the rail
+    // toggle is display:none, so the same order collapses to cards -> End Turn.
+    const controls = Array.from(
+      mainRegion().querySelectorAll<HTMLElement>('button'),
+    ).filter(
+      (button) =>
+        hand.contains(button) ||
+        button.classList.contains('battle-log__toggle') ||
+        button.classList.contains('battle-controls__end'),
+    );
+
+    expect(controls.slice(0, 5)).toEqual(cards);
+    expect(controls[5]?.classList.contains('battle-log__toggle')).toBe(true);
+    expect(controls[6]?.classList.contains('battle-controls__end')).toBe(true);
+
+    // The duel log is not live and the app still has exactly one live region.
+    expect(
+      mainRegion().querySelectorAll('[data-battle-log="true"] [aria-live]'),
+    ).toHaveLength(0);
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+  });
+});

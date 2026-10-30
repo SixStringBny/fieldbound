@@ -8,6 +8,8 @@
  * Missing elements are failures, not skips. Each assertion carries the seed,
  * viewport or action being attempted so a failing rerun is actionable.
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
@@ -205,6 +207,152 @@ function seatName(player: DuelSeat): 'Player 1' | 'Player 2' {
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/* Privacy invariant                                                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The frozen card names, read from the shipped catalog so the privacy scan is
+ * tied to the real names instead of a hand-maintained copy (duel-flow §3.2).
+ * This is test-side data, not an app module import and not injected state.
+ */
+const CATALOG_PATH = join(process.cwd(), 'src', 'content', 'cards.json');
+const CATALOG = JSON.parse(readFileSync(CATALOG_PATH, 'utf8')) as readonly {
+  readonly id: string;
+  readonly name: string;
+}[];
+
+if (CATALOG.length < 20) {
+  throw new Error(
+    `The card catalog at ${CATALOG_PATH} looks truncated (${String(
+      CATALOG.length,
+    )} entries); the privacy scan needs the full name list.`,
+  );
+}
+
+export const CARD_NAMES: readonly string[] = CATALOG.map((card) => card.name);
+export const CARD_NAME_BY_ID = new Map(
+  CATALOG.map((card) => [card.id, card.name] as const),
+);
+
+/**
+ * Every selector duel-flow §3.2 forbids while privacy is mounted. The elements
+ * must not exist at all: `aria-hidden`, clipping and CSS covers do not count.
+ */
+export const PRIVACY_FORBIDDEN_SELECTORS = [
+  '.duel-battle',
+  '.battle-board',
+  '.battle-arena',
+  '.duel-panel',
+  '.field-banner',
+  '.hand',
+  'button.card-view',
+  '[data-card-id]',
+  '[data-instance-id]',
+  '[data-hand-count]',
+  '.duel-card-back',
+  '[data-duel-card-back]',
+  '[data-battle-log]',
+  '[data-battle-log-entry]',
+  '.battle-log',
+  '.battle-log__history',
+  '[role="meter"]',
+  '[data-battle-board]',
+] as const;
+
+/**
+ * Fail if any known card name can be found anywhere in the document - visible
+ * text, hidden text, or an accessible name/alt/title attribute. Querying for
+ * real names matters: a hand re-parented into an overlay still leaks.
+ */
+export async function expectNoCardNames(
+  page: Page,
+  context: string,
+): Promise<void> {
+  const found = await page.evaluate((names: readonly string[]) => {
+    const pieces: string[] = [document.body.textContent ?? ''];
+
+    for (const element of Array.from(
+      document.querySelectorAll('[aria-label], [title], [alt]'),
+    )) {
+      pieces.push(
+        element.getAttribute('aria-label') ?? '',
+        element.getAttribute('title') ?? '',
+        element.getAttribute('alt') ?? '',
+      );
+    }
+
+    const haystack = pieces.join('\n');
+
+    return names.filter((name) => haystack.includes(name));
+  }, CARD_NAMES);
+
+  expect(
+    found,
+    found.length === 0
+      ? `${context}: no card name may be queryable here.`
+      : `${context}: card names are queryable while they must be hidden: ${found.join(
+          ', ',
+        )}.`,
+  ).toEqual([]);
+}
+
+/**
+ * The complete privacy invariant: the privacy route is mounted, the handoff
+ * names the arriving seat, every §3.2 selector is absent, no catalog card name
+ * is queryable in text/aria/title/alt, and exactly one ready control exists.
+ * Returns the handoff locator so a caller can watch it for auto-dismissal.
+ */
+export async function assertPrivacyInvariant(
+  page: Page,
+  player: DuelSeat,
+  context: string,
+): Promise<Locator> {
+  const expected = seatName(player);
+
+  await expectScreen(page, 'privacy', context);
+
+  const privacy = page.locator('[data-duel-privacy="true"]');
+
+  await expect(
+    privacy,
+    `${context}: the full-screen privacy handoff is not visible.`,
+  ).toBeVisible();
+  await expect(
+    privacy,
+    `${context}: exactly one privacy handoff may be mounted.`,
+  ).toHaveCount(1);
+
+  await expect(
+    page.getByRole('heading', { level: 1, name: `Pass to ${expected}`, exact: true }),
+    `${context}: the handoff must name ${expected}, and only ${expected}.`,
+  ).toBeVisible();
+  await expect(
+    page.getByText('Other player, look away.', { exact: true }),
+    `${context}: the handoff must tell the other player to look away.`,
+  ).toBeVisible();
+  await expect(
+    page.getByText(/^Series \d+\u2013\d+$/),
+    `${context}: the handoff must show the public series score.`,
+  ).toHaveCount(1);
+
+  for (const selector of PRIVACY_FORBIDDEN_SELECTORS) {
+    await expect(
+      page.locator(selector),
+      `${context}: ${selector} must be absent while the handoff is shown, not merely covered.`,
+    ).toHaveCount(0);
+  }
+
+  await expectNoCardNames(page, context);
+
+  await expect(
+    page.getByRole('button', { name: "I'm ready", exact: true }),
+    `${context}: the handoff must offer exactly one explicit ready control.`,
+  ).toHaveCount(1);
+
+  return privacy;
+}
+
 /**
  * Wait for the privacy handoff addressed to `player`, then activate the only
  * dismissal control. The battle must be mounted afterwards; a privacy screen
@@ -328,11 +476,26 @@ async function turnMarker(page: Page): Promise<string> {
       document.querySelector('#main-content')?.getAttribute('data-screen') ??
       'no-screen';
     const turn =
-      document.querySelector('.battle-board__turn, .duel-battle__turn')
+      document.querySelector('.battle-board__turn, .duel-header__turn')
         ?.textContent ?? 'no-turn';
 
     return `${screen}|${turn}`;
   });
+}
+
+/** The active player's energy text on either board composition. */
+async function readEnergyText(page: Page): Promise<string> {
+  const energy = page
+    .locator(
+      '.battle-controls__energy, .duel-panel--self .duel-panel__energy-text',
+    )
+    .first();
+
+  if ((await energy.count()) === 0) {
+    return '';
+  }
+
+  return (await energy.textContent()) ?? '';
 }
 
 /**
@@ -374,8 +537,7 @@ export async function playGreedyTurn(page: Page): Promise<GreedyTurnResult> {
       throw new Error('Greedy ordering returned no card despite an affordable hand.');
     }
 
-    const energyText =
-      (await page.locator('.battle-controls__energy').first().textContent()) ?? '';
+    const energyText = await readEnergyText(page);
     const before = handSignature(cards, energyText);
 
     const card = page.locator(
@@ -405,8 +567,7 @@ export async function playGreedyTurn(page: Page): Promise<GreedyTurnResult> {
     }
 
     const afterCards = await readHand(page);
-    const afterEnergy =
-      (await page.locator('.battle-controls__energy').first().textContent()) ?? '';
+    const afterEnergy = await readEnergyText(page);
 
     if (handSignature(afterCards, afterEnergy) === before) {
       throw new Error(

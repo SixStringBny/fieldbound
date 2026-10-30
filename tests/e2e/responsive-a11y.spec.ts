@@ -32,6 +32,7 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import {
+  assertPrivacyInvariant,
   collectConsoleErrors,
   dismissPrivacy,
   expectNoConsoleErrors,
@@ -1105,5 +1106,246 @@ test.describe('reading results', () => {
 
     await expectScreen(page, 'match-result', 'the settled duel series');
     expectNoConsoleErrors(errors, 'the duel plaques at five widths');
+  });
+});
+
+
+/* -------------------------------------------------------------------------- */
+/* Duel flow: setup, privacy and board at all five widths                     */
+/* -------------------------------------------------------------------------- */
+
+async function chooseDuelDeck(
+  page: Page,
+  player: '1' | '2',
+  deckName: string,
+): Promise<void> {
+  await page
+    .getByRole('button', { name: `Choose the ${deckName} deck`, exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: `Confirm Player ${player} deck`, exact: true })
+    .click();
+}
+
+async function openDuelPrivacy(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Local Duel', exact: true }).click();
+  await chooseDuelDeck(page, '1', 'Ember');
+  await chooseDuelDeck(page, '2', 'Frost');
+  await page.getByRole('button', { name: 'Start Match', exact: true }).click();
+  await expectScreen(page, 'privacy', 'the duel privacy handoff');
+}
+
+test.describe('duel flow', () => {
+  test.use({ reducedMotion: 'reduce' });
+
+  test('setup, privacy and the board hold at all five widths', async ({
+    page,
+  }) => {
+    test.setTimeout(180_000);
+
+    const errors = collectConsoleErrors(page);
+
+    await openApp(page, LAYOUT_SEED_BASE);
+    await page.getByRole('button', { name: 'Local Duel', exact: true }).click();
+    await expectScreen(page, 'duel-setup', 'the duel setup');
+
+    // Setup step 1 on every width: no sideways scroll, 44px targets.
+    for (const viewport of VIEWPORTS) {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await expectNoHorizontalScroll(page);
+      await expectMinimumTargets(page, `${viewport.label} duel setup`);
+      await expect(
+        page.getByRole('heading', {
+          level: 2,
+          name: 'Player 1, choose your deck',
+          exact: true,
+        }),
+        `${viewport.label}: the duel setup deck question is missing.`,
+      ).toBeVisible();
+    }
+
+    await page.setViewportSize({ width: 375, height: 667 });
+    await chooseDuelDeck(page, '1', 'Ember');
+    await chooseDuelDeck(page, '2', 'Frost');
+    await expectScreen(page, 'duel-setup', 'the locked summary');
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Both decks are locked', exact: true }),
+      'The locked summary is missing after both confirmations.',
+    ).toBeVisible();
+
+    // Privacy: fixed, opaque, no page scroll, one 44px action.
+    await page.getByRole('button', { name: 'Start Match', exact: true }).click();
+    await expectScreen(page, 'privacy', 'Start Match');
+
+    for (const viewport of VIEWPORTS) {
+      const context = `${viewport.label} duel privacy`;
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+
+      await assertPrivacyInvariant(page, 'Player 1', context);
+      await expectNoHorizontalScroll(page);
+      await expectNoPageScroll(page, context);
+      await expectMinimumTargets(page, context);
+
+      const style = await page
+        .locator('.duel-privacy')
+        .evaluate((node) => {
+          const rect = node.getBoundingClientRect();
+          const computed = getComputedStyle(node);
+          return {
+            position: computed.position,
+            width: rect.width,
+            height: rect.height,
+            background: computed.backgroundColor,
+          };
+        });
+
+      expect(style.position, `${context}: privacy must be a fixed route.`).toBe('fixed');
+      expect(style.width, `${context}: privacy must cover the width.`).toBeGreaterThanOrEqual(
+        viewport.width - 1,
+      );
+      expect(style.height, `${context}: privacy must cover the height.`).toBeGreaterThanOrEqual(
+        viewport.height - 1,
+      );
+      expect(style.background, `${context}: privacy must be opaque.`).toMatch(/^rgb\(/);
+    }
+
+    // The board locks to 100svh at every width.
+    await dismissPrivacy(page, 'Player 1');
+
+    for (const viewport of VIEWPORTS) {
+      const context = `${viewport.label} duel board`;
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await expectScreen(page, 'battle', context);
+      await expectNoPageScroll(page, context);
+      await expectNoHorizontalScroll(page);
+      await expectMinimumTargets(page, context);
+      await expect(
+        page.locator('.hand'),
+        `${context}: exactly one hand may exist.`,
+      ).toHaveCount(1);
+      await expect(
+        page.locator('.hand button.card-view'),
+        `${context}: the active hand must hold five card buttons.`,
+      ).toHaveCount(5);
+      await expect(
+        page.locator('.duel-panel--opponent button.card-view'),
+        `${context}: the opponent hand must never render card faces.`,
+      ).toHaveCount(0);
+      await expect(
+        page.locator('.duel-panel--opponent [data-hand-count]'),
+        `${context}: the opponent must show a hand count.`,
+      ).toHaveText(/^\d+ cards? in hand$/);
+
+      if (viewport.width >= 1024) {
+        const rail = await page.locator('[data-battle-log="true"]').boundingBox();
+        const expected = viewport.width >= 1280 ? 288 : 240;
+
+        expect(
+          Math.abs((rail?.width ?? 0) - expected),
+          `${context}: the log rail measured ${String(rail?.width)}px, expected ${String(
+            expected,
+          )}.`,
+        ).toBeLessThanOrEqual(1);
+      }
+    }
+
+    // Focus lands on the first incoming card with a visible ring, once.
+    const focused = await page.evaluate(() => {
+      const active = document.activeElement;
+      const computed = active === null ? null : getComputedStyle(active);
+      return {
+        isCard: active instanceof HTMLElement && active.classList.contains('card-view'),
+        inHand: active instanceof HTMLElement && active.closest('.hand') !== null,
+        outlineWidth: computed?.outlineWidth ?? '0px',
+        outlineStyle: computed?.outlineStyle ?? 'none',
+      };
+    });
+
+    expect(focused.isCard, 'The incoming turn must focus the first card.').toBe(true);
+    expect(focused.inHand, 'The focused card must belong to the active hand.').toBe(true);
+    expect(
+      focused.outlineWidth,
+      'The focused card must show the two-tone focus ring.',
+    ).not.toBe('0px');
+    expect(focused.outlineStyle, 'The focus ring must be drawn.').not.toBe('none');
+
+    expectNoConsoleErrors(errors, 'the five-viewport duel flow');
+  });
+});
+
+test.describe('duel privacy motion: OS preference', () => {
+  test.use({ reducedMotion: 'reduce' });
+
+  test('the OS reduced-motion preference stills the privacy plaque', async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openApp(page, MOTION_SEED_BASE);
+    await openDuelPrivacy(page);
+
+    const motion = await page.evaluate(() => {
+      const plaque = document.querySelector('.duel-privacy__plaque');
+      const app = document.querySelector('#app-root');
+
+      return {
+        attribute: app?.getAttribute('data-reduced-motion') ?? null,
+        animationName: plaque === null ? '' : getComputedStyle(plaque).animationName,
+      };
+    });
+
+    expect(motion.attribute, 'The OS preference must set data-reduced-motion').toBe(
+      'true',
+    );
+    expect(motion.animationName, 'The plaque must not animate under OS reduce').toBe(
+      'none',
+    );
+  });
+});
+
+test.describe('duel privacy motion: explicit override', () => {
+  test.use({ reducedMotion: 'no-preference' });
+
+  test('the explicit reduce-motion override stills the privacy plaque', async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openApp(page, MOTION_SEED_BASE);
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+
+    const motionSwitch = page.getByRole('switch', { name: 'Reduce motion' });
+
+    await expect(motionSwitch, 'The Reduce motion switch is missing.').toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+    await motionSwitch.click();
+    await expect(motionSwitch, 'The override did not switch on.').toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+
+    await openDuelPrivacy(page);
+
+    const motion = await page.evaluate(() => {
+      const plaque = document.querySelector('.duel-privacy__plaque');
+      const app = document.querySelector('#app-root');
+
+      return {
+        attribute: app?.getAttribute('data-reduced-motion') ?? null,
+        animationName: plaque === null ? '' : getComputedStyle(plaque).animationName,
+      };
+    });
+
+    expect(motion.attribute, 'The explicit override must set data-reduced-motion').toBe(
+      'true',
+    );
+    expect(motion.animationName, 'The plaque must not animate under the override').toBe(
+      'none',
+    );
   });
 });
