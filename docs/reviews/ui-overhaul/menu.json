@@ -1,16 +1,20 @@
 {
   "taskId": "UI-2-menu",
   "reviewer": "Ben McCusker (@SixStringBny)",
-  "reviewedAt": "2026-10-29T23:12:03.555Z",
+  "reviewedAt": "2026-10-30T16:16:31.935Z",
   "decision": "approved",
   "evidence": [
     {
       "path": "docs/reviews/ui-overhaul/menu.md",
       "sha256": "03db787c4d8349e96e6c326f37572e8a27b1253ffb987c5305b90666775a0267"
+    },
+    {
+      "path": "docs/reviews/ui-overhaul/release.md",
+      "sha256": "be39d100e4f1496a8fe910282ffb1e876e7c1b4ac4bcf428d66ed4634cfe0444"
     }
   ],
   "route": "menu",
-  "commit": "23e9d89",
+  "commit": "f2b75e6",
   "viewports": [
     "375x667",
     "390x844",
@@ -156,7 +160,7 @@
   },
   "human": {
     "owner": "Ben McCusker (@SixStringBny)",
-    "reviewedAt": "2026-10-29T23:12:03.555Z",
+    "reviewedAt": "2026-10-30T16:16:31.935Z",
     "viewports": [
       "390x844",
       "768x1024",
@@ -171,7 +175,7 @@
       {
         "id": "H-C2",
         "status": "pass",
-        "note": "Warm slate, parchment mode cards, brass rules and the wax seal; the placeholder art does not clash."
+        "note": "Warm slate, parchment mode cards, brass rules and the wax seal; the placeholder art does not clash. Re-confirmed at the release pass after the motion ticket removed a hover box-shadow transition from menu.css; composition, copy and geometry unchanged."
       },
       {
         "id": "H-P1",
